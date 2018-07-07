@@ -29,7 +29,7 @@ type Status struct {
 
 // Result struct is used to hold properties returned for results from requests to the gremlin server
 type Result struct {
-	// Will be a dynamic structure, allow client to deal with unmarshalling their own way
+	// Query Response Data
 	Data json.RawMessage   `json:"data"`
 	Meta map[string]string `json:"meta"`
 }
@@ -41,6 +41,7 @@ type Response struct {
 	Result    Result `json:"result"`
 }
 
+// ToString returns a string representation of the Response struct
 func (r Response) ToString() string {
 	return fmt.Sprintf("Response \nRequestID: %v, \nStatus: {%#v}, \nResult: {%#v}\n", r.RequestID, r.Status, r.Result)
 }

@@ -1,6 +1,7 @@
 package gremgo
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"testing"
@@ -38,25 +39,25 @@ var dummyPartialResponse2 = []byte(`{"result":{"data":[{"id": 4,"label": "person
 var dummySuccessfulResponseMarshalled = Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
 	Status:    Status{Code: 200},
-	Result:    Result{Data: []interface{}{"testData"}},
+	Result:    Result{Data: []byte("testData")},
 }
 
 var dummyNeedAuthenticationResponseMarshalled = Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
 	Status:    Status{Code: 407},
-	Result:    Result{Data: []interface{}{""}},
+	Result:    Result{Data: []byte("")},
 }
 
 var dummyPartialResponse1Marshalled = Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
 	Status:    Status{Code: 206}, // Code 206 indicates that the response is not the terminating response in a sequence of responses
-	Result:    Result{Data: []interface{}{"testPartialData1"}},
+	Result:    Result{Data: []byte("testPartialData1")},
 }
 
 var dummyPartialResponse2Marshalled = Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
 	Status:    Status{Code: 200},
-	Result:    Result{Data: []interface{}{"testPartialData2"}},
+	Result:    Result{Data: []byte("testPartialData2")},
 }
 
 // TestResponseHandling tests the overall response handling mechanism of gremgo
@@ -78,7 +79,6 @@ func TestResponseAuthHandling(t *testing.T) {
 	ws := new(Ws)
 	ws.auth = &auth{username: "test", password: "test"}
 	c.conn = ws
-
 	c.handleResponse(dummyNeedAuthenticationResponse)
 
 	req, err := prepareAuthRequest(dummyNeedAuthenticationResponseMarshalled.RequestID, "test", "test")
@@ -92,8 +92,9 @@ func TestResponseAuthHandling(t *testing.T) {
 		return
 	}
 
+	c.dispatchRequest(sampleAuthRequest)
 	authRequest := <-c.requests //Simulate that client send auth challenge to server
-
+	fmt.Println("1")
 	if !reflect.DeepEqual(authRequest, sampleAuthRequest) {
 		t.Error("Expected data type does not match actual.")
 	}
@@ -116,7 +117,7 @@ func TestResponseMarshalling(t *testing.T) {
 	}
 	if dummySuccessfulResponseMarshalled.RequestID != resp.RequestID || dummySuccessfulResponseMarshalled.Status.Code != resp.Status.Code {
 		t.Error("Expected requestId and code does not match actual.")
-	} else if reflect.TypeOf(resp.Result.Data).String() != "[]interface {}" {
+	} else if reflect.TypeOf(resp.Result.Data).String() != "json.RawMessage" {
 		t.Error("Expected data type does not match actual.")
 	}
 }
@@ -164,7 +165,7 @@ func TestResponseRetrieval(t *testing.T) {
 
 	resp := c.retrieveResponse(dummyPartialResponse1Marshalled.RequestID)
 
-	var expected []interface{}
+	var expected []Response
 	expected = append(expected, dummyPartialResponse1Marshalled)
 	expected = append(expected, dummyPartialResponse2Marshalled)
 
