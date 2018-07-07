@@ -26,33 +26,38 @@ Example
 package main
 
 import (
-	"fmt"
-	"log"
+    "fmt"
+    "log"
 
-	"github.com/schwartzmx/gremgo-neptune"
+    "github.com/schwartzmx/gremgo-neptune"
 )
 
 func main() {
-	errs := make(chan error)
-	go func(chan error) {
-		err := <-errs
-		log.Fatal("Lost connection to the database: " + err.Error())
-	}(errs) // Example of connection error handling logic
+    errs := make(chan error)
+    go func(chan error) {
+        err := <-errs
+        log.Fatal("Lost connection to the database: " + err.Error())
+    }(errs) // Example of connection error handling logic
 
-	dialer := gremgo.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
-	g, err := gremgo.Dial(dialer, errs) // Returns a gremgo client to interact with
-	if err != nil {
-		fmt.Println(err)
-    	return
-	}
-	res, err := g.Execute( // Sends a query to Gremlin Server with bindings
-		"g.V(x)"
-	)
-	if err != nil {
-		fmt.Println(err)
-    	return
-	}
-	fmt.Printf("%+v", res)
+    dialer := gremgo.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
+    g, err := gremgo.Dial(dialer, errs) // Returns a gremgo client to interact with
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    res, err := g.Execute( // Sends a query to Gremlin Server with bindings
+        "g.V('1234')"
+    )
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    j, err := json.Marshal(res[0].Result.Data) // res will return a list of resultsets,  where the data is a json.RawMessage
+    if err != nil {
+        fmt.Println(err)
+        return nil, err
+    }
+    fmt.Printf("%s", j)
 }
 ```
 
@@ -66,41 +71,41 @@ credentials the complement will panic.
 package main
 
 import (
-	"fmt"
-	"log"
+    "fmt"
+    "log"
 
-	"github.com/schwartzmx/gremgo-neptune"
+    "github.com/schwartzmx/gremgo-neptune"
 )
 
 func main() {
-	errs := make(chan error)
-	go func(chan error) {
-		err := <-errs
-		log.Fatal("Lost connection to the database: " + err.Error())
-	}(errs) // Example of connection error handling logic
+    errs := make(chan error)
+    go func(chan error) {
+        err := <-errs
+        log.Fatal("Lost connection to the database: " + err.Error())
+    }(errs) // Example of connection error handling logic
 
-	dialer := gremgo.NewSecureDialer("127.0.0.1:8182", "username", "password") // Returns a WebSocket dialer to connect to Gremlin Server
-	g, err := gremgo.Dial(dialer, errs) // Returns a gremgo client to interact with
-	if err != nil {
-		fmt.Println(err)
-    	return
-	}
-	res, err := g.Execute("g.V(x)")
-	if err != nil {
-		fmt.Println(err)
-    	return
-	}
-	fmt.Printf("%+v", res)
+    dialer := gremgo.NewSecureDialer("127.0.0.1:8182", "username", "password") // Returns a WebSocket dialer to connect to Gremlin Server
+    g, err := gremgo.Dial(dialer, errs) // Returns a gremgo client to interact with
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    res, err := g.Execute( // Sends a query to Gremlin Server with bindings
+        "g.V('1234')"
+    )
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    j, err := json.Marshal(res[0].Result.Data) // res will return a list of resultsets,  where the data is a json.RawMessage
+    if err != nil {
+        fmt.Println(err)
+        return nil, err
+    }
+    fmt.Printf("%s", j)
 }
 ```
 
 License
 ==========
-
-Copyright (c) 2016 Marcus Engvall
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+See [LICENSE](LICENSE.md)
