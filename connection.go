@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
 type dialer interface {
@@ -132,7 +133,7 @@ func (ws *Ws) ping(errs chan error) {
 
 /////
 
-func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it recieves them
+func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
 	for {
 		select {
 		case msg := <-c.requests:
@@ -149,7 +150,7 @@ func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWork
 	}
 }
 
-func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker works on a loop and sorts messages as soon as it recieves them
+func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
 	for {
 		msg, err := c.conn.read()
 		if err != nil {

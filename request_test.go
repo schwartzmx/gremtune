@@ -97,7 +97,7 @@ func TestRequestDispatch(t *testing.T) {
 // TestAuthRequestDispatch tests the ability for a requester to send a request to the client for writing to Gremlin Server
 func TestAuthRequestDispatch(t *testing.T) {
 	id := "1d6d02bd-8e56-421d-9438-3bd6d0079ff1"
-	testRequest, err := prepareAuthRequest(id, "test", "root")
+	testRequest, _ := prepareAuthRequest(id, "test", "root")
 
 	c := newClient()
 	msg, err := packageRequest(testRequest)

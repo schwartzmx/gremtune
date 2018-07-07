@@ -8,7 +8,7 @@ type DialerConfig func(*Ws)
 //SetAuthentication sets on dialer credentials for authentication
 func SetAuthentication(username string, password string) DialerConfig {
 	return func(c *Ws) {
-		c.auth = &auth{username:username, password:password}
+		c.auth = &auth{username: username, password: password}
 	}
 }
 
@@ -23,20 +23,20 @@ func SetTimeout(seconds int) DialerConfig {
 //connection is alive and in consequence the client is connected
 func SetPingInterval(seconds int) DialerConfig {
 	return func(c *Ws) {
-		c.pingInterval = time.Duration(seconds)* time.Second
+		c.pingInterval = time.Duration(seconds) * time.Second
 	}
 }
 
 //SetWritingWait sets the time for waiting that writing occur
 func SetWritingWait(seconds int) DialerConfig {
 	return func(c *Ws) {
-		c.writingWait = time.Duration(seconds)* time.Second
+		c.writingWait = time.Duration(seconds) * time.Second
 	}
 }
 
 //SetReadingWait sets the time for waiting that reading occur
 func SetReadingWait(seconds int) DialerConfig {
 	return func(c *Ws) {
-		c.readingWait = time.Duration(seconds)* time.Second
+		c.readingWait = time.Duration(seconds) * time.Second
 	}
 }
