@@ -3,7 +3,6 @@ package gremgo
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 )
 
 const (
@@ -49,7 +48,6 @@ func (r Response) ToString() string {
 func (c *Client) handleResponse(msg []byte) (err error) {
 	resp, err := marshalResponse(msg)
 	if err != nil {
-		log.Printf("message: %s \n err: %s", msg, err)
 		return
 	}
 
