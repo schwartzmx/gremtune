@@ -84,9 +84,9 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 		log.Println(err)
 		return
 	}
-	c.responseNotifier.Store(id, make(chan int, 1))
+	c.responseNotifier.Store(id, make(chan error, 1))
 	c.dispatchRequest(msg)
-	resp = c.retrieveResponse(id)
+	resp, err = c.retrieveResponse(id)
 	return
 }
 
