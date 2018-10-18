@@ -58,7 +58,7 @@ func TestRequestPackaging(t *testing.T) {
 
 	var expected []byte
 
-	mimetype := []byte("application/vnd.gremlin-v2.0+json")
+	mimetype := []byte("application/vnd.gremlin-v3.0+json")
 	mimetypelen := byte(len(mimetype))
 
 	expected = append(expected, mimetypelen)
