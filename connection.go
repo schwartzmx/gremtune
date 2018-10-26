@@ -65,9 +65,7 @@ func (ws *Ws) connect() (err error) {
 	if err == nil {
 		ws.connected = true
 		ws.conn.SetPongHandler(func(appData string) error {
-			ws.Lock()
 			ws.connected = true
-			ws.Unlock()
 			return nil
 		})
 	}
@@ -131,18 +129,19 @@ func (ws *Ws) ping(errs chan error) {
 	}
 }
 
-/////
-
 func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
 	for {
 		select {
 		case msg := <-c.requests:
+			c.mu.Lock()
 			err := c.conn.write(msg)
 			if err != nil {
 				errs <- err
 				c.Errored = true
+				c.mu.Unlock()
 				break
 			}
+			c.mu.Unlock()
 
 		case <-quit:
 			return

@@ -15,7 +15,7 @@ type Client struct {
 	responses        chan []byte
 	results          *sync.Map
 	responseNotifier *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
-	respMutex        *sync.Mutex
+	mu               sync.RWMutex
 	Errored          bool
 }
 
@@ -43,7 +43,6 @@ func newClient() (c Client) {
 	c.responses = make(chan []byte, 3) // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
 	c.results = &sync.Map{}
 	c.responseNotifier = &sync.Map{}
-	c.respMutex = &sync.Mutex{} // c.mutex ensures that sorting is thread safe
 	return
 }
 

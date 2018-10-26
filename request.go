@@ -87,7 +87,6 @@ func prepareAuthRequest(requestID string, username string, password string) (req
 
 // formatMessage takes a request type and formats it into being able to be delivered to Gremlin Server
 func packageRequest(req request) (msg []byte, err error) {
-
 	j, err := json.Marshal(req) // Formats request into byte format
 	if err != nil {
 		return
