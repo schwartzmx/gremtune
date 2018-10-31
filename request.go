@@ -1,9 +1,8 @@
 package gremgo
 
 import (
-	"encoding/json"
-
 	"encoding/base64"
+	"encoding/json"
 
 	"github.com/satori/go.uuid"
 )
