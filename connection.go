@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 )
 
 type dialer interface {
@@ -156,7 +157,7 @@ func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker
 			return
 		}
 		if err != nil {
-			errs <- err
+			errs <- errors.Wrapf(err, "Receive message type: %d", msgType)
 			c.Errored = true
 			break
 		}
