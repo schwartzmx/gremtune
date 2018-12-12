@@ -1,11 +1,12 @@
 package gremgo
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Client is a container for the gremgo client.
@@ -86,6 +87,9 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 	c.responseNotifier.Store(id, make(chan error, 1))
 	c.dispatchRequest(msg)
 	resp, err = c.retrieveResponse(id)
+	if err != nil {
+		err = errors.Wrapf(err, "query: %s", query)
+	}
 	return
 }
 
