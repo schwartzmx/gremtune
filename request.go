@@ -1,9 +1,8 @@
 package gremgo
 
 import (
-	"encoding/json"
-
 	"encoding/base64"
+	"encoding/json"
 
 	"github.com/satori/go.uuid"
 )
@@ -87,12 +86,11 @@ func prepareAuthRequest(requestID string, username string, password string) (req
 
 // formatMessage takes a request type and formats it into being able to be delivered to Gremlin Server
 func packageRequest(req request) (msg []byte, err error) {
-
 	j, err := json.Marshal(req) // Formats request into byte format
 	if err != nil {
 		return
 	}
-	mimeType := []byte("application/vnd.gremlin-v2.0+json")
+	mimeType := []byte("application/vnd.gremlin-v3.0+json")
 	msg = append([]byte{0x21}, mimeType...) //0x21 is the fixed length of mimeType in hex
 	msg = append(msg, j...)
 

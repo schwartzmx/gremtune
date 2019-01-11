@@ -14,6 +14,7 @@ type Pool struct {
 	idle        []*idleConnection
 	active      int
 	cond        *sync.Cond
+	closed      bool
 }
 
 // PooledConnection represents a shared and reusable connection.
@@ -85,6 +86,10 @@ func (p *Pool) Get() (*PooledConnection, error) {
 // put pushes the supplied PooledConnection to the top of the idle slice to be reused.
 // It is not threadsafe. The caller should manage locking the pool.
 func (p *Pool) put(pc *PooledConnection) {
+	if p.closed {
+		pc.Client.Close()
+		return
+	}
 	idle := &idleConnection{pc: pc, t: time.Now()}
 	// Prepend the connection to the front of the slice
 	p.idle = append([]*idleConnection{idle}, p.idle...)
@@ -117,6 +122,9 @@ func (p *Pool) purge() {
 // release decrements active and alerts waiters.
 // It is not threadsafe. The caller should manage locking the pool.
 func (p *Pool) release() {
+	if p.closed {
+		return
+	}
 	p.active--
 	if p.cond != nil {
 		p.cond.Signal()
@@ -129,6 +137,17 @@ func (p *Pool) first() *idleConnection {
 		return nil
 	}
 	return p.idle[0]
+}
+
+// Close closes the pool.
+func (p *Pool) Close() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for _, c := range p.idle {
+		c.pc.Client.Close()
+	}
+	p.closed = true
 }
 
 // Close signals that the caller is finished with the connection and should be

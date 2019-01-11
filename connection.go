@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 )
 
 type dialer interface {
@@ -14,7 +15,7 @@ type dialer interface {
 	isConnected() bool
 	isDisposed() bool
 	write([]byte) error
-	read() ([]byte, error)
+	read() (int, []byte, error)
 	close() error
 	getAuth() *auth
 	ping(errs chan error)
@@ -65,9 +66,7 @@ func (ws *Ws) connect() (err error) {
 	if err == nil {
 		ws.connected = true
 		ws.conn.SetPongHandler(func(appData string) error {
-			ws.Lock()
 			ws.connected = true
-			ws.Unlock()
 			return nil
 		})
 	}
@@ -87,8 +86,8 @@ func (ws *Ws) write(msg []byte) (err error) {
 	return
 }
 
-func (ws *Ws) read() (msg []byte, err error) {
-	_, msg, err = ws.conn.ReadMessage()
+func (ws *Ws) read() (msgType int, msg []byte, err error) {
+	msgType, msg, err = ws.conn.ReadMessage()
 	return
 }
 
@@ -131,18 +130,19 @@ func (ws *Ws) ping(errs chan error) {
 	}
 }
 
-/////
-
 func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
 	for {
 		select {
 		case msg := <-c.requests:
+			c.mu.Lock()
 			err := c.conn.write(msg)
 			if err != nil {
 				errs <- err
 				c.Errored = true
+				c.mu.Unlock()
 				break
 			}
+			c.mu.Unlock()
 
 		case <-quit:
 			return
@@ -152,9 +152,12 @@ func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWork
 
 func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
 	for {
-		msg, err := c.conn.read()
+		msgType, msg, err := c.conn.read()
+		if msgType == -1 { // msgType == -1 is noFrame (close connection)
+			return
+		}
 		if err != nil {
-			errs <- err
+			errs <- errors.Wrapf(err, "Receive message type: %d", msgType)
 			c.Errored = true
 			break
 		}

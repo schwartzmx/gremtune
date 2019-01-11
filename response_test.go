@@ -1,7 +1,6 @@
 package gremgo
 
 import (
-	"fmt"
 	"log"
 	"reflect"
 	"testing"
@@ -69,7 +68,8 @@ func TestResponseHandling(t *testing.T) {
 	var expected []Response
 	expected = append(expected, dummySuccessfulResponseMarshalled)
 
-	if reflect.TypeOf(expected).String() != reflect.TypeOf(c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)).String() {
+	r, _ := c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)
+	if reflect.TypeOf(expected).String() != reflect.TypeOf(r).String() {
 		t.Error("Expected data type does not match actual.")
 	}
 }
@@ -94,7 +94,6 @@ func TestResponseAuthHandling(t *testing.T) {
 
 	c.dispatchRequest(sampleAuthRequest)
 	authRequest := <-c.requests //Simulate that client send auth challenge to server
-	fmt.Println("1")
 	if !reflect.DeepEqual(authRequest, sampleAuthRequest) {
 		t.Error("Expected data type does not match actual.")
 	}
@@ -104,7 +103,8 @@ func TestResponseAuthHandling(t *testing.T) {
 	var expectedSuccessful []Response
 	expectedSuccessful = append(expectedSuccessful, dummySuccessfulResponseMarshalled)
 
-	if reflect.TypeOf(expectedSuccessful).String() != reflect.TypeOf(c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)).String() {
+	r, _ := c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)
+	if reflect.TypeOf(expectedSuccessful).String() != reflect.TypeOf(r).String() {
 		t.Error("Expected data type does not match actual.")
 	}
 }
@@ -127,7 +127,7 @@ func TestResponseSortingSingleResponse(t *testing.T) {
 
 	c := newClient()
 
-	c.saveResponse(dummySuccessfulResponseMarshalled)
+	c.saveResponse(dummySuccessfulResponseMarshalled, nil)
 
 	var expected []interface{}
 	expected = append(expected, dummySuccessfulResponseMarshalled)
@@ -143,8 +143,8 @@ func TestResponseSortingMultipleResponse(t *testing.T) {
 
 	c := newClient()
 
-	c.saveResponse(dummyPartialResponse1Marshalled)
-	c.saveResponse(dummyPartialResponse2Marshalled)
+	c.saveResponse(dummyPartialResponse1Marshalled, nil)
+	c.saveResponse(dummyPartialResponse2Marshalled, nil)
 
 	var expected []interface{}
 	expected = append(expected, dummyPartialResponse1Marshalled)
@@ -160,10 +160,10 @@ func TestResponseSortingMultipleResponse(t *testing.T) {
 func TestResponseRetrieval(t *testing.T) {
 	c := newClient()
 
-	c.saveResponse(dummyPartialResponse1Marshalled)
-	c.saveResponse(dummyPartialResponse2Marshalled)
+	c.saveResponse(dummyPartialResponse1Marshalled, nil)
+	c.saveResponse(dummyPartialResponse2Marshalled, nil)
 
-	resp := c.retrieveResponse(dummyPartialResponse1Marshalled.RequestID)
+	resp, _ := c.retrieveResponse(dummyPartialResponse1Marshalled.RequestID)
 
 	var expected []Response
 	expected = append(expected, dummyPartialResponse1Marshalled)
@@ -178,8 +178,8 @@ func TestResponseRetrieval(t *testing.T) {
 func TestResponseDeletion(t *testing.T) {
 	c := newClient()
 
-	c.saveResponse(dummyPartialResponse1Marshalled)
-	c.saveResponse(dummyPartialResponse2Marshalled)
+	c.saveResponse(dummyPartialResponse1Marshalled, nil)
+	c.saveResponse(dummyPartialResponse2Marshalled, nil)
 
 	c.deleteResponse(dummyPartialResponse1Marshalled.RequestID)
 

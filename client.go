@@ -1,11 +1,12 @@
 package gremgo
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Client is a container for the gremgo client.
@@ -15,7 +16,7 @@ type Client struct {
 	responses        chan []byte
 	results          *sync.Map
 	responseNotifier *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
-	respMutex        *sync.Mutex
+	mu               sync.RWMutex
 	Errored          bool
 }
 
@@ -43,7 +44,6 @@ func newClient() (c Client) {
 	c.responses = make(chan []byte, 3) // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
 	c.results = &sync.Map{}
 	c.responseNotifier = &sync.Map{}
-	c.respMutex = &sync.Mutex{} // c.mutex ensures that sorting is thread safe
 	return
 }
 
@@ -84,9 +84,12 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 		log.Println(err)
 		return
 	}
-	c.responseNotifier.Store(id, make(chan int, 1))
+	c.responseNotifier.Store(id, make(chan error, 1))
 	c.dispatchRequest(msg)
-	resp = c.retrieveResponse(id)
+	resp, err = c.retrieveResponse(id)
+	if err != nil {
+		err = errors.Wrapf(err, "query: %s", query)
+	}
 	return
 }
 
