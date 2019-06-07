@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 type requester interface {
@@ -24,10 +24,7 @@ type request struct {
 // prepareRequest packages a query and binding into the format that Gremlin Server accepts
 func prepareRequest(query string) (req request, id string, err error) {
 	var uuID uuid.UUID
-	uuID, err = uuid.NewV4()
-	if err != nil {
-		return
-	}
+	uuID = uuid.NewV4()
 	id = uuID.String()
 
 	req.RequestID = id
@@ -44,10 +41,7 @@ func prepareRequest(query string) (req request, id string, err error) {
 // prepareRequest packages a query and binding into the format that Gremlin Server accepts
 func prepareRequestWithBindings(query string, bindings, rebindings map[string]string) (req request, id string, err error) {
 	var uuID uuid.UUID
-	uuID, err = uuid.NewV4()
-	if err != nil {
-		return
-	}
+	uuID = uuid.NewV4()
 	id = uuID.String()
 
 	req.RequestID = id
