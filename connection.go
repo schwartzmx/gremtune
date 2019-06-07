@@ -12,8 +12,8 @@ import (
 
 type dialer interface {
 	connect() error
-	isConnected() bool
-	isDisposed() bool
+	IsConnected() bool
+	IsDisposed() bool
 	write([]byte) error
 	read() (int, []byte, error)
 	close() error
@@ -73,11 +73,13 @@ func (ws *Ws) connect() (err error) {
 	return
 }
 
-func (ws *Ws) isConnected() bool {
+// IsConnected returns whether the underlying websocket is connected
+func (ws *Ws) IsConnected() bool {
 	return ws.connected
 }
 
-func (ws *Ws) isDisposed() bool {
+// IsDisposed returns whether the underlying websocket is disposed
+func (ws *Ws) IsDisposed() bool {
 	return ws.disposed
 }
 
