@@ -136,15 +136,15 @@ func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWork
 	for {
 		select {
 		case msg := <-c.requests:
-			c.mu.Lock()
+			c.Lock()
 			err := c.conn.write(msg)
 			if err != nil {
 				errs <- err
 				c.Errored = true
-				c.mu.Unlock()
+				c.Unlock()
 				break
 			}
-			c.mu.Unlock()
+			c.Unlock()
 
 		case <-quit:
 			return

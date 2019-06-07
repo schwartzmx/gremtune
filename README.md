@@ -45,7 +45,7 @@ func main() {
         fmt.Println(err)
         return
     }
-    res, err := g.Execute( // Sends a query to Gremlin Server with bindings
+    res, err := g.Execute( // Sends a query to Gremlin Server
         "g.V('1234')"
     )
     if err != nil {
@@ -90,7 +90,7 @@ func main() {
         fmt.Println(err)
         return
     }
-    res, err := g.Execute( // Sends a query to Gremlin Server with bindings
+    res, err := g.Execute( // Sends a query to Gremlin Server
         "g.V('1234')"
     )
     if err != nil {

@@ -1,6 +1,7 @@
 package gremgo
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -148,6 +149,28 @@ func (p *Pool) Close() {
 		c.pc.Client.Close()
 	}
 	p.closed = true
+}
+
+// ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
+func (p *Pool) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []Response, err error) {
+	pc, err := p.Get()
+	if err != nil {
+		fmt.Printf("Error aquiring connection from pool: %s", err)
+		return nil, err
+	}
+	defer pc.Close()
+	return pc.Client.ExecuteWithBindings(query, bindings, rebindings)
+}
+
+// Execute grabs a connection from the pool, formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
+func (p *Pool) Execute(query string) (resp []Response, err error) {
+	pc, err := p.Get()
+	if err != nil {
+		fmt.Printf("Error aquiring connection from pool: %s", err)
+		return nil, err
+	}
+	defer pc.Close()
+	return pc.Client.Execute(query)
 }
 
 // Close signals that the caller is finished with the connection and should be
