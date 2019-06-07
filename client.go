@@ -112,7 +112,7 @@ func (c *Client) authenticate(requestID string) (err error) {
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
 func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []Response, err error) {
-	if c.conn.isDisposed() {
+	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
 	resp, err = c.executeRequest(query, &bindings, &rebindings)
@@ -121,7 +121,7 @@ func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[stri
 
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
 func (c *Client) Execute(query string) (resp []Response, err error) {
-	if c.conn.isDisposed() {
+	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
 	resp, err = c.executeRequest(query, nil, nil)
@@ -130,7 +130,7 @@ func (c *Client) Execute(query string) (resp []Response, err error) {
 
 // ExecuteFile takes a file path to a Gremlin script, sends it to Gremlin Server, and returns the result.
 func (c *Client) ExecuteFile(path string, bindings, rebindings map[string]string) (resp []Response, err error) {
-	if c.conn.isDisposed() {
+	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
 	d, err := ioutil.ReadFile(path) // Read script from file
