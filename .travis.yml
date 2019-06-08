@@ -4,6 +4,14 @@ go:
   - 1.11.x
   - master
 
+services:
+  - docker
+
+before_install:
+  - docker build -t gremgo-neptune/gremlin-server -f ./Dockerfile.gremlin .
+  - docker run -d -p 8182:8182 -t gremgo-neptune/gremlin-server
+  - docker ps -a
+
 before_script:
   - go vet ./...
 
@@ -11,3 +19,6 @@ env:
   - GO111MODULE=on
 
 install: true
+
+notifications:
+  email: false

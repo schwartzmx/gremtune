@@ -16,8 +16,8 @@ type Client struct {
 	responses        chan []byte
 	results          *sync.Map
 	responseNotifier *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
-	mu               sync.RWMutex
-	Errored          bool
+	sync.RWMutex
+	Errored bool
 }
 
 // NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
@@ -128,8 +128,8 @@ func (c *Client) Execute(query string) (resp []Response, err error) {
 	return
 }
 
-// ExecuteFile takes a file path to a Gremlin script, sends it to Gremlin Server, and returns the result.
-func (c *Client) ExecuteFile(path string, bindings, rebindings map[string]string) (resp []Response, err error) {
+// ExecuteFileWithBindings takes a file path to a Gremlin script, sends it to Gremlin Server with bindings, and returns the result.
+func (c *Client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []Response, err error) {
 	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
@@ -140,6 +140,21 @@ func (c *Client) ExecuteFile(path string, bindings, rebindings map[string]string
 	}
 	query := string(d)
 	resp, err = c.executeRequest(query, &bindings, &rebindings)
+	return
+}
+
+// ExecuteFile takes a file path to a Gremlin script, sends it to Gremlin Server, and returns the result.
+func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
+	if c.conn.IsDisposed() {
+		return resp, errors.New("you cannot write on disposed connection")
+	}
+	d, err := ioutil.ReadFile(path) // Read script from file
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	query := string(d)
+	resp, err = c.executeRequest(query, nil, nil)
 	return
 }
 
