@@ -1,4 +1,4 @@
-package gremgo
+package gremtune
 
 import (
 	"log"
@@ -59,7 +59,7 @@ var dummyPartialResponse2Marshalled = Response{
 	Result:    Result{Data: []byte("testPartialData2")},
 }
 
-// TestResponseHandling tests the overall response handling mechanism of gremgo
+// TestResponseHandling tests the overall response handling mechanism of gremtune
 func TestResponseHandling(t *testing.T) {
 	c := newClient()
 

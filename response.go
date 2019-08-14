@@ -1,4 +1,4 @@
-package gremgo
+package gremtune
 
 import (
 	"encoding/json"

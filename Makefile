@@ -17,5 +17,5 @@ test-bench:
 
 .PHONY: gremlin
 gremlin:
-	@docker build -t gremgo-neptune/gremlin-server -f ./Dockerfile.gremlin .
-	@docker run -p 8182:8182 -t gremgo-neptune/gremlin-server
+	@docker build -t gremtune/gremlin-server -f ./Dockerfile.gremlin .
+	@docker run -p 8182:8182 -t gremtune/gremlin-server

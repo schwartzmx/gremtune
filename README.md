@@ -1,24 +1,24 @@
-# gremgo-neptune
+# gremtune
 
-[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/schwartzmx/gremgo-neptune) [![Build Status](https://travis-ci.org/schwartzmx/gremgo-neptune.svg?branch=master)](https://travis-ci.org/schwartzmx/gremgo-neptune) [![Go Report Card](https://goreportcard.com/badge/github.com/schwartzmx/gremgo-neptune)](https://goreportcard.com/report/github.com/schwartzmx/gremgo-neptune)
+[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/schwartzmx/gremtune) [![Build Status](https://travis-ci.org/schwartzmx/gremtune.svg?branch=master)](https://travis-ci.org/schwartzmx/gremtune) [![Go Report Card](https://goreportcard.com/badge/github.com/schwartzmx/gremtune)](https://goreportcard.com/report/github.com/schwartzmx/gremtune)
 
-gremgo-neptune is a fork of [qasaur/gremgo](https://github.com/qasaur/gremgo) with alterations to make it compatible with [AWS Neptune](https://aws.amazon.com/neptune/) which is a "Fast, reliable graph database built for the cloud".
+gremtune is a fork of [qasaur/gremgo](https://github.com/qasaur/gremgo) with alterations to make it compatible with [AWS Neptune](https://aws.amazon.com/neptune/) which is a "Fast, reliable graph database built for the cloud".
 
-gremgo is a fast, efficient, and easy-to-use client for the TinkerPop graph database stack. It is a Gremlin language driver which uses WebSockets to interface with Gremlin Server and has a strong emphasis on concurrency and scalability. Please keep in mind that gremgo is still under heavy development and although effort is being made to fully cover gremgo with reliable tests, bugs may be present in several areas.
+gremtune is a fast, efficient, and easy-to-use client for the TinkerPop graph database stack. It is a Gremlin language driver which uses WebSockets to interface with Gremlin Server and has a strong emphasis on concurrency and scalability. Please keep in mind that gremtune is still under heavy development and although effort is being made to fully cover gremtune with reliable tests, bugs may be present in several areas.
 
 **Modifications were made to `gremgo` in order to "support" AWS Neptune's lack of Gremlin-specific features,  like no support query bindings among others. See differences in Gremlin support here: [AWS Neptune Gremlin Implementation Differences](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-gremlin-differences.html)**
 
 Installation
 ==========
 ```
-go get github.com/schwartzmx/gremgo-neptune
+go get github.com/schwartzmx/gremtune
 dep ensure
 ```
 
 Documentation
 ==========
 
-* [GoDoc](https://godoc.org/github.com/schwartzmx/gremgo-neptune)
+* [GoDoc](https://godoc.org/github.com/schwartzmx/gremtune)
 
 Example
 ==========
@@ -29,7 +29,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/schwartzmx/gremgo-neptune"
+    "github.com/schwartzmx/gremtune"
 )
 
 func main() {
@@ -39,8 +39,8 @@ func main() {
         log.Fatal("Lost connection to the database: " + err.Error())
     }(errs) // Example of connection error handling logic
 
-    dialer := gremgo.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
-    g, err := gremgo.Dial(dialer, errs) // Returns a gremgo client to interact with
+    dialer := gremtune.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
+    g, err := gremtune.Dial(dialer, errs) // Returns a gremtune client to interact with
     if err != nil {
         fmt.Println(err)
         return
@@ -74,7 +74,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/schwartzmx/gremgo-neptune"
+    "github.com/schwartzmx/gremtune"
 )
 
 func main() {
@@ -84,8 +84,8 @@ func main() {
         log.Fatal("Lost connection to the database: " + err.Error())
     }(errs) // Example of connection error handling logic
 
-    dialer := gremgo.NewSecureDialer("127.0.0.1:8182", "username", "password") // Returns a WebSocket dialer to connect to Gremlin Server
-    g, err := gremgo.Dial(dialer, errs) // Returns a gremgo client to interact with
+    dialer := gremtune.NewSecureDialer("127.0.0.1:8182", "username", "password") // Returns a WebSocket dialer to connect to Gremlin Server
+    g, err := gremtune.Dial(dialer, errs) // Returns a gremtune client to interact with
     if err != nil {
         fmt.Println(err)
         return

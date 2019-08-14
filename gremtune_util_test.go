@@ -1,4 +1,4 @@
-package gremgo
+package gremtune
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func InitGremlinClients() {
 	go func(chan error) {
 		err := <-gperrs
 		log.Fatal("Lost connection to the database: " + err.Error())
-	}(errs)
+	}(gperrs)
 	initClient()
 	initPool()
 }

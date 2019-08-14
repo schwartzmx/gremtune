@@ -1,4 +1,4 @@
-package gremgo
+package gremtune
 
 import (
 	"encoding/json"
@@ -33,7 +33,7 @@ func TestRequestPreparation(t *testing.T) {
 	}
 }
 
-// TestRequestPackaging tests the ability for gremgo to format a request using the established Gremlin Server WebSockets protocol for delivery to the server
+// TestRequestPackaging tests the ability for gremtune to format a request using the established Gremlin Server WebSockets protocol for delivery to the server
 func TestRequestPackaging(t *testing.T) {
 	testRequest := request{
 		RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",

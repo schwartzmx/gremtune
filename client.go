@@ -1,4 +1,4 @@
-package gremgo
+package gremtune
 
 import (
 	"io/ioutil"
@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Client is a container for the gremgo client.
+// Client is a container for the gremtune client.
 type Client struct {
 	conn             dialer
 	requests         chan []byte
@@ -47,7 +47,7 @@ func newClient() (c Client) {
 	return
 }
 
-// Dial returns a gremgo client for interaction with the Gremlin Server specified in the host IP.
+// Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
 func Dial(conn dialer, errs chan error) (c Client, err error) {
 	c = newClient()
 	c.conn = conn
