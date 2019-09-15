@@ -80,15 +80,15 @@ func seedBulkData(t *testing.T) {
 	log.Println("Seeding bulk data started...")
 
 	_, err := g.Execute(`
-		g.addV('EmployerBulkData').property(id, '1234_EmployerBulkData').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree')
+		g.addV('EmployerBulkData').property(id, '1234567890').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree')
 	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	//t.Logf("Added EmployerBulkData vertices, response: %v+ \n err: %s", string(r[0].Result.Data), err)
 
-	for i := 1; i < 641; i++ {
-		_, err = g.Execute("g.addV('EmployeeBulkData').property(id, '" + strconv.Itoa(i) + "_EmployeeBulkData').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree').as('y').addE('employes').from(V('1234_EmployerBulkData')).to('y')")
+	for i := 9001; i < 9641; i++ {
+		_, err = g.Execute("g.addV('EmployeeBulkData').property(id, '" + strconv.Itoa(i) + "').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree').as('y').addE('employes').from(V('1234567890')).to('y')")
 		if err != nil {
 			t.Fatal(err)
 		}
