@@ -11,11 +11,12 @@ import (
 
 // Client is a container for the gremtune client.
 type Client struct {
-	conn             dialer
-	requests         chan []byte
-	responses        chan []byte
-	results          *sync.Map
-	responseNotifier *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
+	conn                   dialer
+	requests               chan []byte
+	responses              chan []byte
+	results                *sync.Map
+	responseNotifier       *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
+	responseStatusNotifier *sync.Map // responseNotifier notifies the requester that a response has arrived for the request with the code
 	sync.RWMutex
 	Errored bool
 }
@@ -44,6 +45,7 @@ func newClient() (c Client) {
 	c.responses = make(chan []byte, 3) // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
 	c.results = &sync.Map{}
 	c.responseNotifier = &sync.Map{}
+	c.responseStatusNotifier = &sync.Map{}
 	return
 }
 
@@ -85,11 +87,36 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 		return
 	}
 	c.responseNotifier.Store(id, make(chan error, 1))
+	c.responseStatusNotifier.Store(id, make(chan int, 1))
 	c.dispatchRequest(msg)
 	resp, err = c.retrieveResponse(id)
 	if err != nil {
 		err = errors.Wrapf(err, "query: %s", query)
 	}
+	return
+}
+
+func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan AsyncResponse) (err error) {
+	var req request
+	var id string
+	if bindings != nil && rebindings != nil {
+		req, id, err = prepareRequestWithBindings(query, *bindings, *rebindings)
+	} else {
+		req, id, err = prepareRequest(query)
+	}
+	if err != nil {
+		return
+	}
+
+	msg, err := packageRequest(req)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	c.responseNotifier.Store(id, make(chan error, 1))
+	c.responseStatusNotifier.Store(id, make(chan int, 1))
+	c.dispatchRequest(msg)
+	go c.retrieveResponseAsync(id, responseChannel)
 	return
 }
 
@@ -125,6 +152,15 @@ func (c *Client) Execute(query string) (resp []Response, err error) {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
 	resp, err = c.executeRequest(query, nil, nil)
+	return
+}
+
+// Execute formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
+func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) (err error) {
+	if c.conn.IsDisposed() {
+		return errors.New("you cannot write on disposed connection")
+	}
+	err = c.executeAsync(query, nil, nil, responseChannel)
 	return
 }
 
