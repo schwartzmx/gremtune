@@ -61,8 +61,10 @@ func main() {
 }
 ```
 
-Example for streaming the result (Neptune streams 64 rows at a time. go test -v -run ExecuteBulkDataAsync is cmd to run the testcase)
+Example for streaming the result
 ==========
+Neptune provides 64 values per Response that is why Execute at present provides a [] of Response since it waits for all the responses to be retrieved and then provides it.In ExecuteAsync method it takes a channel to provide the Response as request parmeter and provides the Response as and when it is provided by Neptune. The Response are streamed to the caller and once all the Response are provided the channel is closed.
+go test -v -run ExecuteBulkDataAsync is the cmd to run the testcase) 
 ```go
 package main
 
