@@ -33,7 +33,7 @@ type Result struct {
 	Meta map[string]interface{} `json:"meta"`
 }
 
-// Response structs holds the entire response from requests to the gremlin server
+// AsyncResponse structs holds the entire response from requests to the gremlin server
 type AsyncResponse struct {
 	Response     Response `json:"response"`     //Partial Response object
 	ErrorMessage string   `json:"errorMessage"` // Error message if there was an error
@@ -108,7 +108,7 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 			// Only retrieve all but one from the partial responses saved in results Map that are not sent to responseChannel
 			for i := responseProcessedIndex; i < len(d)-1; i++ {
 				responseProcessedIndex++
-				asyncResponse := AsyncResponse{}
+				var asyncResponse AsyncResponse = AsyncResponse{}
 				asyncResponse.Response = d[i].(Response)
 				// Send the Partial response object to the responseChannel
 				responseChannel <- asyncResponse
@@ -138,13 +138,12 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 		}
 	}
 	// All the Partial response object including the final one has been sent to the responseChannel so closing responseStatusNotifier, responseNotifier, responseChannel and removing all the reponse stored
-	defer close(responseStatusNotifier.(chan int))
-	defer close(responseNotifier.(chan error))
-	defer c.responseNotifier.Delete(id)
-	defer c.responseStatusNotifier.Delete(id)
-	defer c.deleteResponse(id)
-	defer close(responseChannel)
-	return
+	close(responseStatusNotifier.(chan int))
+	close(responseNotifier.(chan error))
+	c.responseNotifier.Delete(id)
+	c.responseStatusNotifier.Delete(id)
+	c.deleteResponse(id)
+	close(responseChannel)
 }
 
 // retrieveResponse retrieves the response saved by saveResponse.
