@@ -16,7 +16,7 @@ type Client struct {
 	responses              chan []byte
 	results                *sync.Map
 	responseNotifier       *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
-	responseStatusNotifier *sync.Map // responseNotifier notifies the requester that a response has arrived for the request with the code
+	responseStatusNotifier *sync.Map // responseStatusNotifier notifies the requester that a response has arrived for the request with the code
 	sync.RWMutex
 	Errored bool
 }

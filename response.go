@@ -96,7 +96,7 @@ func (c *Client) saveResponse(resp Response, err error) {
 	}
 }
 
-// retrieveResponse retrieves the response saved by saveResponse and send the retrieved reponse to the channel .
+// retrieveResponseAsync retrieves the response saved by saveResponse and send the retrieved reponse to the channel .
 func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResponse) {
 	var responseProcessedIndex int
 	responseNotifier, _ := c.responseNotifier.Load(id)

@@ -23,17 +23,15 @@ type BulkResponse struct {
 }
 
 func truncateData(t *testing.T) {
-	log.Println("Removing all data from gremlin server strated...")
+	log.Println("Removing all data from gremlin server started...")
 	_, err := g.Execute(`g.V('1234').drop()`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	//t.Logf("Removed all vertices, response: %v+ \n err: %s", string(r[0].Result.Data), err)
 	_, err = g.Execute(`g.V('2145').drop()`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	//t.Logf("Removed all vertices, response: %v+ \n err: %s", string(r[0].Result.Data), err)
 	log.Println("Removing all data from gremlin server completed...")
 }
 
@@ -56,7 +54,6 @@ func seedData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//t.Logf("Added two vertices and one edge, response: %v+ \n err: %s", string(r[0].Result.Data), err)
 	log.Println("Seeding data completed...")
 }
 
@@ -66,12 +63,10 @@ func truncateBulkData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//t.Logf("Removed all vertices, response: %v+ \n err: %s", string(r[0].Result.Data), err)
 	_, err = g.Execute(`g.V().hasLabel('EmployerBulkData').drop()`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	//t.Logf("Removed all vertices, response: %v+ \n err: %s", string(r[0].Result.Data), err)
 	log.Println("Removing bulk data from gremlin server completed...")
 }
 
@@ -85,14 +80,12 @@ func seedBulkData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//t.Logf("Added EmployerBulkData vertices, response: %v+ \n err: %s", string(r[0].Result.Data), err)
 
 	for i := 9001; i < 9641; i++ {
 		_, err = g.Execute("g.addV('EmployeeBulkData').property(id, '" + strconv.Itoa(i) + "').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree').as('y').addE('employes').from(V('1234567890')).to('y')")
 		if err != nil {
 			t.Fatal(err)
 		}
-		//t.Logf("Added two vertices and one edge, response: %v+ \n err: %s", string(r[0].Result.Data), err)
 	}
 	log.Println("Seeding bulk data completed...")
 }
@@ -130,7 +123,6 @@ func TestExecuteBulkData(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error returned from server err: %v", err.Error())
 	} else {
-		//t.Logf("Execute get vertex, response: %v \n err: %v", string(r[0].Result.Data), err)
 		nl := new(BulkResponse)
 		datastr := strings.Replace(string(r[0].Result.Data), "@type", "type", -1)
 		datastr = strings.Replace(datastr, "@value", "value", -1)
@@ -146,7 +138,6 @@ func TestExecuteBulkData(t *testing.T) {
 
 func TestExecuteBulkDataAsync(t *testing.T) {
 	seedBulkData(t)
-	//defer truncateBulkData(t)
 	start := time.Now()
 	responseChannel := make(chan AsyncResponse, 2)
 	err := g.ExecuteAsync(`g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)`, responseChannel)
@@ -160,7 +151,6 @@ func TestExecuteBulkDataAsync(t *testing.T) {
 		for asyncResponse = range responseChannel {
 			log.Println(fmt.Sprintf("Time it took to get async response: %s response status: %v (206 means partial and 200 final response)", time.Since(start), asyncResponse.Response.Status.Code))
 			count++
-			//t.Logf("Execute get vertex, response: %v \n err: %v", string(r[0].Result.Data), err)
 			nl := new(BulkResponse)
 			datastr := strings.Replace(string(asyncResponse.Response.Result.Data), "@type", "type", -1)
 			datastr = strings.Replace(datastr, "@value", "value", -1)
@@ -169,9 +159,6 @@ func TestExecuteBulkDataAsync(t *testing.T) {
 				t.Errorf("There should only be 64 value, got: %v+", len(nl.Value))
 			}
 			start = time.Now()
-			//			if count ==1 {
-			//				time.Sleep(2 * time.Second)
-			//			}
 		}
 		if count != 10 {
 			t.Errorf("There should only be 10 value, got: %v+", count)
