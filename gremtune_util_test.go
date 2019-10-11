@@ -22,7 +22,7 @@ func InitGremlinClients() {
 		log.Fatal("Lost connection to the database: " + err.Error())
 	}(gperrs)
 	initClient()
-	initPool()
+	initNewPool()
 }
 
 func initClient() {
@@ -56,4 +56,27 @@ func initPool() {
 		IdleTimeout: time.Duration(10 * time.Second),
 	}
 	gp = &pool
+}
+
+func initNewPool() {
+	if gp != nil {
+		return
+	}
+	dialFn := func() (*Client, error) {
+		dialer := NewDialer("ws://127.0.0.1:8182")
+		c, err := Dial(dialer, gperrs)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return &c, err
+	}
+	pool, err := NewPool(PoolConfig{
+		Dial:        dialFn,
+		MaxActive:   10,
+		IdleTimeout: time.Duration(10 * time.Second),
+	})
+	if err != nil {
+		log.Fatalf("Error intializing Pool, %s", err)
+	}
+	gp = pool
 }

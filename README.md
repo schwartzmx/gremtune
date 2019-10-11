@@ -8,20 +8,26 @@ gremtune is a fast, efficient, and easy-to-use client for the TinkerPop graph da
 
 **Modifications were made to `gremgo` in order to "support" AWS Neptune's lack of Gremlin-specific features,  like no support query bindings among others. See differences in Gremlin support here: [AWS Neptune Gremlin Implementation Differences](https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-gremlin-differences.html)**
 
-Installation
-==========
+**NOTE**: In order allow continued use for other Graph databases supporting Gremlin outside of only AWS Neptune,  this client still supports querying with Bindings via `ExecuteWithBindings` or `ExecuteFileWithBindings` however this **WILL NOT** work with AWS Neptune as Neptune does not support variables or bindings,
+
+>Variables
+
+>Neptune does not support Gremlin variables and does not support the bindings property.
+
+src: https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-gremlin-differences.html
+
+## Installation
 ```
 go get github.com/schwartzmx/gremtune
 dep ensure
 ```
 
-Documentation
-==========
+## Documentation
+[GoDoc](https://godoc.org/github.com/schwartzmx/gremtune)
 
-* [GoDoc](https://godoc.org/github.com/schwartzmx/gremtune)
+## Examples
 
-Example
-==========
+#### Single Client
 ```go
 package main
 
@@ -60,11 +66,62 @@ func main() {
     fmt.Printf("%s", j)
 }
 ```
+#### Pool Client
+```go
+package main
 
-Example for streaming the result
-==========
-Neptune provides 64 values per Response that is why Execute at present provides a [] of Response since it waits for all the responses to be retrieved and then provides it.In ExecuteAsync method it takes a channel to provide the Response as request parameter and provides the Response as and when it is provided by Neptune. The Response are streamed to the caller and once all the Responses are provided the channel is closed.
-go test -v -run ExecuteBulkDataAsync is the cmd to run the testcase) 
+import (
+    "fmt"
+    "log"
+
+    "github.com/schwartzmx/gremtune"
+)
+
+func main() {
+    var gp *Pool
+    var gperrs = make(chan error)
+
+	go func(chan error) {
+		err := <-gperrs
+		log.Fatal("Lost connection to the database: " + err.Error())
+    }(gperrs)
+    
+    dialFn := func() (*Client, error) {
+        dialer := gremtune.NewDialer("ws://127.0.0.1:8182")
+        c, err := gremtune.Dial(dialer, gperrs)
+        if err != nil {
+            log.Fatal(err)
+        }
+        return &c, err
+    }
+    /* Pool object can be initialized directly
+
+	pool := gremtune.Pool{
+		Dial:        dialFn,
+		MaxActive:   10,
+		IdleTimeout: time.Duration(10 * time.Second),
+	}
+
+    or via NewPool() with a PoolConfig */
+    pool := gremtune.NewPool(gremtune.PoolConfig{
+        Dial: dialFn,
+        MaxActive: 10,
+        IdleTimeout: time.Duration(10 * time.Second),
+    })
+    
+    res, err := pool.Execute( // Sends a query to Gremlin Server via the Pool
+        "g.V('1234')"
+    )
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+```
+
+
+
+#### Example Streaming Query Results
+Neptune provides 64 values per Response that is why Execute at present provides a slice of `[]Response` s since it waits for all the responses to be retrieved and then provides it when all have returned.  The `ExecuteAsync` method takes a channel to provide the `Response` as a request parameter and returns the `Response` as and when it is provided by Neptune.  The `Response` are streamed to the caller and once all the `Response`s are provided the channel is closed.
 ```go
 package main
 
@@ -120,8 +177,7 @@ func main() {
 }
 ```
 
-Authentication
-==========
+## Authentication
 The plugin accepts authentication creating a secure dialer where credentials are setted.
 If the server where are you trying to connect needs authentication and you do not provide the 
 credentials the complement will panic.
@@ -165,6 +221,5 @@ func main() {
 }
 ```
 
-License
-==========
+## License
 See [LICENSE](LICENSE.md)

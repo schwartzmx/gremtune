@@ -2,6 +2,7 @@ package gremtune
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -18,6 +19,13 @@ type Pool struct {
 	closed      bool
 }
 
+// PoolConfig represents a new Pool configuration,  used in NewPool for initializing a connection pool
+type PoolConfig struct {
+	Dial        func() (*Client, error)
+	MaxActive   int
+	IdleTimeout time.Duration
+}
+
 // PooledConnection represents a shared and reusable connection.
 type PooledConnection struct {
 	Pool   *Pool
@@ -28,6 +36,20 @@ type idleConnection struct {
 	pc *PooledConnection
 	// t is the time the connection was idled
 	t time.Time
+}
+
+// NewPool intializes a new connection Pool
+func NewPool(pc PoolConfig) (*Pool, error) {
+	p := new(Pool)
+	p.Dial = pc.Dial
+	p.MaxActive = pc.MaxActive
+	p.IdleTimeout = pc.IdleTimeout
+	_, err := p.Get()
+	if err != nil {
+		log.Printf("Error intializing Pool: %s", err)
+		return nil, err
+	}
+	return p, nil
 }
 
 // Get will return an available pooled connection. Either an idle connection or
