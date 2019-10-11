@@ -61,6 +61,65 @@ func main() {
 }
 ```
 
+Example for streaming the result
+==========
+Neptune provides 64 values per Response that is why Execute at present provides a [] of Response since it waits for all the responses to be retrieved and then provides it.In ExecuteAsync method it takes a channel to provide the Response as request parameter and provides the Response as and when it is provided by Neptune. The Response are streamed to the caller and once all the Responses are provided the channel is closed.
+go test -v -run ExecuteBulkDataAsync is the cmd to run the testcase) 
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+    "strings"
+    "github.com/schwartzmx/gremtune"
+)
+
+func main() {
+    errs := make(chan error)
+    go func(chan error) {
+        err := <-errs
+        log.Fatal("Lost connection to the database: " + err.Error())
+    }(errs) // Example of connection error handling logic
+
+    dialer := gremtune.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
+    g, err := gremtune.Dial(dialer, errs) // Returns a gremtune client to interact with
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    start := time.Now()
+    responseChannel := make(chan AsyncResponse, 10)
+    err := g.ExecuteAsync( // Sends a query to Gremlin Server
+        "g.V().hasLabel('Employee').valueMap(true)", responseChannel
+    )
+    log.Println(fmt.Sprintf("Time it took to execute query %s", time.Since(start)))
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    count := 0
+    asyncResponse := AsyncResponse{}
+    start = time.Now()
+    for asyncResponse = range responseChannel {
+        log.Println(fmt.Sprintf("Time it took to get async response: %s response status: %v", time.Since(start), asyncResponse.Response.Status.Code))
+        count++
+        
+        nl := new(BulkResponse)
+        datastr := strings.Replace(string(asyncResponse.Response.Result.Data), "@type", "type", -1)
+        datastr = strings.Replace(datastr, "@value", "value", -1)
+        err = json.Unmarshal([]byte(datastr), &nl)
+        if err != nil {
+           fmt.Println(err)
+           return nil, err
+        }
+        log.Println(fmt.Sprintf("No of rows retrieved: %v", len(nl.Value)))
+        start = time.Now()
+    }
+}
+```
+
 Authentication
 ==========
 The plugin accepts authentication creating a secure dialer where credentials are setted.
