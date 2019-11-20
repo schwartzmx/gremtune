@@ -40,3 +40,12 @@ func SetReadingWait(seconds int) DialerConfig {
 		c.readingWait = time.Duration(seconds) * time.Second
 	}
 }
+
+
+//SetBufferSize sets the read/write buffer size
+func SetBufferSize(readBufferSize int, writeBufferSize int) DialerConfig {
+	return func(c *Ws) {
+		c.readBufferSize = readBufferSize
+                c.writeBufferSize = writeBufferSize
+	}
+}
