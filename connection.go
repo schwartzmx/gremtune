@@ -50,7 +50,7 @@ type auth struct {
 
 func (ws *Ws) connect() (err error) {
 	d := websocket.Dialer{
-		WriteBufferSize:  8192,
+		WriteBufferSize:  1000000,
 		ReadBufferSize:   8192,
 		HandshakeTimeout: ws.timeout, // Timeout or else we'll hang forever and never fail on bad hosts.
 	}
