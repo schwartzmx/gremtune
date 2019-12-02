@@ -74,7 +74,8 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 	var id string
 	if bindings != nil && rebindings != nil {
 		req, id, err = prepareRequestWithBindings(query, *bindings, *rebindings)
-	} else if len(*sessionID) > 0 {
+		// } else if len(*sessionID) > 0 {
+	} else if sessionID != nil {
 		req, id, err = prepareRequestWithSession(query, *sessionID, *commitSession)
 	} else {
 		req, id, err = prepareRequest(query)
@@ -103,7 +104,8 @@ func (c *Client) executeAsync(query string, bindings, rebindings *map[string]str
 	var id string
 	if bindings != nil && rebindings != nil {
 		req, id, err = prepareRequestWithBindings(query, *bindings, *rebindings)
-	} else if len(*sessionID) > 0 {
+		// } else if len(*sessionID) > 0 {
+	} else if sessionID != nil {
 		req, id, err = prepareRequestWithSession(query, *sessionID, *commitSession)
 	} else {
 		req, id, err = prepareRequest(query)
