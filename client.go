@@ -153,6 +153,16 @@ func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[stri
 	return
 }
 
+// ExecuteWithSession formats a raw Gremlin query as part of a session, sends it to Gremlin Server, and returns the result.
+func (c *Client) ExecuteWithSession(query string, sessionID string, commitSession bool) (resp []Response, err error) {
+	if c.conn.IsDisposed() {
+		return resp, errors.New("you cannot write on disposed connection")
+	}
+
+	resp, err = c.executeRequest(query, nil, nil, &sessionID, &commitSession)
+	return
+}
+
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
 func (c *Client) Execute(query string) (resp []Response, err error) {
 	if c.conn.IsDisposed() {
