@@ -66,7 +66,7 @@ func prepareRequestWithBindings(query string, bindings, rebindings map[string]st
 }
 
 // prepareRequest packages a query and binding into the format that Gremlin Server accepts
-func prepareRequestWithSession(query string, sessionID string, commitSession bool) (req request, id string, err error) {
+func prepareRequestWithSession(query string, sessionID string) (req request, id string, err error) {
 
 	if len(sessionID) > 0 {
 		var uuID uuid.UUID
@@ -74,23 +74,38 @@ func prepareRequestWithSession(query string, sessionID string, commitSession boo
 		id = uuID.String()
 
 		req.RequestID = id
-
+		req.Op = "eval"
+		req.Processor = "session"
 		req.Args = make(map[string]interface{})
 		req.Args["language"] = "gremlin-groovy"
 		req.Args["gremlin"] = query
 		req.Args["manageTransaction"] = false
-		req.Processor = "session"
 		req.Args["session"] = sessionID
-		if commitSession {
-			req.Op = "close"
-			req.Args["force"] = false
-		} else {
-			req.Op = "eval"
-			req.Args["batchSize"] = 64
-		}
-
+		req.Args["batchSize"] = 64
 	} else {
 		req, id, err = prepareRequest(query)
+	}
+	return
+}
+
+// prepareRequest packages a query and binding into the format that Gremlin Server accepts
+func prepareCommitSessionRequest(sessionID string) (req request, id string, err error) {
+
+	if len(sessionID) > 0 {
+		var uuID uuid.UUID
+		uuID, _ = uuid.NewV4()
+		id = uuID.String()
+
+		req.RequestID = id
+		req.Op = "close"
+		req.Processor = "session"
+		req.Args = make(map[string]interface{})
+		req.Args["language"] = "gremlin-groovy"
+		req.Args["manageTransaction"] = false
+		req.Args["session"] = sessionID
+		req.Args["force"] = false
+	} else {
+		req, id, err = prepareRequest("")
 	}
 	return
 }

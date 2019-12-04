@@ -69,21 +69,22 @@ func Dial(conn dialer, errs chan error) (c Client, err error) {
 	return
 }
 
-func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string, sessionID *string, commitSession *bool) (resp []Response, err error) {
+func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) (resp []Response, err error) {
 	var req request
 	var id string
 	if bindings != nil && rebindings != nil {
 		req, id, err = prepareRequestWithBindings(query, *bindings, *rebindings)
-		// } else if len(*sessionID) > 0 {
-	} else if sessionID != nil {
-		req, id, err = prepareRequestWithSession(query, *sessionID, *commitSession)
 	} else {
 		req, id, err = prepareRequest(query)
 	}
 	if err != nil {
 		return
 	}
+	resp, err = c.executeReq(req, id)
+	return
+}
 
+func (c *Client) executeReq(req request, id string) (resp []Response, err error) {
 	msg, err := packageRequest(req)
 	if err != nil {
 		log.Println(err)
@@ -94,19 +95,17 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 	c.dispatchRequest(msg)
 	resp, err = c.retrieveResponse(id)
 	if err != nil {
-		err = errors.Wrapf(err, "query: %s", query)
+		err = errors.Wrapf(err, "request: %s", req)
 	}
 	return
 }
 
-func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, sessionID *string, commitSession *bool, responseChannel chan AsyncResponse) (err error) {
+// func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, sessionID *string, commitSession *bool, responseChannel chan AsyncResponse) (err error) {
+func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan AsyncResponse) (err error) {
 	var req request
 	var id string
 	if bindings != nil && rebindings != nil {
 		req, id, err = prepareRequestWithBindings(query, *bindings, *rebindings)
-		// } else if len(*sessionID) > 0 {
-	} else if sessionID != nil {
-		req, id, err = prepareRequestWithSession(query, *sessionID, *commitSession)
 	} else {
 		req, id, err = prepareRequest(query)
 	}
@@ -149,17 +148,33 @@ func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[stri
 		return resp, errors.New("you cannot write on disposed connection")
 	}
 
-	resp, err = c.executeRequest(query, &bindings, &rebindings, nil, nil)
+	resp, err = c.executeRequest(query, &bindings, &rebindings)
 	return
 }
 
 // ExecuteWithSession formats a raw Gremlin query as part of a session, sends it to Gremlin Server, and returns the result.
-func (c *Client) ExecuteWithSession(query string, sessionID string, commitSession bool) (resp []Response, err error) {
+func (c *Client) ExecuteWithSession(query string, sessionID string) (resp []Response, err error) {
 	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
+	req, id, err := prepareRequestWithSession(query, sessionID)
+	if err != nil {
+		return
+	}
+	resp, err = c.executeReq(req, id)
+	return
+}
 
-	resp, err = c.executeRequest(query, nil, nil, &sessionID, &commitSession)
+// CommitSession formats a raw Gremlin query, closes the session, and then the transaction will be commited
+func (c *Client) CommitSession(query string, sessionID string) (resp []Response, err error) {
+	if c.conn.IsDisposed() {
+		return resp, errors.New("you cannot write on disposed connection")
+	}
+	req, id, err := prepareCommitSessionRequest(sessionID)
+	if err != nil {
+		return
+	}
+	resp, err = c.executeReq(req, id)
 	return
 }
 
@@ -168,7 +183,7 @@ func (c *Client) Execute(query string) (resp []Response, err error) {
 	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
-	resp, err = c.executeRequest(query, nil, nil, nil, nil)
+	resp, err = c.executeRequest(query, nil, nil)
 	return
 }
 
@@ -177,7 +192,7 @@ func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) 
 	if c.conn.IsDisposed() {
 		return errors.New("you cannot write on disposed connection")
 	}
-	err = c.executeAsync(query, nil, nil, nil, nil, responseChannel)
+	err = c.executeAsync(query, nil, nil, responseChannel)
 	return
 }
 
@@ -192,7 +207,7 @@ func (c *Client) ExecuteFileWithBindings(path string, bindings, rebindings map[s
 		return
 	}
 	query := string(d)
-	resp, err = c.executeRequest(query, &bindings, &rebindings, nil, nil)
+	resp, err = c.executeRequest(query, &bindings, &rebindings)
 	return
 }
 
@@ -207,7 +222,7 @@ func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
 		return
 	}
 	query := string(d)
-	resp, err = c.executeRequest(query, nil, nil, nil, nil)
+	resp, err = c.executeRequest(query, nil, nil)
 	return
 }
 
