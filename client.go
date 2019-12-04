@@ -166,7 +166,7 @@ func (c *Client) ExecuteWithSession(query string, sessionID string) (resp []Resp
 }
 
 // CommitSession formats a raw Gremlin query, closes the session, and then the transaction will be commited
-func (c *Client) CommitSession(query string, sessionID string) (resp []Response, err error) {
+func (c *Client) CommitSession(sessionID string) (resp []Response, err error) {
 	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
