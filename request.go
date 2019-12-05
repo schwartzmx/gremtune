@@ -65,7 +65,7 @@ func prepareRequestWithBindings(query string, bindings, rebindings map[string]st
 	return
 }
 
-// prepareRequest packages a query and binding into the format that Gremlin Server accepts
+// prepareRequestWithSession packages a query and sessionID into the format that Gremlin Server accepts
 func prepareRequestWithSession(query string, sessionID string) (req request, id string, err error) {
 
 	if len(sessionID) > 0 {
