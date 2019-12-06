@@ -38,8 +38,8 @@ type Ws struct {
 	writingWait  time.Duration
 	readingWait  time.Duration
 	timeout      time.Duration
-        readBufSize  int
-        writeBufSize int
+	readBufSize  int
+	writeBufSize int
 	quit         chan struct{}
 	sync.RWMutex
 }
