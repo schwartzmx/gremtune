@@ -21,14 +21,6 @@ type request struct {
 	Args      map[string]interface{} `json:"args"`
 }
 
-// sessionedRequest is a container for all evaluation request parameters to be sent to the Gremlin Server with session.
-type sessionedRequest struct {
-	RequestID string                 `json:"requestId"`
-	Op        string                 `json:"op"`
-	Processor string                 `json:"processor"`
-	Args      map[string]interface{} `json:"args"`
-}
-
 // prepareRequest packages a query and binding into the format that Gremlin Server accepts
 func prepareRequest(query string) (req request, id string, err error) {
 	var uuID uuid.UUID
