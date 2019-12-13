@@ -30,6 +30,8 @@ func NewDialer(host string, configs ...DialerConfig) (dialer *Ws) {
 		readingWait:  15 * time.Second,
 		connected:    false,
 		quit:         make(chan struct{}),
+		readBufSize:  8192,
+		writeBufSize: 8192,
 	}
 
 	for _, conf := range configs {
