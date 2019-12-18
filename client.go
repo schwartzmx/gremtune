@@ -139,7 +139,7 @@ func (c *Client) authenticate(requestID string) (err error) {
 	return
 }
 
-// ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
+// ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.  NOTE: AWS Neptune does not currently support bindings or rebindings see: https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-gremlin-differences.html
 func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []Response, err error) {
 	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
@@ -157,7 +157,7 @@ func (c *Client) Execute(query string) (resp []Response, err error) {
 	return
 }
 
-// Execute formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
+// ExecuteAsync formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method parameter.
 func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) (err error) {
 	if c.conn.IsDisposed() {
 		return errors.New("you cannot write on disposed connection")
@@ -166,7 +166,7 @@ func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) 
 	return
 }
 
-// ExecuteFileWithBindings takes a file path to a Gremlin script, sends it to Gremlin Server with bindings, and returns the result.
+// ExecuteFileWithBindings takes a file path to a Gremlin script, sends it to Gremlin Server with bindings, and returns the result. NOTE: AWS Neptune does not currently support bindings or rebindings see: https://docs.aws.amazon.com/neptune/latest/userguide/access-graph-gremlin-differences.html
 func (c *Client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []Response, err error) {
 	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
