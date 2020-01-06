@@ -84,7 +84,7 @@ func packageRequest(req request) (msg []byte, err error) {
 	if err != nil {
 		return
 	}
-	mimeType := []byte("application/vnd.gremlin-v3.0+json")
+	mimeType := []byte("application/vnd.gremlin-v2.0+json")
 	msg = append([]byte{0x21}, mimeType...) //0x21 is the fixed length of mimeType in hex
 	msg = append(msg, j...)
 
