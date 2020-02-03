@@ -1,0 +1,7 @@
+version: "3"
+services:
+  tinkerpop:
+    image: tinkerpop/gremlin-server
+    ports:
+      - 8182:8182
+    network_mode: "bridge"
