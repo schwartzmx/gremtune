@@ -1,7 +1,9 @@
 version: "3"
 services:
   tinkerpop:
-    image: tinkerpop/gremlin-server
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - 8182:8182
     network_mode: "bridge"
