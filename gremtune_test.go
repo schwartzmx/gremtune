@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -118,8 +119,6 @@ func TestExecute_IT(t *testing.T) {
 	require.NoError(t, err, "Unexpected error from server")
 	require.Len(t, r, 1)
 
-	t.Logf("Execute get vertex, response: %v \n err: %v", string(r[0].Result.Data), err)
-
 	nl := nodeLabels{}
 	err = json.Unmarshal(r[0].Result.Data, &nl)
 	require.NoError(t, err, "Failed to unmarshall")
@@ -149,37 +148,36 @@ func TestExecuteBulkData_IT(t *testing.T) {
 	assert.Len(t, nl, 64, "There should only be 64 values")
 }
 
-//
-//func TestExecuteBulkDataAsync(t *testing.T) {
-//	seedBulkData(t)
-//	start := time.Now()
-//	responseChannel := make(chan AsyncResponse, 2)
-//	err := g.ExecuteAsync(`g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)`, responseChannel)
-//	log.Println(fmt.Sprintf("Time it took to execute query %s", time.Since(start)))
-//	if err != nil {
-//		t.Errorf("Unexpected error returned from server err: %v", err.Error())
-//	} else {
-//		count := 0
-//		asyncResponse := AsyncResponse{}
-//		start = time.Now()
-//		for asyncResponse = range responseChannel {
-//			log.Println(fmt.Sprintf("Time it took to get async response: %s response status: %v (206 means partial and 200 final response)", time.Since(start), asyncResponse.Response.Status.Code))
-//			count++
-//			nl := new(BulkResponse)
-//			datastr := strings.Replace(string(asyncResponse.Response.Result.Data), "@type", "type", -1)
-//			datastr = strings.Replace(datastr, "@value", "value", -1)
-//			err = json.Unmarshal([]byte(datastr), &nl)
-//			if len(nl.Value) != 64 {
-//				t.Errorf("There should only be 64 value, got: %v+", len(nl.Value))
-//			}
-//			start = time.Now()
-//		}
-//		if count != 10 {
-//			t.Errorf("There should only be 10 value, got: %v+", count)
-//		}
-//	}
-//}
-//
+func TestExecuteBulkDataAsync_IT(t *testing.T) {
+	// This is an integration test and belongs on data filled in
+	// via seedBulkData()
+	// As precondition a local gremlin-server has to run listening on port 8182
+
+	// ensure that the used gremlin client instance is available
+	require.NotNil(t, g)
+	require.True(t, g.conn.IsConnected())
+
+	seedBulkData(t)
+	responseChannel := make(chan AsyncResponse, 2)
+	err := g.ExecuteAsync("g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)", responseChannel)
+	require.NoError(t, err, "Unexpected error from server")
+
+	count := 0
+	asyncResponse := AsyncResponse{}
+	start := time.Now()
+	for asyncResponse = range responseChannel {
+		t.Logf("Time it took to get async response: %s response status: %v (206 means partial and 200 final response)", time.Since(start), asyncResponse.Response.Status.Code)
+		count++
+
+		var nl []bulkResponseEntry
+		err = json.Unmarshal(asyncResponse.Response.Result.Data, &nl)
+		assert.NoError(t, err)
+		assert.Len(t, nl, 64, "There should only be 64 values")
+		start = time.Now()
+	}
+	assert.Equal(t, 10, count, "There should only be 10 values")
+}
+
 //func TestExecuteWithBindings(t *testing.T) {
 //	seedData(t)
 //	r, err := g.ExecuteWithBindings(
