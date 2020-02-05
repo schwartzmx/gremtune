@@ -3,11 +3,14 @@ package gremtune
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPurge(t *testing.T) {
+	// GIVEN
 	n := time.Now()
-
 	// invalid has timedout and should be cleaned up
 	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Client: &Client{}}}
 	// valid has not yet timed out and should remain in the idle pool
@@ -16,82 +19,56 @@ func TestPurge(t *testing.T) {
 	// Pool has a 30 second timeout and an idle connection slice containing both
 	// the invalid and valid idle connections
 	p := &Pool{IdleTimeout: time.Second * 30, idle: []*idleConnection{invalid, valid}}
+	assert.Len(t, p.idle, 2, "Expected 2 idle connections")
 
-	if len(p.idle) != 2 {
-		t.Errorf("Expected 2 idle connections, got %d", len(p.idle))
-	}
-
+	// WHEN
 	p.purge()
 
-	if len(p.idle) != 1 {
-		t.Errorf("Expected 1 idle connection after purge, got %d", len(p.idle))
-	}
-
-	if p.idle[0].t != valid.t {
-		t.Error("Expected the valid connection to remain in idle pool")
-	}
-
+	// THEN
+	assert.Len(t, p.idle, 1, "Expected 1 idle connection after purge")
+	assert.Equal(t, valid.t, p.idle[0].t, "Expected the valid connection to remain in idle pool")
 }
 
 func TestPurgeErrorClosedConnection(t *testing.T) {
+	// GIVEN
 	n := time.Now()
-
 	p := &Pool{IdleTimeout: time.Second * 30}
-
 	valid := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Client: &Client{}}}
-
 	client := &Client{}
-
 	closed := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Pool: p, Client: client}}
-
 	idle := []*idleConnection{valid, closed}
-
 	p.idle = idle
 
 	// Simulate error
 	closed.pc.Client.Errored = true
+	assert.Len(t, p.idle, 2, "Expected 2 idle connections")
 
-	if len(p.idle) != 2 {
-		t.Errorf("Expected 2 idle connections, got %d", len(p.idle))
-	}
-
+	// WHEN
 	p.purge()
 
-	if len(p.idle) != 1 {
-		t.Errorf("Expected 1 idle connection after purge, got %d", len(p.idle))
-	}
-
-	if p.idle[0] != valid {
-		t.Error("Expected valid connection to remain in pool")
-	}
+	// THEN
+	assert.Len(t, p.idle, 1, "Expected 1 idle connection after purge")
+	assert.Equal(t, valid.t, p.idle[0].t, "Expected the valid connection to remain in idle pool")
 }
 
 func TestPooledConnectionClose(t *testing.T) {
+	// GIVEN
 	pool := &Pool{}
 	pc := &PooledConnection{Pool: pool}
+	assert.Len(t, pool.idle, 0, "Expected 0 idle connections")
 
-	if len(pool.idle) != 0 {
-		t.Errorf("Expected 0 idle connection, got %d", len(pool.idle))
-	}
-
+	// WHEN
 	pc.Close()
 
-	if len(pool.idle) != 1 {
-		t.Errorf("Expected 1 idle connection, got %d", len(pool.idle))
-	}
-
+	// THEN
+	assert.Len(t, pool.idle, 1, "Expected 1 idle connection")
 	idled := pool.idle[0]
-
-	if idled == nil {
-		t.Error("Expected to get connection")
-	}
-
-	if idled.t.IsZero() {
-		t.Error("Expected an idled time")
-	}
+	require.NotNil(t, idled, "Expected to get connection")
+	assert.False(t, idled.t.IsZero(), "Expected an idled time")
 }
 
 func TestFirst(t *testing.T) {
+	// GIVEN
 	n := time.Now()
 	pool := &Pool{MaxActive: 1, IdleTimeout: 30 * time.Second}
 	idled := []*idleConnection{
@@ -100,35 +77,25 @@ func TestFirst(t *testing.T) {
 		&idleConnection{pc: &PooledConnection{Pool: pool, Client: &Client{}}},                              // valid
 	}
 	pool.idle = idled
+	assert.Len(t, pool.idle, 3, "Expected 3 idle connections")
 
-	if len(pool.idle) != 3 {
-		t.Errorf("Expected 3 idle connection, got %d", len(pool.idle))
-	}
-
+	// WHEN
 	// Get should return the last idle connection and purge the others
 	c := pool.first()
-
-	if c != pool.idle[0] {
-		t.Error("Expected to get first connection in idle slice")
-	}
-
+	assert.Equal(t, c, pool.idle[0], "Expected to get first connection in idle slice")
 	// Empty pool should return nil
 	emptyPool := &Pool{}
-
 	c = emptyPool.first()
 
-	if c != nil {
-		t.Errorf("Expected nil, got %T", c)
-	}
+	// THEN
+	assert.Nil(t, c)
 }
 
 func TestGetAndDial(t *testing.T) {
+	// GIVEN
 	n := time.Now()
-
 	pool := &Pool{IdleTimeout: time.Second * 30}
-
 	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Pool: pool, Client: &Client{}}}
-
 	idle := []*idleConnection{invalid}
 	pool.idle = idle
 
@@ -137,55 +104,26 @@ func TestGetAndDial(t *testing.T) {
 		return client, nil
 	}
 
-	if len(pool.idle) != 1 {
-		t.Error("Expected 1 idle connection")
-	}
+	assert.Len(t, pool.idle, 1, "Expected 1 idle connections")
+	assert.Equal(t, invalid, pool.idle[0], "Expected invalid connection")
 
-	if pool.idle[0] != invalid {
-		t.Error("Expected invalid connection")
-	}
-
+	// WHEN
 	conn, err := pool.Get()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	if len(pool.idle) != 0 {
-		t.Errorf("Expected 0 idle connections, got %d", len(pool.idle))
-	}
-
-	if conn.Client != client {
-		t.Error("Expected correct client to be returned")
-	}
-
-	if pool.active != 1 {
-		t.Errorf("Expected 1 active connection, got %d", pool.active)
-	}
+	assert.NoError(t, err)
+	assert.Len(t, pool.idle, 0, "Expected 0 idle connections")
+	assert.Equal(t, client, conn.Client, "Expected correct client to be returned")
+	assert.Equal(t, 1, pool.active, "Expected 1 active connections")
 
 	// Close the connection and ensure it was returned to the idle pool
 	conn.Close()
 
-	if len(pool.idle) != 1 {
-		t.Error("Expected connection to be returned to idle pool")
-	}
-
-	if pool.active != 0 {
-		t.Errorf("Expected 0 active connections, got %d", pool.active)
-	}
+	assert.Len(t, pool.idle, 1, "Expected connection to be returned to idle pool")
+	assert.Equal(t, 0, pool.active, "Expected 0 active connections")
 
 	// Get a new connection and ensure that it is the now idling connection
 	conn, err = pool.Get()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	if conn.Client != client {
-		t.Error("Expected the same connection to be reused")
-	}
-
-	if pool.active != 1 {
-		t.Errorf("Expected 1 active connection, got %d", pool.active)
-	}
+	assert.NoError(t, err)
+	require.NotNil(t, conn)
+	assert.Equal(t, client, conn.Client, "Expected the same connection to be reused")
+	assert.Equal(t, 1, pool.active, "Expected 1 active connections")
 }
