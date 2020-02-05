@@ -7,6 +7,10 @@ all: test lint finish
 help: ## Prints the help
 	@echo "$$(grep -hE '^\S+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\1\:\2/' | column -c2 -t -s :)"
 
+build: sep ## Builds the library
+	@echo "--> Build"
+	@go build .
+
 test: sep ## Runs all unittests and generates a coverage report.
 	@echo "--> Run the unit-tests"
 	@go test -timeout 30s -run "^Test.*[^I,T]$$" -covermode=count

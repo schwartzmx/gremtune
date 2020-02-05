@@ -14,8 +14,14 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
 
-      - name: Run the unit tests and lint the code
-        run: make test lint
+      - name: Build
+        run: make build
+
+      - name: Run the unit tests
+        run: make test
+
+      - name: Lint the code
+        run: make lint
 
       - name: Start the local gremlin as preparation for the integration test
         run: make infra.up
