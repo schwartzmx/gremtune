@@ -162,9 +162,8 @@ func TestResponseDeletion(t *testing.T) {
 
 	c.deleteResponse(dummyPartialResponse1Marshalled.RequestID)
 
-	if _, ok := c.results.Load(dummyPartialResponse1Marshalled.RequestID); ok {
-		t.Fail()
-	}
+	_, ok := c.results.Load(dummyPartialResponse1Marshalled.RequestID)
+	assert.False(t, ok)
 }
 
 var codes = []struct {
