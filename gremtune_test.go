@@ -6,12 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-func init() {
-	InitGremlinClients()
+type SuiteIntegrationTests struct {
+	suite.Suite
+	client             *Client
+	clientErrorChannel chan error
+	pool               *Pool
+	poolErrorChannel   chan error
 }
 
 // One entry returned from gremlin looks like this:
@@ -34,20 +37,66 @@ type id struct {
 	Value int    `json:"@value,omitempty"`
 }
 
-func truncateData(t *testing.T) {
-	t.Log("Removing all data from gremlin server started...")
-	_, err := g.Execute(`g.V('1234').drop()`)
-	require.NoError(t, err)
+type nodeLabels []string
 
-	_, err = g.Execute(`g.V('2145').drop()`)
-	require.NoError(t, err)
-	t.Log("Removing all data from gremlin server completed...")
+var failingErrorChannelConsumerFunc = func(errChan chan error, t *testing.T) {
+	err := <-errChan
+	if err == nil {
+		return
+	}
+	t.Fatalf("Lost connection to the database: %s", err.Error())
 }
 
-func seedData(t *testing.T) {
-	truncateData(t)
-	t.Log("Seeding data started...")
-	_, err := g.Execute(`
+func (s *SuiteIntegrationTests) TearDownSuite() {
+	s.T().Log("TearDown SuiteIntegrationTests")
+	close(s.clientErrorChannel)
+	close(s.poolErrorChannel)
+}
+
+func (s *SuiteIntegrationTests) SetupSuite() {
+	s.T().Log("Initialize SuiteIntegrationTests")
+	s.T().Log("In order to run this suite a local gremlin server has to run and listen at port 8182")
+
+	// create the error channels
+	s.clientErrorChannel = make(chan error)
+	s.poolErrorChannel = make(chan error)
+
+	// create failing readers for those channels
+	go failingErrorChannelConsumerFunc(s.clientErrorChannel, s.T())
+	go failingErrorChannelConsumerFunc(s.poolErrorChannel, s.T())
+
+	s.client = newTestClient(s.T(), s.clientErrorChannel)
+	s.pool = newTestPool(s.T(), s.poolErrorChannel)
+
+	// ensure preconditions
+	s.Require().NotNil(s.client)
+	s.Require().NotNil(s.pool)
+	s.Require().True(s.client.conn.IsConnected())
+}
+
+// In order for 'go test' to run this suite, we need to create
+// a normal test function and pass our suite to suite.Run
+func Test_SuiteIntegrationTests(t *testing.T) {
+	iTSuite := &SuiteIntegrationTests{}
+	suite.Run(t, iTSuite)
+}
+
+func (s *SuiteIntegrationTests) truncateData() {
+	s.T().Log("Removing all data from gremlin server started...")
+
+	_, err := s.client.Execute(`g.V('1234').drop()`)
+	s.Require().NoError(err)
+
+	_, err = s.client.Execute(`g.V('2145').drop()`)
+	s.Require().NoError(err)
+	s.T().Log("Removing all data from gremlin server completed...")
+}
+
+func (s *SuiteIntegrationTests) seedData() {
+	s.truncateData()
+	s.T().Log("Seeding data started...")
+
+	_, err := s.client.Execute(`
 		g.addV('Phil').property(id, '1234').
 			property('timestamp', '2018-07-01T13:37:45-05:00').
 			property('source', 'tree').
@@ -60,199 +109,151 @@ func seedData(t *testing.T) {
 			from('x').
 			to('y')
 	`)
-	require.NoError(t, err)
-	t.Log("Seeding data completed...")
+	s.Require().NoError(err)
+	s.T().Log("Seeding data completed...")
 }
 
-func truncateBulkData(t *testing.T) {
-	t.Log("Removing bulk data from gremlin server strated...")
-	_, err := g.Execute(`g.V().hasLabel('EmployeeBulkData').drop().iterate()`)
-	require.NoError(t, err)
+func (s *SuiteIntegrationTests) truncateBulkData() {
+	s.T().Log("Removing bulk data from gremlin server strated...")
+	_, err := s.client.Execute(`g.V().hasLabel('EmployeeBulkData').drop().iterate()`)
+	s.Require().NoError(err)
 
-	_, err = g.Execute(`g.V().hasLabel('EmployerBulkData').drop()`)
-	require.NoError(t, err)
-	t.Log("Removing bulk data from gremlin server completed...")
+	_, err = s.client.Execute(`g.V().hasLabel('EmployerBulkData').drop()`)
+	s.Require().NoError(err)
+	s.T().Log("Removing bulk data from gremlin server completed...")
 }
 
-func seedBulkData(t *testing.T) {
-	truncateBulkData(t)
-	t.Log("Seeding bulk data started...")
+func (s *SuiteIntegrationTests) seedBulkData() {
+	s.truncateBulkData()
+	s.T().Log("Seeding bulk data started...")
 
-	_, err := g.Execute("g.addV('EmployerBulkData').property(id, '1234567890').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree')")
-	require.NoError(t, err)
+	_, err := s.client.Execute("g.addV('EmployerBulkData').property(id, '1234567890').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree')")
+	s.Require().NoError(err)
 
 	for i := 9001; i < 9641; i++ {
-		_, err = g.Execute("g.addV('EmployeeBulkData').property(id, '" + strconv.Itoa(i) + "').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree').as('y').addE('employes').from(V('1234567890')).to('y')")
-		require.NoError(t, err)
+		_, err = s.client.Execute("g.addV('EmployeeBulkData').property(id, '" + strconv.Itoa(i) + "').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree').as('y').addE('employes').from(V('1234567890')).to('y')")
+		s.Require().NoError(err)
 	}
-	t.Log("Seeding bulk data completed...")
+	s.T().Log("Seeding bulk data completed...")
 }
 
-type nodeLabels []string
+func (s *SuiteIntegrationTests) TestExecute_IT() {
 
-func TestExecute_IT(t *testing.T) {
-	// This is an integration test and belongs on data filled in
-	// via seedData()
-	// As precondition a local gremlin-server has to run listening on port 8182
+	s.seedData()
+	r, err := s.client.Execute("g.V('1234').label()")
+	s.Require().NoError(err, "Unexpected error from server")
+	s.Require().Len(r, 1)
 
-	// ensure that the used gremlin client instance is available
-	require.NotNil(t, g)
-	require.True(t, g.conn.IsConnected())
+	labels := nodeLabels{}
+	err = json.Unmarshal(r[0].Result.Data, &labels)
+	s.Require().NoError(err, "Failed to unmarshall")
 
-	seedData(t)
-	r, err := g.Execute("g.V('1234').label()")
-	require.NoError(t, err, "Unexpected error from server")
-	require.Len(t, r, 1)
-
-	nl := nodeLabels{}
-	err = json.Unmarshal(r[0].Result.Data, &nl)
-	require.NoError(t, err, "Failed to unmarshall")
-
-	assert.Len(t, nl, 1, "There should be only one node label")
-	assert.Equal(t, "Phil", nl[0]) // see seedData()
+	s.Assert().Len(labels, 1, "There should be only one node label")
+	s.Assert().Equal("Phil", labels[0]) // see seedData()
 }
 
-func TestExecuteBulkData_IT(t *testing.T) {
-	// This is an integration test and belongs on data filled in
-	// via seedBulkData()
-	// As precondition a local gremlin-server has to run listening on port 8182
+func (s *SuiteIntegrationTests) TestExecuteBulkData_IT() {
+	s.seedBulkData()
+	defer s.truncateBulkData()
 
-	// ensure that the used gremlin client instance is available
-	require.NotNil(t, g)
-	require.True(t, g.conn.IsConnected())
-	seedBulkData(t)
-	defer truncateBulkData(t)
-
-	r, err := g.Execute("g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)")
-	require.NoError(t, err, "Unexpected error from server")
-	assert.Len(t, r, 10, "There should only be 10 responses")
+	r, err := s.client.Execute("g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)")
+	s.Require().NoError(err, "Unexpected error from server")
+	s.Assert().Len(r, 10, "There should only be 10 responses")
 
 	var nl []bulkResponseEntry
 	err = json.Unmarshal([]byte(r[0].Result.Data), &nl)
-	assert.NoError(t, err)
-	assert.Len(t, nl, 64, "There should only be 64 values")
+	s.Assert().NoError(err)
+	s.Assert().Len(nl, 64, "There should only be 64 values")
 }
 
-func TestExecuteBulkDataAsync_IT(t *testing.T) {
-	// This is an integration test and belongs on data filled in
-	// via seedBulkData()
-	// As precondition a local gremlin-server has to run listening on port 8182
+func (s *SuiteIntegrationTests) TestExecuteBulkDataAsync_IT() {
 
-	// ensure that the used gremlin client instance is available
-	require.NotNil(t, g)
-	require.True(t, g.conn.IsConnected())
-
-	seedBulkData(t)
-	defer truncateBulkData(t)
+	s.seedBulkData()
+	defer s.truncateBulkData()
 	responseChannel := make(chan AsyncResponse, 2)
-	err := g.ExecuteAsync("g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)", responseChannel)
-	require.NoError(t, err, "Unexpected error from server")
+	err := s.client.ExecuteAsync("g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)", responseChannel)
+	s.Require().NoError(err, "Unexpected error from server")
 
 	count := 0
 	asyncResponse := AsyncResponse{}
 	start := time.Now()
 	for asyncResponse = range responseChannel {
-		t.Logf("Time it took to get async response: %s response status: %v (206 means partial and 200 final response)", time.Since(start), asyncResponse.Response.Status.Code)
+		s.T().Logf("Time it took to get async response: %s response status: %v (206 means partial and 200 final response)", time.Since(start), asyncResponse.Response.Status.Code)
 		count++
 
 		var nl []bulkResponseEntry
 		err = json.Unmarshal(asyncResponse.Response.Result.Data, &nl)
-		assert.NoError(t, err)
-		assert.Len(t, nl, 64, "There should only be 64 values")
+		s.Assert().NoError(err)
+		s.Assert().Len(nl, 64, "There should only be 64 values")
 		start = time.Now()
 	}
-	assert.Equal(t, 10, count, "There should only be 10 values")
+	s.Assert().Equal(10, count, "There should only be 10 values")
 }
 
-func TestExecuteWithBindings_IT(t *testing.T) {
-	// This is an integration test and belongs on data filled in
-	// via seedBulkData()
-	// As precondition a local gremlin-server has to run listening on port 8182
+func (s *SuiteIntegrationTests) TestExecuteWithBindings_IT() {
 
-	// ensure that the used gremlin client instance is available
-	require.NotNil(t, g)
-	require.True(t, g.conn.IsConnected())
-
-	seedData(t)
-	r, err := g.ExecuteWithBindings(
+	s.seedData()
+	r, err := s.client.ExecuteWithBindings(
 		"g.V(x).label()",
 		map[string]string{"x": "1234"},
 		map[string]string{},
 	)
-	require.NoError(t, err, "Unexpected error from server")
+	s.Require().NoError(err, "Unexpected error from server")
 
-	t.Logf("Execute with bindings get vertex, response: %s \n err: %s", string(r[0].Result.Data), err)
+	s.T().Logf("Execute with bindings get vertex, response: %s \n err: %s", string(r[0].Result.Data), err)
 	var nl nodeLabels
 	err = json.Unmarshal(r[0].Result.Data, &nl)
-	assert.NoError(t, err)
-	assert.Len(t, nl, 1, "There should only be 1 node label")
-	assert.Equal(t, "Phil", nl[0])
+	s.Assert().NoError(err)
+	s.Assert().Len(nl, 1, "There should only be 1 node label")
+	s.Assert().Equal("Phil", nl[0])
 }
 
-func TestExecuteFile_IT(t *testing.T) {
-	// This is an integration test and belongs on data filled in
-	// via seedBulkData()
-	// As precondition a local gremlin-server has to run listening on port 8182
+func (s *SuiteIntegrationTests) TestExecuteFile_IT() {
 
-	// ensure that the used gremlin client instance is available
-	require.NotNil(t, g)
-	require.True(t, g.conn.IsConnected())
-	seedData(t)
+	s.seedData()
 
-	r, err := g.ExecuteFile("scripts/test.groovy")
-	require.NoError(t, err, "Unexpected error from server")
+	r, err := s.client.ExecuteFile("scripts/test.groovy")
+	s.Require().NoError(err, "Unexpected error from server")
 
-	t.Logf("ExecuteFile get vertex, response: %s \n err: %s", string(r[0].Result.Data), err)
+	s.T().Logf("ExecuteFile get vertex, response: %s \n err: %s", string(r[0].Result.Data), err)
 
 	var nl nodeLabels
 	err = json.Unmarshal(r[0].Result.Data, &nl)
-	assert.NoError(t, err)
-	assert.Len(t, nl, 1, "There should only be 1 node label")
-	assert.Equal(t, "Vincent", nl[0])
+	s.Assert().NoError(err)
+	s.Assert().Len(nl, 1, "There should only be 1 node label")
+	s.Assert().Equal("Vincent", nl[0])
 }
 
-func TestExecuteFileWithBindings_IT(t *testing.T) {
-	// This is an integration test and belongs on data filled in
-	// via seedBulkData()
-	// As precondition a local gremlin-server has to run listening on port 8182
+func (s *SuiteIntegrationTests) TestExecuteFileWithBindings_IT() {
 
-	// ensure that the used gremlin client instance is available
-	require.NotNil(t, g)
-	require.True(t, g.conn.IsConnected())
-	seedData(t)
+	s.seedData()
 
-	r, err := g.ExecuteFileWithBindings(
+	r, err := s.client.ExecuteFileWithBindings(
 		"scripts/test-wbindings.groovy",
 		map[string]string{"x": "2145"},
 		map[string]string{},
 	)
-	require.NoError(t, err, "Unexpected error from server")
-	t.Logf("ExecuteFileWithBindings get vertex, response: %s \n err: %s", r[0].Result.Data, err)
+	s.Require().NoError(err, "Unexpected error from server")
+	s.T().Logf("ExecuteFileWithBindings get vertex, response: %s \n err: %s", r[0].Result.Data, err)
 
 	var nl nodeLabels
 	err = json.Unmarshal(r[0].Result.Data, &nl)
-	assert.NoError(t, err)
-	assert.Len(t, nl, 1, "There should only be 1 node label")
-	assert.Equal(t, "Vincent", nl[0])
+	s.Assert().NoError(err)
+	s.Assert().Len(nl, 1, "There should only be 1 node label")
+	s.Assert().Equal("Vincent", nl[0])
 }
 
-func TestPoolExecute_IT(t *testing.T) {
-	// This is an integration test and belongs on data filled in
-	// via seedBulkData()
-	// As precondition a local gremlin-server has to run listening on port 8182
+func (s *SuiteIntegrationTests) TestPoolExecute_IT() {
 
-	// ensure that the used gremlin client instance is available
-	require.NotNil(t, g)
-	require.True(t, g.conn.IsConnected())
-	seedData(t)
+	s.seedData()
 
-	r, err := gp.Execute(`g.V('1234').label()`)
-	require.NoError(t, err, "Unexpected error from server")
-	t.Logf("PoolExecute get vertex, response: %s \n err: %s", r[0].Result.Data, err)
+	r, err := s.pool.Execute(`g.V('1234').label()`)
+	s.Require().NoError(err, "Unexpected error from server")
+	s.T().Logf("PoolExecute get vertex, response: %s \n err: %s", r[0].Result.Data, err)
 	var nl nodeLabels
 
 	err = json.Unmarshal(r[0].Result.Data, &nl)
-	assert.NoError(t, err)
-	assert.Len(t, nl, 1, "There should only be 1 node label")
-	assert.Equal(t, "Phil", nl[0])
+	s.Assert().NoError(err)
+	s.Assert().Len(nl, 1, "There should only be 1 node label")
+	s.Assert().Equal("Phil", nl[0])
 }

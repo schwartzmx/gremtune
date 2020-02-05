@@ -1,59 +1,31 @@
 package gremtune
 
 import (
-	"fmt"
-	"log"
+	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
-var g *Client
-var errs = make(chan error)
-var gp *Pool
-var gperrs = make(chan error)
-
-// InitGremlinClients intializes gremlin client and pool for use by tests
-func InitGremlinClients() {
-	go func(chan error) {
-		err := <-errs
-		log.Fatal("Lost connection to the database: " + err.Error())
-	}(errs)
-	go func(chan error) {
-		err := <-gperrs
-		log.Fatal("Lost connection to the database: " + err.Error())
-	}(gperrs)
-	initClient()
-	initPool()
-}
-
-func initClient() {
-	if g != nil {
-		return
-	}
-	var err error
+func newTestClient(t *testing.T, errChan chan error) *Client {
 	dialer := NewDialer("ws://127.0.0.1:8182")
-	r, err := Dial(dialer, errs)
-	if err != nil {
-		fmt.Println(err)
-	}
-	g = &r
+	require.NotNil(t, dialer, "Dialer is nil")
+	client, err := Dial(dialer, errChan)
+	require.NoError(t, err, "Failed to create client")
+	return &client
 }
 
-func initPool() {
-	if gp != nil {
-		return
-	}
+func newTestPool(t *testing.T, errChan chan error) *Pool {
 	dialFn := func() (*Client, error) {
 		dialer := NewDialer("ws://127.0.0.1:8182")
-		c, err := Dial(dialer, gperrs)
-		if err != nil {
-			log.Fatal(err)
-		}
+		c, err := Dial(dialer, errChan)
+		require.NoError(t, err)
 		return &c, err
 	}
-	pool := Pool{
+
+	return &Pool{
 		Dial:        dialFn,
 		MaxActive:   10,
 		IdleTimeout: time.Duration(10 * time.Second),
 	}
-	gp = &pool
 }

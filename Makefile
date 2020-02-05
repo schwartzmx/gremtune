@@ -11,6 +11,10 @@ test: sep ## Runs all unittests and generates a coverage report.
 	@echo "--> Run the unit-tests"
 	@go test -timeout 30s $$(go list ./... | grep -v "/test$" | grep -v "/interfaces$") -covermode=count
 
+test.integration: sep ## Runs all integration tests. As precondition a local gremlin-server has to run and listen on port 8182.
+	@echo "--> Run the integration-tests"
+	@go test -timeout 30s -run "Test_SuiteIntegrationTests"
+
 lint: ## Runs the linter to check for coding-style issues
 	@echo "--> Lint project"
 	@echo "!!!!golangci-lint has to be installed. See: https://github.com/golangci/golangci-lint#install"
