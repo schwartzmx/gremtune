@@ -7,12 +7,6 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type requester interface {
-	prepare() error
-	getID() string
-	getRequest() request
-}
-
 // request is a container for all evaluation request parameters to be sent to the Gremlin Server.
 type request struct {
 	RequestID string                 `json:"requestId"`

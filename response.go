@@ -84,9 +84,11 @@ func (c *Client) saveResponse(resp Response, err error) {
 	}
 	newdata := append(container, resp)       // Create new data container with new data
 	c.results.Store(resp.RequestID, newdata) // Add new data to buffer for future retrieval
-	respNotifier, load := c.responseNotifier.LoadOrStore(resp.RequestID, make(chan error, 1))
-	responseStatusNotifier, load := c.responseStatusNotifier.LoadOrStore(resp.RequestID, make(chan int, 1))
-	_ = load
+
+	// FIXME: At the moment the case if the load or store was not successfull is not handled. The according return value is just ignored
+	respNotifier, _ := c.responseNotifier.LoadOrStore(resp.RequestID, make(chan error, 1))
+	// FIXME: At the moment the case if the load or store was not successfull is not handled. The according return value is just ignored
+	responseStatusNotifier, _ := c.responseStatusNotifier.LoadOrStore(resp.RequestID, make(chan int, 1))
 	if cap(responseStatusNotifier.(chan int)) > len(responseStatusNotifier.(chan int)) {
 		// Channel is not full so adding the response status to the channel else it will cause the method to wait till the response is read by requester
 		responseStatusNotifier.(chan int) <- resp.Status.Code
@@ -171,7 +173,6 @@ func (c *Client) retrieveResponse(id string) (data []Response, err error) {
 // deleteRespones deletes the response from the container. Used for cleanup purposes by requester.
 func (c *Client) deleteResponse(id string) {
 	c.results.Delete(id)
-	return
 }
 
 // responseDetectError detects any possible errors in responses from Gremlin Server and generates an error for each code
