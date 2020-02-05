@@ -39,14 +39,6 @@ type id struct {
 
 type nodeLabels []string
 
-var failingErrorChannelConsumerFunc = func(errChan chan error, t *testing.T) {
-	err := <-errChan
-	if err == nil {
-		return
-	}
-	t.Fatalf("Lost connection to the database: %s", err.Error())
-}
-
 func (s *SuiteIntegrationTests) TearDownSuite() {
 	s.T().Log("TearDown SuiteIntegrationTests")
 	close(s.clientErrorChannel)
@@ -81,38 +73,6 @@ func Test_SuiteIT(t *testing.T) {
 	suite.Run(t, iTSuite)
 }
 
-func (s *SuiteIntegrationTests) truncateData() {
-	s.T().Log("Removing all data from gremlin server started...")
-
-	_, err := s.client.Execute(`g.V('1234').drop()`)
-	s.Require().NoError(err)
-
-	_, err = s.client.Execute(`g.V('2145').drop()`)
-	s.Require().NoError(err)
-	s.T().Log("Removing all data from gremlin server completed...")
-}
-
-func (s *SuiteIntegrationTests) seedData() {
-	s.truncateData()
-	s.T().Log("Seeding data started...")
-
-	_, err := s.client.Execute(`
-		g.addV('Phil').property(id, '1234').
-			property('timestamp', '2018-07-01T13:37:45-05:00').
-			property('source', 'tree').
-			as('x').
-		  addV('Vincent').property(id, '2145').
-			property('timestamp', '2018-07-01T13:37:45-05:00').
-			property('source', 'tree').
-			as('y').
-		  addE('brother').
-			from('x').
-			to('y')
-	`)
-	s.Require().NoError(err)
-	s.T().Log("Seeding data completed...")
-}
-
 func (s *SuiteIntegrationTests) truncateBulkData() {
 	s.T().Log("Removing bulk data from gremlin server strated...")
 	_, err := s.client.Execute(`g.V().hasLabel('EmployeeBulkData').drop().iterate()`)
@@ -139,7 +99,7 @@ func (s *SuiteIntegrationTests) seedBulkData() {
 
 func (s *SuiteIntegrationTests) TestExecute_IT() {
 
-	s.seedData()
+	seedData(s.T(), s.client)
 	r, err := s.client.Execute("g.V('1234').label()")
 	s.Require().NoError(err, "Unexpected error from server")
 	s.Require().Len(r, 1)
@@ -192,7 +152,7 @@ func (s *SuiteIntegrationTests) TestExecuteBulkDataAsync_IT() {
 
 func (s *SuiteIntegrationTests) TestExecuteWithBindings_IT() {
 
-	s.seedData()
+	seedData(s.T(), s.client)
 	r, err := s.client.ExecuteWithBindings(
 		"g.V(x).label()",
 		map[string]string{"x": "1234"},
@@ -210,7 +170,7 @@ func (s *SuiteIntegrationTests) TestExecuteWithBindings_IT() {
 
 func (s *SuiteIntegrationTests) TestExecuteFile_IT() {
 
-	s.seedData()
+	seedData(s.T(), s.client)
 
 	r, err := s.client.ExecuteFile("scripts/test.groovy")
 	s.Require().NoError(err, "Unexpected error from server")
@@ -226,7 +186,7 @@ func (s *SuiteIntegrationTests) TestExecuteFile_IT() {
 
 func (s *SuiteIntegrationTests) TestExecuteFileWithBindings_IT() {
 
-	s.seedData()
+	seedData(s.T(), s.client)
 
 	r, err := s.client.ExecuteFileWithBindings(
 		"scripts/test-wbindings.groovy",
@@ -245,7 +205,7 @@ func (s *SuiteIntegrationTests) TestExecuteFileWithBindings_IT() {
 
 func (s *SuiteIntegrationTests) TestPoolExecute_IT() {
 
-	s.seedData()
+	seedData(s.T(), s.client)
 
 	r, err := s.pool.Execute(`g.V('1234').label()`)
 	s.Require().NoError(err, "Unexpected error from server")

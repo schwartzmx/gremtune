@@ -15,6 +15,10 @@ test.integration: sep ## Runs all integration tests. As precondition a local gre
 	@echo "--> Run the integration-tests"
 	@go test -timeout 30s -run "Test_SuiteIT"
 
+bench: sep ## Execute benchmarks
+	@echo "--> Execute benchmarks"
+	@go test -timeout 30s -v -bench "BenchmarkPoolExecute.*"
+
 lint: ## Runs the linter to check for coding-style issues
 	@echo "--> Lint project"
 	@echo "!!!!golangci-lint has to be installed. See: https://github.com/golangci/golangci-lint#install"

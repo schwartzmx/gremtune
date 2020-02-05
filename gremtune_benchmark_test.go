@@ -4,11 +4,27 @@ import (
 	"testing"
 )
 
-func init() {
-	InitGremlinClients()
-	t := testing.T{}
-	seedData(&t)
+var benchmarkClient *Client
+var benchmarkPool *Pool
 
+func init() {
+
+	t := &testing.T{}
+
+	t.Log("Starting the benchmark. In order to run it a local gremlin server has to run and listen on 8182")
+
+	// create the error channels
+	clientErrChannel := make(chan error)
+	poolErrChannel := make(chan error)
+
+	// create failing readers for those channels
+	go failingErrorChannelConsumerFunc(clientErrChannel, t)
+	go failingErrorChannelConsumerFunc(poolErrChannel, t)
+
+	benchmarkClient = newTestClient(t, clientErrChannel)
+	benchmarkPool = newTestPool(t, poolErrChannel)
+
+	seedData(t, benchmarkClient)
 }
 
 func benchmarkPoolExecute(i int, b *testing.B) {
@@ -18,7 +34,7 @@ func benchmarkPoolExecute(i int, b *testing.B) {
 			if err != nil {
 				b.Error(err)
 			}
-		}(gp)
+		}(benchmarkPool)
 	}
 }
 
