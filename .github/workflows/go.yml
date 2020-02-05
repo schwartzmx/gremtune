@@ -14,20 +14,18 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
 
-      - name: Install linter
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.3
-          export PATH=$PATH:$(go env GOPATH)/bin
-          golangci-lint --version
-
       - name: Build
         run: make build
 
       - name: Run the unit tests
         run: make test
 
-      - name: Lint the code
-        run: make lint
+      - name: Install linter and lint the code
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.3
+          export PATH=$PATH:$(go env GOPATH)/bin
+          golangci-lint --version
+          make lint
 
       - name: Start the local gremlin as preparation for the integration test
         run: make infra.up
