@@ -1,14 +1,16 @@
 package gremtune
 
 import (
+	"sync"
 	"testing"
 )
 
 var benchmarkClient *Client
 var benchmarkPool *Pool
 
-func init() {
+var once sync.Once
 
+func initBeforeBenchmark() {
 	t := &testing.T{}
 
 	t.Log("Starting the benchmark. In order to run it a local gremlin server has to run and listen on 8182")
@@ -28,6 +30,8 @@ func init() {
 }
 
 func benchmarkPoolExecute(i int, b *testing.B) {
+	once.Do(initBeforeBenchmark)
+
 	for n := 0; n < i; n++ {
 		go func(p *Pool) {
 			_, err := p.Execute(`g.V('1234').label()`)
