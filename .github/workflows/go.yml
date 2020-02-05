@@ -26,12 +26,16 @@ jobs:
           export PATH=$PATH:$(go env GOPATH)/bin
           golangci-lint --version
           make lint
-
+  test-preparation:
+    name: TestPreparation
+    runs-on: ubuntu-latest
+    steps:
       - name: Start the local gremlin as preparation for the integration test
         run: make infra.up
-
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: test-preparation
+    steps:
       - name: Run the integration tests
         run: make test.integration
-
-      - name: Stop the local gremlin
-        run: make infra.down
