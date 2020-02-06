@@ -31,10 +31,15 @@ type Websocket struct {
 	pingInterval time.Duration
 	writingWait  time.Duration
 	readingWait  time.Duration
-	timeout      time.Duration
+
+	// timeout for the initial handshake
+	timeout time.Duration
+
 	readBufSize  int
 	writeBufSize int
-	quit         chan struct{}
+
+	// channel for quit notification
+	quit chan struct{}
 	sync.RWMutex
 }
 
@@ -44,8 +49,8 @@ type auth struct {
 	password string
 }
 
-// NewWebsocketDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewWebsocketDialer(host string, configs ...DialerConfig) *Websocket {
+// NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
+func NewDialer(host string, configs ...DialerConfig) dialer {
 	websocket := &Websocket{
 		timeout:      5 * time.Second,
 		pingInterval: 60 * time.Second,
