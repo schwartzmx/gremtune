@@ -72,6 +72,7 @@ func TestConnect(t *testing.T) {
 
 	// THEN
 	assert.NoError(t, err)
+	assert.True(t, dialer.IsConnected())
 }
 
 func TestConnectFail(t *testing.T) {
@@ -90,6 +91,7 @@ func TestConnectFail(t *testing.T) {
 
 	// THEN
 	assert.Error(t, err)
+	assert.False(t, dialer.IsConnected())
 }
 
 func newMockedDialerFactory(websocketConnection WebsocketConnection, fail bool) websocketDialerFactory {

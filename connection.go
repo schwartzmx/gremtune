@@ -90,23 +90,26 @@ func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
 	return createdWebsocket, nil
 }
 
-func (ws *websocket) connect() (err error) {
+func (ws *websocket) connect() error {
 	// create the function that shall be used for dialing
 	dial := ws.wsDialerFactory(ws.writeBufSize, ws.readBufSize, ws.timeout)
 
-	ws.conn, _, err = dial(ws.host, http.Header{})
+	conn, _, err := dial(ws.host, http.Header{})
+	ws.conn = conn
 	if err != nil {
+		ws.connected = false
 		// As of 3.2.2 the URL has changed.
 		// https://groups.google.com/forum/#!msg/gremlin-users/x4hiHsmTsHM/Xe4GcPtRCAAJ
 		// Probably '/gremlin' has to be added to the used hostname
 		return fmt.Errorf("Dial failed: %s. Probably '/gremlin' has to be added to the used hostname", err)
 	}
 
-	ws.connected = true
 	ws.conn.SetPongHandler(func(appData string) error {
 		ws.connected = true
 		return nil
 	})
+
+	ws.connected = true
 	return nil
 }
 
@@ -120,25 +123,24 @@ func (ws *websocket) IsDisposed() bool {
 	return ws.disposed
 }
 
-func (ws *websocket) write(msg []byte) (err error) {
-	err = ws.conn.WriteMessage(2, msg)
-	return
+func (ws *websocket) write(msg []byte) error {
+	return ws.conn.WriteMessage(2, msg)
 }
 
 func (ws *websocket) read() (msgType int, msg []byte, err error) {
-	msgType, msg, err = ws.conn.ReadMessage()
-	return
+	return ws.conn.ReadMessage()
 }
 
-func (ws *websocket) close() (err error) {
+func (ws *websocket) close() error {
 	defer func() {
+		// close the channel to send the quit notification
+		// to all workers
 		close(ws.quit)
 		ws.conn.Close()
 		ws.disposed = true
 	}()
 
-	err = ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, "")) //Cleanly close the connection with the server
-	return
+	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, "")) //Cleanly close the connection with the server
 }
 
 func (ws *websocket) getAuth() *auth {

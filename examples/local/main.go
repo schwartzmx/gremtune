@@ -20,7 +20,7 @@ func main() {
 
 	host := "localhost"
 	port := 8182
-	hostURL := fmt.Sprintf("ws://%s:%d", host, port)
+	hostURL := fmt.Sprintf("ws://%s:%d/gremlin", host, port)
 
 	errs := make(chan error)
 	go panicOnErrorOnChannel(errs)
