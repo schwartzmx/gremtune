@@ -1,9 +1,14 @@
 package gremtune
 
 import (
+	"net/http"
 	"testing"
+	"time"
 
+	"github.com/golang/mock/gomock"
+	mock_connection "github.com/schwartzmx/gremtune/test/mocks/connection"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewDialer(t *testing.T) {
@@ -47,4 +52,27 @@ func TestPanicOnMissingAuthCredentials(t *testing.T) {
 	}()
 
 	c.conn.getAuth()
+}
+
+func TestConnect(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedWebsocketConnection := mock_connection.NewMockWebsocketConnection(mockCtrl)
+	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection)
+
+	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	require.NoError(t, err)
+	require.NotNil(t, dialer)
+
+}
+
+func newMockedDialerFactory(websocketConnection WebsocketConnection) websocketDialerFactory {
+
+	dialerFunc := func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
+		return websocketConnection, nil, nil
+	}
+
+	return func(wBufSize, rBifSize int, timeout time.Duration) websocketDialer {
+		return dialerFunc
+	}
 }
