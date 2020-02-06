@@ -20,7 +20,7 @@ go run ./examples/local
 1. Obtain the host/ endpoint of the CosmosDB
 
    - To this end one has to login into the Azure web console and navigate to the Azure CosmosDB panel.
-   - Here just select the db you want to connect to, go to the overview tab and there copy the URL of the `Gremlin Endpoint`
+   - Select the db you want to connect to, go to the overview tab and there copy the URL of the `Gremlin Endpoint`
    - It should look like this `wss://xyz-my-db-abc.gremlin.cosmos.azure.com:443/`
 
 2. Obtain the username/ database name
