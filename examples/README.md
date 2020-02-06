@@ -1,6 +1,6 @@
 # Examples
 
-The provided examples needs a gremlin-server as counterpart. The counterpart can either be a local one, e.g. gremlin-server, or a CosmosDB running on Azure.
+The provided examples need a gremlin-server as counterpart. The counterpart can either be a local one, e.g. gremlin-server, or a CosmosDB running on Azure.
 
 ## Against Local Gremlin-Server
 
