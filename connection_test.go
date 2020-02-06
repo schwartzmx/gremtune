@@ -1,6 +1,7 @@
 package gremtune
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -55,24 +56,60 @@ func TestPanicOnMissingAuthCredentials(t *testing.T) {
 }
 
 func TestConnect(t *testing.T) {
+	// GIVEN
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedWebsocketConnection := mock_connection.NewMockWebsocketConnection(mockCtrl)
-	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection)
+	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
 
 	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
 	require.NoError(t, err)
 	require.NotNil(t, dialer)
 
+	// WHEN
+	mockedWebsocketConnection.EXPECT().SetPongHandler(gomock.Any())
+	err = dialer.connect()
+
+	// THEN
+	assert.NoError(t, err)
 }
 
-func newMockedDialerFactory(websocketConnection WebsocketConnection) websocketDialerFactory {
+func TestConnectFail(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedWebsocketConnection := mock_connection.NewMockWebsocketConnection(mockCtrl)
+	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, true)
 
-	dialerFunc := func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
+	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	require.NoError(t, err)
+	require.NotNil(t, dialer)
+
+	// WHEN
+	err = dialer.connect()
+
+	// THEN
+	assert.Error(t, err)
+}
+
+func newMockedDialerFactory(websocketConnection WebsocketConnection, fail bool) websocketDialerFactory {
+
+	dialerFuncSuccess := func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
 		return websocketConnection, nil, nil
 	}
 
+	dialerFuncError := func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
+		return nil, nil, fmt.Errorf("Timeout")
+	}
+
+	// if needed return a dialer that can't create a connection successfully
+	if fail {
+		return func(wBufSize, rBifSize int, timeout time.Duration) websocketDialer {
+			return dialerFuncError
+		}
+	}
+
 	return func(wBufSize, rBifSize int, timeout time.Duration) websocketDialer {
-		return dialerFunc
+		return dialerFuncSuccess
 	}
 }

@@ -101,6 +101,10 @@ func (ws *websocket) connect() (err error) {
 		// https://groups.google.com/forum/#!msg/gremlin-users/x4hiHsmTsHM/Xe4GcPtRCAAJ
 		ws.host = ws.host + "/gremlin"
 		ws.conn, _, err = dial(ws.host, http.Header{})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	if err == nil {
@@ -110,7 +114,7 @@ func (ws *websocket) connect() (err error) {
 			return nil
 		})
 	}
-	return
+	return nil
 }
 
 // IsConnected returns whether the underlying websocket is connected
