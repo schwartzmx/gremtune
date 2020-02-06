@@ -37,7 +37,7 @@ func main() {
 	log.Println("Connecting using:")
 	log.Printf("\thost: %s\n", host)
 	log.Printf("\tusername: %s\n", username)
-	log.Printf("\tpassword: %s\n", password)
+	log.Printf("\tpassword is set %v\n", len(password) > 0)
 
 	errs := make(chan error)
 	go panicOnErrorOnChannel(errs)

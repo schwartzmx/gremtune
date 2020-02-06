@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := all
 
-all: test lint finish
+all: lint test finish
 
 # This target (taken from: https://gist.github.com/prwhite/8168133) is an easy way to print out a usage/ help of all make targets.
 # For all make targets the text after \#\# will be printed.
@@ -13,11 +13,11 @@ build: sep ## Builds the library
 
 test: sep ## Runs all unittests and generates a coverage report.
 	@echo "--> Run the unit-tests"
-	@go test -timeout 30s -run "^Test.*[^I,T]$$" -covermode=count
+	@go test -timeout 30s -run "^Test.*[^IT]$$" -covermode=count
 
 test.integration: sep ## Runs all integration tests. As precondition a local gremlin-server has to run and listen on port 8182.
 	@echo "--> Run the integration-tests"
-	@go test -timeout 30s -run "Test_SuiteIT"
+	@go test -timeout 30s -run "Test_SuiteIT" -covermode=count
 
 bench: sep ## Execute benchmarks
 	@echo "--> Execute benchmarks"

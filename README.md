@@ -179,3 +179,7 @@ To run it on can use: `go run ./examples`
 ## License
 
 See [LICENSE](LICENSE.md)
+
+### 3rd Party Licenses
+
+- [difflib license](https://github.com/pmezard/go-difflib/blob/master/LICENSE)
