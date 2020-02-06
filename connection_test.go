@@ -4,7 +4,7 @@ import "testing"
 
 func TestPanicOnMissingAuthCredentials(t *testing.T) {
 	c := newClient()
-	ws := new(Ws)
+	ws := &Websocket{}
 	c.conn = ws
 
 	defer func() {

@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -19,27 +18,6 @@ type Client struct {
 	responseStatusNotifier *sync.Map // responseStatusNotifier notifies the requester that a response has arrived for the request with the code
 	sync.RWMutex
 	Errored bool
-}
-
-// NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewDialer(host string, configs ...DialerConfig) (dialer *Ws) {
-	dialer = &Ws{
-		timeout:      5 * time.Second,
-		pingInterval: 60 * time.Second,
-		writingWait:  15 * time.Second,
-		readingWait:  15 * time.Second,
-		connected:    false,
-		quit:         make(chan struct{}),
-		readBufSize:  8192,
-		writeBufSize: 8192,
-	}
-
-	for _, conf := range configs {
-		conf(dialer)
-	}
-
-	dialer.host = host
-	return dialer
 }
 
 func newClient() (c Client) {
@@ -62,7 +40,7 @@ func Dial(conn dialer, errs chan error) (c Client, err error) {
 		return
 	}
 
-	quit := conn.(*Ws).quit
+	quit := conn.(*Websocket).quit
 
 	go c.writeWorker(errs, quit)
 	go c.readWorker(errs, quit)

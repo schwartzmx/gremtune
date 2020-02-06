@@ -62,7 +62,7 @@ func TestResponseHandling(t *testing.T) {
 
 func TestResponseAuthHandling(t *testing.T) {
 	c := newClient()
-	ws := new(Ws)
+	ws := &Websocket{}
 	ws.auth = &auth{username: "test", password: "test"}
 	c.conn = ws
 	err := c.handleResponse(dummyNeedAuthenticationResponse)

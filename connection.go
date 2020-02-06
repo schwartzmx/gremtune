@@ -21,14 +21,8 @@ type dialer interface {
 	ping(errs chan error)
 }
 
-/////
-/*
-WebSocket Connection
-*/
-/////
-
-// Ws is the dialer for a WebSocket connection
-type Ws struct {
+// Websocket is the dialer for a WebSocket connection
+type Websocket struct {
 	host         string
 	conn         *websocket.Conn
 	auth         *auth
@@ -50,7 +44,28 @@ type auth struct {
 	password string
 }
 
-func (ws *Ws) connect() (err error) {
+// NewWebsocketDialer returns a WebSocket dialer to use when connecting to Gremlin Server
+func NewWebsocketDialer(host string, configs ...DialerConfig) *Websocket {
+	websocket := &Websocket{
+		timeout:      5 * time.Second,
+		pingInterval: 60 * time.Second,
+		writingWait:  15 * time.Second,
+		readingWait:  15 * time.Second,
+		connected:    false,
+		quit:         make(chan struct{}),
+		readBufSize:  8192,
+		writeBufSize: 8192,
+	}
+
+	for _, conf := range configs {
+		conf(websocket)
+	}
+
+	websocket.host = host
+	return websocket
+}
+
+func (ws *Websocket) connect() (err error) {
 	d := websocket.Dialer{
 		WriteBufferSize:  ws.writeBufSize,
 		ReadBufferSize:   ws.readBufSize,
@@ -76,26 +91,26 @@ func (ws *Ws) connect() (err error) {
 }
 
 // IsConnected returns whether the underlying websocket is connected
-func (ws *Ws) IsConnected() bool {
+func (ws *Websocket) IsConnected() bool {
 	return ws.connected
 }
 
 // IsDisposed returns whether the underlying websocket is disposed
-func (ws *Ws) IsDisposed() bool {
+func (ws *Websocket) IsDisposed() bool {
 	return ws.disposed
 }
 
-func (ws *Ws) write(msg []byte) (err error) {
+func (ws *Websocket) write(msg []byte) (err error) {
 	err = ws.conn.WriteMessage(2, msg)
 	return
 }
 
-func (ws *Ws) read() (msgType int, msg []byte, err error) {
+func (ws *Websocket) read() (msgType int, msg []byte, err error) {
 	msgType, msg, err = ws.conn.ReadMessage()
 	return
 }
 
-func (ws *Ws) close() (err error) {
+func (ws *Websocket) close() (err error) {
 	defer func() {
 		close(ws.quit)
 		ws.conn.Close()
@@ -106,14 +121,14 @@ func (ws *Ws) close() (err error) {
 	return
 }
 
-func (ws *Ws) getAuth() *auth {
+func (ws *Websocket) getAuth() *auth {
 	if ws.auth == nil {
 		panic("You must create a Secure Dialer for authenticate with the server")
 	}
 	return ws.auth
 }
 
-func (ws *Ws) ping(errs chan error) {
+func (ws *Websocket) ping(errs chan error) {
 	ticker := time.NewTicker(ws.pingInterval)
 	defer ticker.Stop()
 	for {
