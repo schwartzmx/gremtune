@@ -48,3 +48,12 @@ func SetBufferSize(readBufferSize int, writeBufferSize int) DialerConfig {
 		c.writeBufSize = writeBufferSize
 	}
 }
+
+// websocketDialerFactoryFun exchange/ set the factory function used to create the dialer which
+// is then used to open the websocket connection.
+// This function is not exported on purpose, it should only used for injection and mocking in tests!!
+func websocketDialerFactoryFun(wsDialerFactory websocketDialerFactory) DialerConfig {
+	return func(c *Websocket) {
+		c.wsDialerFactory = wsDialerFactory
+	}
+}

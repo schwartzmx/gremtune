@@ -28,6 +28,11 @@ func TestNewDialerFail(t *testing.T) {
 	dialer, err = NewDialer("ws://host", SetBufferSize(10, 0))
 	assert.Nil(t, dialer)
 	assert.Error(t, err)
+
+	// WHEN - dialerFactory is nil
+	dialer, err = NewDialer("ws://host", websocketDialerFactoryFun(nil))
+	assert.Nil(t, dialer)
+	assert.Error(t, err)
 }
 
 func TestPanicOnMissingAuthCredentials(t *testing.T) {

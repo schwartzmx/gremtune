@@ -43,6 +43,8 @@ type Websocket struct {
 	// channel for quit notification
 	quit chan struct{}
 	sync.RWMutex
+
+	wsDialerFactory websocketDialerFactory
 }
 
 // WebsocketConnection is the minimal interface needed to act on a websocket
@@ -63,15 +65,16 @@ type auth struct {
 // NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
 func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
 	websocket := &Websocket{
-		timeout:      5 * time.Second,
-		pingInterval: 60 * time.Second,
-		writingWait:  15 * time.Second,
-		readingWait:  15 * time.Second,
-		connected:    false,
-		quit:         make(chan struct{}),
-		readBufSize:  8192,
-		writeBufSize: 8192,
-		host:         host,
+		timeout:         5 * time.Second,
+		pingInterval:    60 * time.Second,
+		writingWait:     15 * time.Second,
+		readingWait:     15 * time.Second,
+		connected:       false,
+		quit:            make(chan struct{}),
+		readBufSize:     8192,
+		writeBufSize:    8192,
+		host:            host,
+		wsDialerFactory: gorillaWebsocketDialerFactory, // use the gorilla websocket as default
 	}
 
 	for _, conf := range configs {
@@ -91,23 +94,16 @@ func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
 		return nil, fmt.Errorf("Invalid size for write buffer: %d", websocket.writeBufSize)
 	}
 
+	if websocket.wsDialerFactory == nil {
+		return nil, fmt.Errorf("The factory for websocket dialers is nil")
+	}
+
 	return websocket, nil
 }
 
-var webSocketDialerFunc = func(writeBufferSize, readBufferSize int, handshakeTimout time.Duration) func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
-	dialer := websocket.Dialer{
-		WriteBufferSize:  writeBufferSize,
-		ReadBufferSize:   readBufferSize,
-		HandshakeTimeout: handshakeTimout,
-	}
-
-	return func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
-		return dialer.Dial(urlStr, requestHeader)
-	}
-}
-
 func (ws *Websocket) connect() (err error) {
-	dial := webSocketDialerFunc(ws.writeBufSize, ws.readBufSize, ws.timeout)
+	// create the function that shall be used for dialing
+	dial := ws.wsDialerFactory(ws.writeBufSize, ws.readBufSize, ws.timeout)
 
 	ws.conn, _, err = dial(ws.host, http.Header{})
 	if err != nil {
