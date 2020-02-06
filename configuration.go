@@ -12,7 +12,7 @@ func SetAuthentication(username string, password string) DialerConfig {
 	}
 }
 
-//SetTimeout sets the dial timeout
+//SetTimeout sets the dial handshake timeout
 func SetTimeout(seconds int) DialerConfig {
 	return func(c *Websocket) {
 		c.timeout = time.Duration(seconds) * time.Second

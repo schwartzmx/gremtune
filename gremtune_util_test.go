@@ -16,8 +16,9 @@ var failingErrorChannelConsumerFunc = func(errChan chan error, t *testing.T) {
 }
 
 func newTestClient(t *testing.T, errChan chan error) *Client {
-	dialer := NewDialer("ws://127.0.0.1:8182")
+	dialer, err := NewDialer("ws://127.0.0.1:8182")
 	require.NotNil(t, dialer, "Dialer is nil")
+	require.NoError(t, err)
 	client, err := Dial(dialer, errChan)
 	require.NoError(t, err, "Failed to create client")
 	return &client
@@ -25,7 +26,8 @@ func newTestClient(t *testing.T, errChan chan error) *Client {
 
 func newTestPool(t *testing.T, errChan chan error) *Pool {
 	dialFn := func() (*Client, error) {
-		dialer := NewDialer("ws://127.0.0.1:8182")
+		dialer, err := NewDialer("ws://127.0.0.1:8182")
+		require.NoError(t, err)
 		c, err := Dial(dialer, errChan)
 		require.NoError(t, err)
 		return &c, err

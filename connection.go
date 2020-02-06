@@ -1,7 +1,9 @@
 package gremtune
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"sync"
@@ -50,7 +52,7 @@ type auth struct {
 }
 
 // NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewDialer(host string, configs ...DialerConfig) dialer {
+func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
 	websocket := &Websocket{
 		timeout:      5 * time.Second,
 		pingInterval: 60 * time.Second,
@@ -60,14 +62,26 @@ func NewDialer(host string, configs ...DialerConfig) dialer {
 		quit:         make(chan struct{}),
 		readBufSize:  8192,
 		writeBufSize: 8192,
+		host:         host,
 	}
 
 	for _, conf := range configs {
 		conf(websocket)
 	}
 
-	websocket.host = host
-	return websocket
+	// verify setup and fail as early as possible
+	if !strings.HasPrefix(websocket.host, "ws://") && !strings.HasPrefix(websocket.host, "wss://") {
+		return nil, fmt.Errorf("Host '%s' is invalid, expected protocol 'ws://' or 'wss://' missing", websocket.host)
+	}
+	if websocket.readBufSize <= 0 {
+		return nil, fmt.Errorf("Invalid size for read buffer: %d", websocket.readBufSize)
+	}
+
+	if websocket.writeBufSize <= 0 {
+		return nil, fmt.Errorf("Invalid size for write buffer: %d", websocket.writeBufSize)
+	}
+
+	return websocket, nil
 }
 
 func (ws *Websocket) connect() (err error) {
