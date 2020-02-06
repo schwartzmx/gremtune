@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
+	gorilla "github.com/gorilla/websocket"
 )
 
 // websocketDialer is a function type for dialing/ connecting to a websocket server and creating a WebsocketConnection
@@ -17,7 +17,7 @@ type websocketDialerFactory func(writeBufferSize, readBufferSize int, handshakeT
 // of github.com/gorilla/websocket
 var gorillaWebsocketDialerFactory = func(writeBufferSize, readBufferSize int, handshakeTimout time.Duration) websocketDialer {
 	// create the gorilla websocket dialer
-	dialer := websocket.Dialer{
+	dialer := gorilla.Dialer{
 		WriteBufferSize:  writeBufferSize,
 		ReadBufferSize:   readBufferSize,
 		HandshakeTimeout: handshakeTimout,
@@ -27,4 +27,15 @@ var gorillaWebsocketDialerFactory = func(writeBufferSize, readBufferSize int, ha
 	return func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
 		return dialer.Dial(urlStr, requestHeader)
 	}
+}
+
+type dialer interface {
+	connect() error
+	IsConnected() bool
+	IsDisposed() bool
+	write([]byte) error
+	read() (int, []byte, error)
+	close() error
+	getAuth() *auth
+	ping(errs chan error)
 }

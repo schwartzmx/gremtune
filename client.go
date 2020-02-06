@@ -40,7 +40,7 @@ func Dial(conn dialer, errs chan error) (c Client, err error) {
 		return
 	}
 
-	quit := conn.(*Websocket).quit
+	quit := conn.(*websocket).quit
 
 	go c.writeWorker(errs, quit)
 	go c.readWorker(errs, quit)

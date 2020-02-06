@@ -28,6 +28,12 @@ lint: ## Runs the linter to check for coding-style issues
 	@echo "!!!!golangci-lint has to be installed. See: https://github.com/golangci/golangci-lint#install"
 	@golangci-lint run --fast
 
+gen-mocks: sep ## Generates test doubles (mocks).
+	@echo "--> generate mocks (github.com/golang/mock/gomock is required for this)"
+	@go get github.com/golang/mock/gomock
+	@go install github.com/golang/mock/mockgen
+	@mockgen -source=connection.go -destination test/mocks/mock_connection.go
+
 infra.up: ## Starts up the infra components
 	make -C infra up
 

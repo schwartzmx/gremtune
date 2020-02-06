@@ -37,7 +37,7 @@ func TestNewDialerFail(t *testing.T) {
 
 func TestPanicOnMissingAuthCredentials(t *testing.T) {
 	c := newClient()
-	ws := &Websocket{}
+	ws := &websocket{}
 	c.conn = ws
 
 	defer func() {
