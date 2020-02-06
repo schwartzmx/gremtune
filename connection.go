@@ -94,19 +94,28 @@ func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
 	return websocket, nil
 }
 
-func (ws *Websocket) connect() (err error) {
-	d := websocket.Dialer{
-		WriteBufferSize:  ws.writeBufSize,
-		ReadBufferSize:   ws.readBufSize,
-		HandshakeTimeout: ws.timeout, // Timeout or else we'll hang forever and never fail on bad hosts.
+var webSocketDialerFunc = func(writeBufferSize, readBufferSize int, handshakeTimout time.Duration) func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
+	dialer := websocket.Dialer{
+		WriteBufferSize:  writeBufferSize,
+		ReadBufferSize:   readBufferSize,
+		HandshakeTimeout: handshakeTimout,
 	}
-	ws.conn, _, err = d.Dial(ws.host, http.Header{})
+
+	return func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
+		return dialer.Dial(urlStr, requestHeader)
+	}
+}
+
+func (ws *Websocket) connect() (err error) {
+	dial := webSocketDialerFunc(ws.writeBufSize, ws.readBufSize, ws.timeout)
+
+	ws.conn, _, err = dial(ws.host, http.Header{})
 	if err != nil {
 
 		// As of 3.2.2 the URL has changed.
 		// https://groups.google.com/forum/#!msg/gremlin-users/x4hiHsmTsHM/Xe4GcPtRCAAJ
 		ws.host = ws.host + "/gremlin"
-		ws.conn, _, err = d.Dial(ws.host, http.Header{})
+		ws.conn, _, err = dial(ws.host, http.Header{})
 	}
 
 	if err == nil {
