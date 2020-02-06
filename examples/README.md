@@ -1,6 +1,6 @@
 # Examples
 
-The provided exampled needs a germlin-server as counterpart. They can be either a local one or a CosmosDB running on Azure.
+The provided examples needs a gremlin-server as counterpart. The counterpart can either be a local one, e.g. gremlin-server, or a CosmosDB running on Azure.
 
 ## Against Local Gremlin-Server
 
@@ -13,13 +13,13 @@ make infra.up
 go run ./examples/local
 ```
 
-## Against CosmosDB
+## Against CosmosDB on Azure
 
 ### Prerequisites
 
 1. Obtain the host/ endpoint of the CosmosDB
 
-   - Therefore one has to login into the Azure web console and navigate to the Azure CosmosDB panel.
+   - To this end one has to login into the Azure web console and navigate to the Azure CosmosDB panel.
    - Here just select the db you want to connect to, go to the overview tab and there copy the URL of the `Gremlin Endpoint`
    - It should look like this `wss://xyz-my-db-abc.gremlin.cosmos.azure.com:443/`
 
