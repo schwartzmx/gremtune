@@ -1,15 +1,14 @@
 package gremtune
 
 import (
-	"log"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-/*
-Dummy responses for mocking
-*/
-
+// Dummy responses for mocking
 var dummySuccessfulResponse = []byte(`{"result":{"data":[{"id": 2,"label": "person","type": "vertex","properties": [
   {"id": 2, "value": "vadas", "label": "name"},
   {"id": 3, "value": 27, "label": "age"}]}
@@ -20,20 +19,6 @@ var dummySuccessfulResponse = []byte(`{"result":{"data":[{"id": 2,"label": "pers
 var dummyNeedAuthenticationResponse = []byte(`{"result":{},
  "requestId":"1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
  "status":{"code":407,"attributes":{},"message":""}}`)
-
-var dummyPartialResponse1 = []byte(`{"result":{"data":[{"id": 2,"label": "person","type": "vertex","properties": [
-  {"id": 2, "value": "vadas", "label": "name"},
-  {"id": 3, "value": 27, "label": "age"}]},
-  ], "meta":{}},
- "requestId":"1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
- "status":{"code":206,"attributes":{},"message":""}}`)
-
-var dummyPartialResponse2 = []byte(`{"result":{"data":[{"id": 4,"label": "person","type": "vertex","properties": [
-  {"id": 5, "value": "quant", "label": "name"},
-  {"id": 6, "value": 54, "label": "age"}]},
-  ], "meta":{}},
- "requestId":"1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
- "status":{"code":200,"attributes":{},"message":""}}`)
 
 var dummySuccessfulResponseMarshalled = Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
@@ -63,15 +48,16 @@ var dummyPartialResponse2Marshalled = Response{
 func TestResponseHandling(t *testing.T) {
 	c := newClient()
 
-	c.handleResponse(dummySuccessfulResponse)
+	err := c.handleResponse(dummySuccessfulResponse)
+	require.NoError(t, err)
 
 	var expected []Response
 	expected = append(expected, dummySuccessfulResponseMarshalled)
 
-	r, _ := c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)
-	if reflect.TypeOf(expected).String() != reflect.TypeOf(r).String() {
-		t.Error("Expected data type does not match actual.")
-	}
+	r, err := c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)
+	require.NoError(t, err)
+
+	assert.Equal(t, reflect.TypeOf(r), reflect.TypeOf(expected))
 }
 
 func TestResponseAuthHandling(t *testing.T) {
@@ -79,47 +65,38 @@ func TestResponseAuthHandling(t *testing.T) {
 	ws := new(Ws)
 	ws.auth = &auth{username: "test", password: "test"}
 	c.conn = ws
-	c.handleResponse(dummyNeedAuthenticationResponse)
+	err := c.handleResponse(dummyNeedAuthenticationResponse)
+	require.NoError(t, err)
 
 	req, err := prepareAuthRequest(dummyNeedAuthenticationResponseMarshalled.RequestID, "test", "test")
-	if err != nil {
-		return
-	}
+	require.NoError(t, err)
 
 	sampleAuthRequest, err := packageRequest(req)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	require.NoError(t, err)
 
 	c.dispatchRequest(sampleAuthRequest)
 	authRequest := <-c.requests //Simulate that client send auth challenge to server
-	if !reflect.DeepEqual(authRequest, sampleAuthRequest) {
-		t.Error("Expected data type does not match actual.")
-	}
+	assert.Equal(t, authRequest, sampleAuthRequest, "Expected data type does not match actual.")
 
-	c.handleResponse(dummySuccessfulResponse) //If authentication is successful the server returns the origin petition
+	err = c.handleResponse(dummySuccessfulResponse) //If authentication is successful the server returns the origin petition
+	require.NoError(t, err)
 
 	var expectedSuccessful []Response
 	expectedSuccessful = append(expectedSuccessful, dummySuccessfulResponseMarshalled)
 
-	r, _ := c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)
-	if reflect.TypeOf(expectedSuccessful).String() != reflect.TypeOf(r).String() {
-		t.Error("Expected data type does not match actual.")
-	}
+	r, err := c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)
+	require.NoError(t, err)
+	assert.Equal(t, reflect.TypeOf(expectedSuccessful), reflect.TypeOf(r), "Expected data type does not match actual.")
 }
 
 // TestResponseMarshalling tests the ability to marshal a response into a designated response struct for further manipulation
 func TestResponseMarshalling(t *testing.T) {
 	resp, err := marshalResponse(dummySuccessfulResponse)
-	if err != nil {
-		t.Error(err)
-	}
-	if dummySuccessfulResponseMarshalled.RequestID != resp.RequestID || dummySuccessfulResponseMarshalled.Status.Code != resp.Status.Code {
-		t.Error("Expected requestId and code does not match actual.")
-	} else if reflect.TypeOf(resp.Result.Data).String() != "json.RawMessage" {
-		t.Error("Expected data type does not match actual.")
-	}
+	require.NoError(t, err)
+
+	assert.Equal(t, resp.RequestID, dummySuccessfulResponseMarshalled.RequestID)
+	assert.Equal(t, dummySuccessfulResponseMarshalled.Status.Code, resp.Status.Code)
+	assert.Equal(t, reflect.TypeOf(resp.Result.Data).String(), "json.RawMessage")
 }
 
 // TestResponseSortingSingleResponse tests the ability for sortResponse to save a response received from Gremlin Server
@@ -132,7 +109,9 @@ func TestResponseSortingSingleResponse(t *testing.T) {
 	var expected []interface{}
 	expected = append(expected, dummySuccessfulResponseMarshalled)
 
-	result, _ := c.results.Load(dummySuccessfulResponseMarshalled.RequestID)
+	result, ok := c.results.Load(dummySuccessfulResponseMarshalled.RequestID)
+	assert.True(t, ok)
+
 	if reflect.DeepEqual(result.([]interface{}), expected) != true {
 		t.Fail()
 	}
@@ -150,7 +129,8 @@ func TestResponseSortingMultipleResponse(t *testing.T) {
 	expected = append(expected, dummyPartialResponse1Marshalled)
 	expected = append(expected, dummyPartialResponse2Marshalled)
 
-	results, _ := c.results.Load(dummyPartialResponse1Marshalled.RequestID)
+	results, ok := c.results.Load(dummyPartialResponse1Marshalled.RequestID)
+	assert.True(t, ok)
 	if reflect.DeepEqual(results.([]interface{}), expected) != true {
 		t.Fail()
 	}
@@ -163,15 +143,14 @@ func TestResponseRetrieval(t *testing.T) {
 	c.saveResponse(dummyPartialResponse1Marshalled, nil)
 	c.saveResponse(dummyPartialResponse2Marshalled, nil)
 
-	resp, _ := c.retrieveResponse(dummyPartialResponse1Marshalled.RequestID)
+	resp, err := c.retrieveResponse(dummyPartialResponse1Marshalled.RequestID)
+	require.NoError(t, err)
 
 	var expected []Response
 	expected = append(expected, dummyPartialResponse1Marshalled)
 	expected = append(expected, dummyPartialResponse2Marshalled)
 
-	if reflect.DeepEqual(resp, expected) != true {
-		t.Fail()
-	}
+	assert.Equal(t, resp, expected)
 }
 
 // TestResponseDeletion tests the ability for a requester to clean up after retrieving a response after delivery to a client
@@ -183,9 +162,8 @@ func TestResponseDeletion(t *testing.T) {
 
 	c.deleteResponse(dummyPartialResponse1Marshalled.RequestID)
 
-	if _, ok := c.results.Load(dummyPartialResponse1Marshalled.RequestID); ok {
-		t.Fail()
-	}
+	_, ok := c.results.Load(dummyPartialResponse1Marshalled.RequestID)
+	assert.False(t, ok)
 }
 
 var codes = []struct {

@@ -1,24 +1,44 @@
 package gremtune
 
 import (
+	"sync"
 	"testing"
 )
 
-func init() {
-	InitGremlinClients()
-	t := testing.T{}
-	seedData(&t)
+var benchmarkClient *Client
+var benchmarkPool *Pool
 
+var once sync.Once
+
+func initBeforeBenchmark() {
+	t := &testing.T{}
+
+	t.Log("Starting the benchmark. In order to run it a local gremlin server has to run and listen on 8182")
+
+	// create the error channels
+	clientErrChannel := make(chan error)
+	poolErrChannel := make(chan error)
+
+	// create failing readers for those channels
+	go failingErrorChannelConsumerFunc(clientErrChannel, t)
+	go failingErrorChannelConsumerFunc(poolErrChannel, t)
+
+	benchmarkClient = newTestClient(t, clientErrChannel)
+	benchmarkPool = newTestPool(t, poolErrChannel)
+
+	seedData(t, benchmarkClient)
 }
 
 func benchmarkPoolExecute(i int, b *testing.B) {
+	once.Do(initBeforeBenchmark)
+
 	for n := 0; n < i; n++ {
 		go func(p *Pool) {
 			_, err := p.Execute(`g.V('1234').label()`)
 			if err != nil {
 				b.Error(err)
 			}
-		}(gp)
+		}(benchmarkPool)
 	}
 }
 

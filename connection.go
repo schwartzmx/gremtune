@@ -166,7 +166,9 @@ func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker
 			break
 		}
 		if msg != nil {
-			c.handleResponse(msg)
+			// FIXME: At the moment the error returned by handle response is just ignored.
+			err = c.handleResponse(msg)
+			_ = err
 		}
 
 		select {

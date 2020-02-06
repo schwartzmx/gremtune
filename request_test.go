@@ -2,8 +2,10 @@ package gremtune
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestRequestPreparation tests the ability to package a query and a set of bindings into a request struct for further manipulation
@@ -12,9 +14,7 @@ func TestRequestPreparation(t *testing.T) {
 	bindings := map[string]string{"x": "10"}
 	rebindings := map[string]string{}
 	req, id, err := prepareRequestWithBindings(query, bindings, rebindings)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	expectedRequest := request{
 		RequestID: id,
@@ -28,9 +28,7 @@ func TestRequestPreparation(t *testing.T) {
 		},
 	}
 
-	if reflect.DeepEqual(req, expectedRequest) != true {
-		t.Fail()
-	}
+	assert.Equal(t, req, expectedRequest)
 }
 
 // TestRequestPackaging tests the ability for gremtune to format a request using the established Gremlin Server WebSockets protocol for delivery to the server
@@ -47,27 +45,21 @@ func TestRequestPackaging(t *testing.T) {
 	}
 
 	msg, err := packageRequest(testRequest)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	j, err := json.Marshal(testRequest)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	var expected []byte
 
-	mimetype := []byte("application/vnd.gremlin-v3.0+json")
+	mimetype := []byte("application/vnd.gremlin-v2.0+json")
 	mimetypelen := byte(len(mimetype))
 
 	expected = append(expected, mimetypelen)
 	expected = append(expected, mimetype...)
 	expected = append(expected, j...)
 
-	if reflect.DeepEqual(msg, expected) != true {
-		t.Fail()
-	}
+	assert.Equal(t, msg, expected)
 }
 
 // TestRequestDispatch tests the ability for a requester to send a request to the client for writing to Gremlin Server
@@ -84,14 +76,11 @@ func TestRequestDispatch(t *testing.T) {
 	}
 	c := newClient()
 	msg, err := packageRequest(testRequest)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	c.dispatchRequest(msg)
 	req := <-c.requests // c.requests is the channel where all requests are sent for writing to Gremlin Server, write workers listen on this channel
-	if reflect.DeepEqual(msg, req) != true {
-		t.Fail()
-	}
+	assert.Equal(t, msg, req)
 }
 
 // TestAuthRequestDispatch tests the ability for a requester to send a request to the client for writing to Gremlin Server
@@ -101,27 +90,23 @@ func TestAuthRequestDispatch(t *testing.T) {
 
 	c := newClient()
 	msg, err := packageRequest(testRequest)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
+
 	c.dispatchRequest(msg)
 	req := <-c.requests // c.requests is the channel where all requests are sent for writing to Gremlin Server, write workers listen on this channel
-	if reflect.DeepEqual(msg, req) != true {
-		t.Fail()
-	}
+	assert.Equal(t, msg, req)
 }
 
 // TestAuthRequestPreparation tests the ability to create successful authentication request
 func TestAuthRequestPreparation(t *testing.T) {
 	id := "1d6d02bd-8e56-421d-9438-3bd6d0079ff1"
 	testRequest, err := prepareAuthRequest(id, "test", "root")
-	if err != nil {
-		t.Fail()
-	}
-	if testRequest.RequestID != id || testRequest.Processor != "trasversal" || testRequest.Op != "authentication" {
-		t.Fail()
-	}
-	if len(testRequest.Args) != 1 || testRequest.Args["sasl"] == "" {
-		t.Fail()
-	}
+	require.NoError(t, err)
+
+	assert.Equal(t, testRequest.RequestID, id)
+	assert.Equal(t, "trasversal", testRequest.Processor)
+	assert.Equal(t, "authentication", testRequest.Op)
+
+	assert.Len(t, testRequest.Args, 1)
+	assert.NotEmpty(t, testRequest.Args["sasl"])
 }

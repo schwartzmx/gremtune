@@ -1,0 +1,9 @@
+version: "3"
+services:
+  tinkerpop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8182:8182
+    network_mode: "bridge"
