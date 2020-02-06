@@ -26,7 +26,7 @@ type dialer interface {
 // Websocket is the dialer for a WebSocket connection
 type Websocket struct {
 	host         string
-	conn         *websocket.Conn
+	conn         WebsocketConnection
 	auth         *auth
 	disposed     bool
 	connected    bool
@@ -43,6 +43,15 @@ type Websocket struct {
 	// channel for quit notification
 	quit chan struct{}
 	sync.RWMutex
+}
+
+// WebsocketConnection is the minimal interface needed to act on a websocket
+type WebsocketConnection interface {
+	SetPongHandler(handler func(appData string) error)
+	WriteMessage(messageType int, data []byte) error
+	ReadMessage() (messageType int, p []byte, err error)
+	Close() error
+	WriteControl(messageType int, data []byte, deadline time.Time) error
 }
 
 //Auth is the container for authentication data of dialer
@@ -73,6 +82,7 @@ func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
 	if !strings.HasPrefix(websocket.host, "ws://") && !strings.HasPrefix(websocket.host, "wss://") {
 		return nil, fmt.Errorf("Host '%s' is invalid, expected protocol 'ws://' or 'wss://' missing", websocket.host)
 	}
+
 	if websocket.readBufSize <= 0 {
 		return nil, fmt.Errorf("Invalid size for read buffer: %d", websocket.readBufSize)
 	}

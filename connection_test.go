@@ -14,7 +14,18 @@ func TestNewDialer(t *testing.T) {
 
 func TestNewDialerFail(t *testing.T) {
 
+	// WHEN - invalid host
 	dialer, err := NewDialer("invalid host")
+	assert.Nil(t, dialer)
+	assert.Error(t, err)
+
+	// WHEN - read buffer invalid
+	dialer, err = NewDialer("ws://host", SetBufferSize(0, 10))
+	assert.Nil(t, dialer)
+	assert.Error(t, err)
+
+	// WHEN - write buffer invalid
+	dialer, err = NewDialer("ws://host", SetBufferSize(10, 0))
 	assert.Nil(t, dialer)
 	assert.Error(t, err)
 }
