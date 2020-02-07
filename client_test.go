@@ -45,7 +45,12 @@ func TestDial(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
-	errorChannel := make(chan error, 10)
+	errorChannel := make(chan error)
+	go func() {
+		// just consume the errors to avoid blocking
+		for range errorChannel {
+		}
+	}()
 	quitChannel := make(chan struct{})
 
 	// WHEN
@@ -59,6 +64,7 @@ func TestDial(t *testing.T) {
 	require.NotNil(t, client)
 	require.NoError(t, err)
 	err = client.Close()
+	close(errorChannel)
 
 	// THEN
 	assert.NoError(t, err)
