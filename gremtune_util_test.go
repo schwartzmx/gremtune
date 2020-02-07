@@ -21,7 +21,7 @@ func newTestClient(t *testing.T, errChan chan error) *Client {
 	require.NoError(t, err)
 	client, err := Dial(dialer, errChan)
 	require.NoError(t, err, "Failed to create client")
-	return &client
+	return client
 }
 
 func newTestPool(t *testing.T, errChan chan error) *Pool {
@@ -30,7 +30,7 @@ func newTestPool(t *testing.T, errChan chan error) *Pool {
 		require.NoError(t, err)
 		c, err := Dial(dialer, errChan)
 		require.NoError(t, err)
-		return &c, err
+		return c, err
 	}
 
 	return &Pool{

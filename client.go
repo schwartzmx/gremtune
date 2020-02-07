@@ -16,37 +16,38 @@ type Client struct {
 	results                *sync.Map
 	responseNotifier       *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
 	responseStatusNotifier *sync.Map // responseStatusNotifier notifies the requester that a response has arrived for the request with the code
-	sync.RWMutex
-	Errored bool
+	mux                    sync.RWMutex
+	Errored                bool
 }
 
-func newClient() (c Client) {
-	c.requests = make(chan []byte, 3)  // c.requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
-	c.responses = make(chan []byte, 3) // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
-	c.results = &sync.Map{}
-	c.responseNotifier = &sync.Map{}
-	c.responseStatusNotifier = &sync.Map{}
-	return
+func newClient() *Client {
+	return &Client{
+		requests:               make(chan []byte, 3), // c.requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
+		responses:              make(chan []byte, 3), // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
+		results:                &sync.Map{},
+		responseNotifier:       &sync.Map{},
+		responseStatusNotifier: &sync.Map{},
+	}
 }
 
 // Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
-func Dial(conn dialer, errs chan error) (c Client, err error) {
-	c = newClient()
-	c.conn = conn
+func Dial(conn dialer, errs chan error) (*Client, error) {
+	client := newClient()
+	client.conn = conn
 
 	// Connects to Gremlin Server
-	err = conn.connect()
+	err := conn.connect()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	quit := conn.(*websocket).quit
 
-	go c.writeWorker(errs, quit)
-	go c.readWorker(errs, quit)
+	go client.writeWorker(errs, quit)
+	go client.readWorker(errs, quit)
 	go conn.ping(errs)
 
-	return
+	return client, nil
 }
 
 func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) (resp []Response, err error) {
@@ -185,15 +186,15 @@ func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWork
 	for {
 		select {
 		case msg := <-c.requests:
-			c.Lock()
+			c.mux.Lock()
 			err := c.conn.write(msg)
 			if err != nil {
 				errs <- err
 				c.Errored = true
-				c.Unlock()
+				c.mux.Unlock()
 				break
 			}
-			c.Unlock()
+			c.mux.Unlock()
 
 		case <-quit:
 			return

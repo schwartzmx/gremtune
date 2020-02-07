@@ -75,8 +75,8 @@ func marshalResponse(msg []byte) (resp Response, err error) {
 
 // saveResponse makes the response available for retrieval by the requester. Mutexes are used for thread safety.
 func (c *Client) saveResponse(resp Response, err error) {
-	c.Lock()
-	defer c.Unlock()
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	var container []interface{}
 	existingData, ok := c.results.Load(resp.RequestID) // Retrieve old data container (for requests with multiple responses)
 	if ok {

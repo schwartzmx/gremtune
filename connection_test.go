@@ -42,20 +42,6 @@ func TestNewDialerFail(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestPanicOnMissingAuthCredentials(t *testing.T) {
-	c := newClient()
-	ws := &websocket{}
-	c.conn = ws
-
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fail()
-		}
-	}()
-
-	c.conn.getAuth()
-}
-
 func TestConnect(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
