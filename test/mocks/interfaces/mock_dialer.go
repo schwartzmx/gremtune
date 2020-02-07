@@ -120,10 +120,10 @@ func (mr *MockDialerMockRecorder) Close() *gomock.Call {
 }
 
 // GetAuth mocks base method
-func (m *MockDialer) GetAuth() *interfaces.Auth {
+func (m *MockDialer) GetAuth() interfaces.Auth {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAuth")
-	ret0, _ := ret[0].(*interfaces.Auth)
+	ret0, _ := ret[0].(interfaces.Auth)
 	return ret0
 }
 

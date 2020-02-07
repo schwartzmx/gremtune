@@ -1,6 +1,7 @@
 package gremtune
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"sync"
@@ -101,21 +102,36 @@ func (c *Client) executeAsync(query string, bindings, rebindings *map[string]str
 	return
 }
 
-func (c *Client) authenticate(requestID string) (err error) {
+func validateCredentials(auth interfaces.Auth) error {
+	if len(auth.Username) == 0 {
+		return fmt.Errorf("Username is missing")
+	}
+
+	if len(auth.Password) == 0 {
+		return fmt.Errorf("Password is missing")
+	}
+	return nil
+}
+
+func (c *Client) authenticate(requestID string) error {
 	auth := c.conn.GetAuth()
+	if err := validateCredentials(auth); err != nil {
+		return err
+	}
+
 	req, err := prepareAuthRequest(requestID, auth.Username, auth.Password)
 	if err != nil {
-		return
+		return err
 	}
 
 	msg, err := packageRequest(req)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 
 	c.dispatchRequest(msg)
-	return
+	return nil
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.

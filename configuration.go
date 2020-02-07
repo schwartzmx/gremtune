@@ -12,7 +12,7 @@ type DialerConfig func(*websocket)
 //SetAuthentication sets on dialer credentials for authentication
 func SetAuthentication(username string, password string) DialerConfig {
 	return func(ws *websocket) {
-		ws.auth = &interfaces.Auth{Username: username, Password: password}
+		ws.auth = interfaces.Auth{Username: username, Password: password}
 	}
 }
 

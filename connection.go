@@ -23,7 +23,9 @@ type websocket struct {
 
 	// conn is the actual connection
 	conn interfaces.WebsocketConnection
-	auth *interfaces.Auth
+
+	// auth auth information like username and password
+	auth interfaces.Auth
 
 	// disposed flags the websocket as
 	// 'has been closed and can't be reused'
@@ -180,10 +182,7 @@ func (ws *websocket) Close() error {
 	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, "")) //Cleanly close the connection with the server
 }
 
-func (ws *websocket) GetAuth() *interfaces.Auth {
-	if ws.auth == nil {
-		panic("You must create a Secure Dialer for authenticate with the server")
-	}
+func (ws *websocket) GetAuth() interfaces.Auth {
 	return ws.auth
 }
 

@@ -6,23 +6,16 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/schwartzmx/gremtune/interfaces"
 	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestPanicOnMissingAuthCredentials(t *testing.T) {
-	c := newClient(nil)
-	ws := &websocket{}
-	c.conn = ws
-
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fail()
-		}
-	}()
-
-	c.conn.GetAuth()
+func TestValidateCredentials(t *testing.T) {
+	assert.Error(t, validateCredentials(interfaces.Auth{}))
+	assert.Error(t, validateCredentials(interfaces.Auth{Username: "Hans"}))
+	assert.NoError(t, validateCredentials(interfaces.Auth{Username: "Hans", Password: "PW"}))
 }
 
 func TestNewClient(t *testing.T) {

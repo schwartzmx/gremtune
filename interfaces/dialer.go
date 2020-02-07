@@ -7,7 +7,7 @@ type Dialer interface {
 	Write([]byte) error
 	Read() (int, []byte, error)
 	Close() error
-	GetAuth() *Auth
+	GetAuth() Auth
 	Ping(errs chan error)
 	GetQuitChannel() <-chan struct{}
 }
