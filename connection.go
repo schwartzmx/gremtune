@@ -209,13 +209,16 @@ func (ws *websocket) Ping(errs chan error) {
 				errs <- err
 				connected = false
 			}
-			// FIXME: move it to a function (setIsConnected)
-			ws.mux.Lock()
-			ws.connected = connected
-			ws.mux.Unlock()
+			ws.setIsConnected(connected)
 
 		case <-ws.quit:
 			return
 		}
 	}
+}
+
+func (ws *websocket) setIsConnected(connected bool) {
+	ws.mux.Lock()
+	defer ws.mux.Unlock()
+	ws.connected = connected
 }
