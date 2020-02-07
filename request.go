@@ -16,12 +16,15 @@ type request struct {
 }
 
 // prepareRequest packages a query and binding into the format that Gremlin Server accepts
-func prepareRequest(query string) (req request, id string, err error) {
+func prepareRequest(query string) (request, string, error) {
 	var uuID uuid.UUID
-	uuID, _ = uuid.NewV4()
-	id = uuID.String()
+	uuID, err := uuid.NewV4()
+	if err != nil {
+		return request{}, "", err
+	}
 
-	req.RequestID = id
+	req := request{}
+	req.RequestID = uuID.String()
 	req.Op = "eval"
 	req.Processor = ""
 
@@ -29,16 +32,18 @@ func prepareRequest(query string) (req request, id string, err error) {
 	req.Args["language"] = "gremlin-groovy"
 	req.Args["gremlin"] = query
 
-	return
+	return req, req.RequestID, nil
 }
 
 // prepareRequest packages a query and binding into the format that Gremlin Server accepts
-func prepareRequestWithBindings(query string, bindings, rebindings map[string]string) (req request, id string, err error) {
-	var uuID uuid.UUID
-	uuID, _ = uuid.NewV4()
-	id = uuID.String()
+func prepareRequestWithBindings(query string, bindings, rebindings map[string]string) (request, string, error) {
+	uuID, err := uuid.NewV4()
+	if err != nil {
+		return request{}, "", err
+	}
 
-	req.RequestID = id
+	req := request{}
+	req.RequestID = uuID.String()
 	req.Op = "eval"
 	req.Processor = ""
 
@@ -48,11 +53,12 @@ func prepareRequestWithBindings(query string, bindings, rebindings map[string]st
 	req.Args["bindings"] = bindings
 	req.Args["rebindings"] = rebindings
 
-	return
+	return req, req.RequestID, nil
 }
 
 //prepareAuthRequest creates a ws request for Gremlin Server
-func prepareAuthRequest(requestID string, username string, password string) (req request, err error) {
+func prepareAuthRequest(requestID string, username string, password string) (request, error) {
+	req := request{}
 	req.RequestID = requestID
 	req.Op = "authentication"
 	req.Processor = "trasversal"
@@ -69,23 +75,26 @@ func prepareAuthRequest(requestID string, username string, password string) (req
 	req.Args = make(map[string]interface{})
 	req.Args["sasl"] = base64.StdEncoding.EncodeToString(simpleAuth)
 
-	return
+	return req, nil
 }
 
 // formatMessage takes a request type and formats it into being able to be delivered to Gremlin Server
-func packageRequest(req request) (msg []byte, err error) {
+func packageRequest(req request) ([]byte, error) {
 	j, err := json.Marshal(req) // Formats request into byte format
 	if err != nil {
-		return
+		return nil, err
 	}
 	mimeType := []byte("application/vnd.gremlin-v2.0+json")
-	msg = append([]byte{0x21}, mimeType...) //0x21 is the fixed length of mimeType in hex
+	mimetypelen := byte(len(mimeType))
+
+	//mimetypelen is the fixed length of mimeType in hex
+	msg := append([]byte{mimetypelen}, mimeType...)
 	msg = append(msg, j...)
 
-	return
+	return msg, nil
 }
 
-// dispactchRequest sends the request for writing to the remote Gremlin Server
+// dispatchRequest sends the request for writing to the remote Gremlin Server
 func (c *Client) dispatchRequest(msg []byte) {
 	c.requests <- msg
 }
