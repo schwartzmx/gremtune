@@ -22,14 +22,36 @@ type WebsocketConnection interface {
 
 // websocket is the dialer for a WebsocketConnection
 type websocket struct {
-	host         string
-	conn         WebsocketConnection
-	auth         *auth
-	disposed     bool
-	connected    bool
+	// the host to establish the connection with
+	// it is expected to specify the protocol as part of the host
+	// supported protocols are ws and wss
+	// example: ws://localhost:8182/gremlin
+	host string
+
+	// conn is the actual connection
+	conn WebsocketConnection
+	auth *auth
+
+	// disposed flags the websocket as
+	// 'has been closed and can't be reused'
+	disposed bool
+
+	// connected flags the websocket as connected or not connected
+	connected bool
+
+	// pingInterval is the interval that is used to check if the connection
+	// is still alive
 	pingInterval time.Duration
-	writingWait  time.Duration
-	readingWait  time.Duration
+
+	// writingWait is the maximum time a write operation will wait to start
+	// sending data on the socket. If this duration has been exceeded
+	// the operation will fail with an error.
+	writingWait time.Duration
+
+	// readingWait is the maximum time a read operation will wait until
+	// data is received on the socket. If this duration has been exceeded
+	// the operation will fail with an error.
+	readingWait time.Duration
 
 	// timeout for the initial handshake
 	timeout time.Duration
