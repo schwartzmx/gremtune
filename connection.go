@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	gorilla "github.com/gorilla/websocket"
-	"github.com/pkg/errors"
 )
 
 // WebsocketConnection is the minimal interface needed to act on a websocket
@@ -187,52 +186,6 @@ func (ws *websocket) ping(errs chan error) {
 
 		case <-ws.quit:
 			return
-		}
-	}
-}
-
-func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
-	for {
-		select {
-		case msg := <-c.requests:
-			c.Lock()
-			err := c.conn.write(msg)
-			if err != nil {
-				errs <- err
-				c.Errored = true
-				c.Unlock()
-				break
-			}
-			c.Unlock()
-
-		case <-quit:
-			return
-		}
-	}
-}
-
-func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
-	for {
-		msgType, msg, err := c.conn.read()
-		if msgType == -1 { // msgType == -1 is noFrame (close connection)
-			return
-		}
-		if err != nil {
-			errs <- errors.Wrapf(err, "Receive message type: %d", msgType)
-			c.Errored = true
-			break
-		}
-		if msg != nil {
-			// FIXME: At the moment the error returned by handle response is just ignored.
-			err = c.handleResponse(msg)
-			_ = err
-		}
-
-		select {
-		case <-quit:
-			return
-		default:
-			continue
 		}
 	}
 }

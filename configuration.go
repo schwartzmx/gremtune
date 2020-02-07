@@ -13,31 +13,31 @@ func SetAuthentication(username string, password string) DialerConfig {
 }
 
 //SetTimeout sets the dial handshake timeout
-func SetTimeout(seconds int) DialerConfig {
+func SetTimeout(timeout time.Duration) DialerConfig {
 	return func(ws *websocket) {
-		ws.timeout = time.Duration(seconds) * time.Second
+		ws.timeout = timeout
 	}
 }
 
 //SetPingInterval sets the interval of ping sending for know is
 //connection is alive and in consequence the client is connected
-func SetPingInterval(seconds int) DialerConfig {
+func SetPingInterval(interval time.Duration) DialerConfig {
 	return func(ws *websocket) {
-		ws.pingInterval = time.Duration(seconds) * time.Second
+		ws.pingInterval = interval
 	}
 }
 
 //SetWritingWait sets the time for waiting that writing occur
-func SetWritingWait(seconds int) DialerConfig {
+func SetWritingWait(wait time.Duration) DialerConfig {
 	return func(ws *websocket) {
-		ws.writingWait = time.Duration(seconds) * time.Second
+		ws.writingWait = wait
 	}
 }
 
 //SetReadingWait sets the time for waiting that reading occur
-func SetReadingWait(seconds int) DialerConfig {
+func SetReadingWait(wait time.Duration) DialerConfig {
 	return func(ws *websocket) {
-		ws.readingWait = time.Duration(seconds) * time.Second
+		ws.readingWait = wait
 	}
 }
 

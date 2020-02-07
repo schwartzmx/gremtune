@@ -193,6 +193,35 @@ func TestConnectCloseFail(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestPing(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedWebsocketConnection := mock_connection.NewMockWebsocketConnection(mockCtrl)
+	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+
+	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory), SetPingInterval(time.Millisecond*100))
+	require.NoError(t, err)
+	require.NotNil(t, dialer)
+
+	// WHEN
+	mockedWebsocketConnection.EXPECT().SetPongHandler(gomock.Any())
+	err = dialer.connect()
+	require.NoError(t, err)
+
+	mockedWebsocketConnection.EXPECT().WriteControl(gorilla.PingMessage, gomock.Any(), gomock.Any()).Return(nil)
+	mockedWebsocketConnection.EXPECT().WriteControl(gorilla.PingMessage, gomock.Any(), gomock.Any()).Return(fmt.Errorf("ERR")).AnyTimes()
+	errors := make(chan error, 5)
+	go dialer.ping(errors)
+
+	// wait a bit to allow the ping timer to tick
+	time.Sleep(time.Millisecond * 500)
+
+	// THEN
+	assert.False(t, dialer.IsConnected())
+	assert.NotEmpty(t, errors)
+}
+
 func newMockedDialerFactory(websocketConnection WebsocketConnection, fail bool) websocketDialerFactory {
 
 	dialerFuncSuccess := func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
