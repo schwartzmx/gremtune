@@ -39,3 +39,9 @@ type dialer interface {
 	getAuth() *auth
 	ping(errs chan error)
 }
+
+//Auth is the container for authentication data of dialer
+type auth struct {
+	username string
+	password string
+}

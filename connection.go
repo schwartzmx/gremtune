@@ -39,15 +39,11 @@ type websocket struct {
 
 	// channel for quit notification
 	quit chan struct{}
-	sync.RWMutex
+	mux  sync.RWMutex
 
+	// wsDialerFactory is a factory that creates
+	// dialers (functions that can establish a websocket connection)
 	wsDialerFactory websocketDialerFactory
-}
-
-//Auth is the container for authentication data of dialer
-type auth struct {
-	username string
-	password string
 }
 
 // NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
@@ -118,6 +114,9 @@ func (ws *websocket) connect() error {
 
 // IsConnected returns whether the underlying websocket is connected
 func (ws *websocket) IsConnected() bool {
+	ws.mux.RLock()
+	defer ws.mux.RUnlock()
+
 	return ws.connected && ws.conn != nil
 }
 
@@ -180,9 +179,9 @@ func (ws *websocket) ping(errs chan error) {
 				errs <- err
 				connected = false
 			}
-			ws.Lock()
+			ws.mux.Lock()
 			ws.connected = connected
-			ws.Unlock()
+			ws.mux.Unlock()
 
 		case <-ws.quit:
 			return
