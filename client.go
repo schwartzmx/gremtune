@@ -23,6 +23,7 @@ type Client struct {
 
 func newClient(dialer interfaces.Dialer) *Client {
 	return &Client{
+		conn:                   dialer,
 		requests:               make(chan []byte, 3), // c.requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
 		responses:              make(chan []byte, 3), // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
 		results:                &sync.Map{},
@@ -40,7 +41,7 @@ func Dial(conn interfaces.Dialer, errs chan error) (*Client, error) {
 		return nil, err
 	}
 
-	quit := conn.(*websocket).quit
+	quit := client.conn.GetQuitChannel()
 
 	go client.writeWorker(errs, quit)
 	go client.readWorker(errs, quit)
@@ -181,7 +182,7 @@ func (c *Client) Close() {
 	}
 }
 
-func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
+func (c *Client) writeWorker(errs chan error, quit <-chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
 	for {
 		select {
 		case msg := <-c.requests:
@@ -201,7 +202,7 @@ func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWork
 	}
 }
 
-func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
+func (c *Client) readWorker(errs chan error, quit <-chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
 	for {
 		msgType, msg, err := c.conn.Read()
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)

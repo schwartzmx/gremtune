@@ -127,6 +127,10 @@ func (ws *websocket) Connect() error {
 	return nil
 }
 
+func (ws *websocket) GetQuitChannel() <-chan struct{} {
+	return ws.quit
+}
+
 // IsConnected returns whether the underlying websocket is connected
 func (ws *websocket) IsConnected() bool {
 	ws.mux.RLock()

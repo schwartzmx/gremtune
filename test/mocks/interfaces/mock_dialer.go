@@ -144,3 +144,17 @@ func (mr *MockDialerMockRecorder) Ping(errs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockDialer)(nil).Ping), errs)
 }
+
+// GetQuitChannel mocks base method
+func (m *MockDialer) GetQuitChannel() <-chan struct{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetQuitChannel")
+	ret0, _ := ret[0].(<-chan struct{})
+	return ret0
+}
+
+// GetQuitChannel indicates an expected call of GetQuitChannel
+func (mr *MockDialerMockRecorder) GetQuitChannel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQuitChannel", reflect.TypeOf((*MockDialer)(nil).GetQuitChannel))
+}
