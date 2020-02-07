@@ -233,7 +233,8 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *Client) writeWorker(errs chan error, quit <-chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
+// writeWorker works on a loop and dispatches messages as soon as it receives them
+func (c *Client) writeWorker(errs chan error, quit <-chan struct{}) {
 	defer c.wg.Done()
 	for {
 		select {
@@ -254,22 +255,36 @@ func (c *Client) writeWorker(errs chan error, quit <-chan struct{}) { // writeWo
 	}
 }
 
-func (c *Client) readWorker(errs chan error, quit <-chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
+// readWorker works on a loop and sorts messages as soon as it receives them
+func (c *Client) readWorker(errs chan error, quit <-chan struct{}) {
 	defer c.wg.Done()
 	for {
 		msgType, msg, err := c.conn.Read()
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
+			errs <- fmt.Errorf("Received msgType == -1 this is no frame --> close the readworker")
+			c.Errored = true
+
+			// FIXME: This looks weird. In case a malformed package is sent here the readWorker
+			// is just closed. But what happens afterwards? No one is reading any more?!
+			// And the connection is not really closed. Hence no reconnect will happen.
+			// The only chance would be that the one who consumes the error messages
+			// of the error channel closes the connection immediately if an error arrives.
 			return
 		}
+
+		var errorToPost error
 		if err != nil {
-			errs <- errors.Wrapf(err, "Receive message type: %d", msgType)
-			c.Errored = true
-			break
+			errorToPost = err
+		} else if msg == nil {
+			errorToPost = fmt.Errorf("Receive message type: %d, but message was nil", msgType)
+		} else {
+			// handle the message
+			errorToPost = c.handleResponse(msg)
 		}
-		if msg != nil {
-			// FIXME: At the moment the error returned by handle response is just ignored.
-			err = c.handleResponse(msg)
-			_ = err
+
+		if errorToPost != nil {
+			errs <- errorToPost
+			c.Errored = true
 		}
 
 		select {

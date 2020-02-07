@@ -85,10 +85,13 @@ func (c *Client) saveResponse(resp Response, err error) {
 	newdata := append(container, resp)       // Create new data container with new data
 	c.results.Store(resp.RequestID, newdata) // Add new data to buffer for future retrieval
 
-	// FIXME: At the moment the case if the load or store was not successfull is not handled. The according return value is just ignored
+	// obtain or create (if needed) the error notification channel for the currently active response
 	respNotifier, _ := c.responseNotifier.LoadOrStore(resp.RequestID, make(chan error, 1))
-	// FIXME: At the moment the case if the load or store was not successfull is not handled. The according return value is just ignored
+	// obtain or create (if needed) the status notification channel for the currently active response
 	responseStatusNotifier, _ := c.responseStatusNotifier.LoadOrStore(resp.RequestID, make(chan int, 1))
+
+	// FIXME: This looks weird. the status code of the current response is only posted to the responseStatusNotifier channel
+	// if there is space left on the channel. If not then the status is just silently not posted (ignored).
 	if cap(responseStatusNotifier.(chan int)) > len(responseStatusNotifier.(chan int)) {
 		// Channel is not full so adding the response status to the channel else it will cause the method to wait till the response is read by requester
 		responseStatusNotifier.(chan int) <- resp.Status.Code
@@ -118,7 +121,7 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 		}
 		//Checks to see If there was an Error or full response has been provided by Neptune
 		if len(responseNotifier.(chan error)) > 0 {
-			//Checks to see If there was an Error or will get nil when final reponse has been provided by Neptune
+			//Checks to see If there was an Error or will get nil when final response has been provided by Neptune
 			err := <-responseNotifier.(chan error)
 			if dataI, ok := c.results.Load(id); ok {
 				d := dataI.([]interface{})
