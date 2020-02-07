@@ -50,9 +50,9 @@ type websocket struct {
 	readBufSize  int
 	writeBufSize int
 
-	// channel for quit notification
-	quit chan struct{}
-	mux  sync.RWMutex
+	// quitChannel channel for quit notification
+	quitChannel chan struct{}
+	mux         sync.RWMutex
 
 	// wsDialerFactory is a factory that creates
 	// dialers (functions that can establish a websocket connection)
@@ -67,7 +67,7 @@ func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) 
 		readingWait:     15 * time.Second,
 		connected:       false,
 		disposed:        false,
-		quit:            make(chan struct{}),
+		quitChannel:     make(chan struct{}),
 		readBufSize:     8192,
 		writeBufSize:    8192,
 		host:            host,
@@ -127,7 +127,7 @@ func (ws *websocket) Connect() error {
 }
 
 func (ws *websocket) GetQuitChannel() <-chan struct{} {
-	return ws.quit
+	return ws.quitChannel
 }
 
 // IsConnected returns whether the underlying websocket is connected
@@ -165,7 +165,7 @@ func (ws *websocket) Close() error {
 	defer func() {
 		// close the channel to send the quit notification
 		// to all workers
-		close(ws.quit)
+		close(ws.quitChannel)
 		if ws.conn != nil {
 			ws.conn.Close()
 		}

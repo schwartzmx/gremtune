@@ -25,6 +25,8 @@ type Client struct {
 	// pingInterval is the interval that is used to check if the connection
 	// is still alive
 	pingInterval time.Duration
+
+	wg sync.WaitGroup
 }
 
 func newClient(dialer interfaces.Dialer) *Client {
@@ -52,11 +54,13 @@ func Dial(conn interfaces.Dialer, errorChannel chan error) (*Client, error) {
 		return nil, err
 	}
 
-	quit := client.conn.GetQuitChannel()
+	quitChannel := client.conn.GetQuitChannel()
 
-	go client.writeWorker(errorChannel, quit)
-	go client.readWorker(errorChannel, quit)
-	go client.pingWorker(errorChannel, quit)
+	// Start all worker (run async)
+	client.wg.Add(3)
+	go client.writeWorker(errorChannel, quitChannel)
+	go client.readWorker(errorChannel, quitChannel)
+	go client.pingWorker(errorChannel, quitChannel)
 
 	return client, nil
 }
@@ -64,6 +68,7 @@ func Dial(conn interfaces.Dialer, errorChannel chan error) (*Client, error) {
 func (c *Client) pingWorker(errs chan error, quit <-chan struct{}) {
 	ticker := time.NewTicker(c.pingInterval)
 	defer ticker.Stop()
+	defer c.wg.Done()
 
 	for {
 		select {
@@ -75,7 +80,6 @@ func (c *Client) pingWorker(errs chan error, quit <-chan struct{}) {
 			return
 		}
 	}
-
 }
 
 func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) (resp []Response, err error) {
@@ -219,13 +223,18 @@ func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
 }
 
 // Close closes the underlying connection and marks the client as closed.
-func (c *Client) Close() {
-	if c.conn != nil {
-		c.conn.Close()
+func (c *Client) Close() error {
+	if c.conn == nil {
+		return fmt.Errorf("Connection is nil")
 	}
+	// wait for cleanup of all started go routines
+	defer c.wg.Wait()
+
+	return c.conn.Close()
 }
 
 func (c *Client) writeWorker(errs chan error, quit <-chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
+	defer c.wg.Done()
 	for {
 		select {
 		case msg := <-c.requests:
@@ -246,6 +255,7 @@ func (c *Client) writeWorker(errs chan error, quit <-chan struct{}) { // writeWo
 }
 
 func (c *Client) readWorker(errs chan error, quit <-chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
+	defer c.wg.Done()
 	for {
 		msgType, msg, err := c.conn.Read()
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
