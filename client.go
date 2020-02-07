@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/schwartzmx/gremtune/interfaces"
@@ -20,6 +21,10 @@ type Client struct {
 	responseStatusNotifier *sync.Map // responseStatusNotifier notifies the requester that a response has arrived for the request with the code
 	mux                    sync.RWMutex
 	Errored                bool
+
+	// pingInterval is the interval that is used to check if the connection
+	// is still alive
+	pingInterval time.Duration
 }
 
 func newClient(dialer interfaces.Dialer) *Client {
@@ -30,11 +35,16 @@ func newClient(dialer interfaces.Dialer) *Client {
 		results:                &sync.Map{},
 		responseNotifier:       &sync.Map{},
 		responseStatusNotifier: &sync.Map{},
+		pingInterval:           60 * time.Second,
 	}
 }
 
 // Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
-func Dial(conn interfaces.Dialer, errs chan error) (*Client, error) {
+func Dial(conn interfaces.Dialer, errorChannel chan error) (*Client, error) {
+
+	if conn == nil {
+		return nil, fmt.Errorf("Dialer is nil")
+	}
 	client := newClient(conn)
 
 	err := client.conn.Connect()
@@ -44,11 +54,28 @@ func Dial(conn interfaces.Dialer, errs chan error) (*Client, error) {
 
 	quit := client.conn.GetQuitChannel()
 
-	go client.writeWorker(errs, quit)
-	go client.readWorker(errs, quit)
-	go conn.Ping(errs)
+	go client.writeWorker(errorChannel, quit)
+	go client.readWorker(errorChannel, quit)
+	go client.pingWorker(errorChannel, quit)
 
 	return client, nil
+}
+
+func (c *Client) pingWorker(errs chan error, quit <-chan struct{}) {
+	ticker := time.NewTicker(c.pingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := c.conn.Ping(); err != nil {
+				errs <- err
+			}
+		case <-quit:
+			return
+		}
+	}
+
 }
 
 func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) (resp []Response, err error) {

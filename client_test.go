@@ -49,7 +49,7 @@ func TestDial(t *testing.T) {
 	// WHEN
 	mockedDialer.EXPECT().Connect().Return(nil)
 	mockedDialer.EXPECT().GetQuitChannel().Return(quitChannel)
-	mockedDialer.EXPECT().Ping(errorChannel)
+	//mockedDialer.EXPECT().Ping()
 	mockedDialer.EXPECT().Read().Return(-1, nil, fmt.Errorf("Read failed"))
 	mockedDialer.EXPECT().Close()
 	client, err := Dial(mockedDialer, errorChannel)
@@ -68,3 +68,34 @@ func TestDial(t *testing.T) {
 	assert.NotNil(t, client.responseStatusNotifier)
 	assert.False(t, client.Errored)
 }
+
+//func TestPing(t *testing.T) {
+//	// GIVEN
+//	mockCtrl := gomock.NewController(t)
+//	defer mockCtrl.Finish()
+//	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
+//	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+//	errorChannel := make(chan error, 5)
+//
+//	dialer, err := NewDialer("ws://localhost", errorChannel, websocketDialerFactoryFun(mockedDialerFactory), SetPingInterval(time.Millisecond*100))
+//	require.NoError(t, err)
+//	require.NotNil(t, dialer)
+//
+//	// WHEN
+//	mockedWebsocketConnection.EXPECT().SetPongHandler(gomock.Any())
+//	err = dialer.Connect()
+//	require.NoError(t, err)
+//
+//	mockedWebsocketConnection.EXPECT().WriteControl(gorilla.PingMessage, gomock.Any(), gomock.Any()).Return(nil)
+//	mockedWebsocketConnection.EXPECT().WriteControl(gorilla.PingMessage, gomock.Any(), gomock.Any()).Return(fmt.Errorf("ERR")).AnyTimes()
+//	mockedWebsocketConnection.EXPECT().Close().Return(nil)
+//	go dialer.Ping()
+//
+//	// wait a bit to allow the ping timer to tick
+//	time.Sleep(time.Millisecond * 500)
+//	dialer.Close()
+//
+//	// THEN
+//	assert.False(t, dialer.IsConnected())
+//	assert.NotEmpty(t, errorChannel)
+//}

@@ -25,7 +25,7 @@ func main() {
 	errs := make(chan error)
 	go panicOnErrorOnChannel(errs)
 
-	dialer, err := gremtune.NewDialer(hostURL, errs) // Returns a WebSocket dialer to connect to Gremlin Server
+	dialer, err := gremtune.NewDialer(hostURL) // Returns a WebSocket dialer to connect to Gremlin Server
 	if err != nil {
 		log.Fatalf("Failed to create the dialer: %s", err)
 	}

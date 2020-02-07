@@ -8,9 +8,8 @@ type Dialer interface {
 	Read() (int, []byte, error)
 	Close() error
 	GetAuth() Auth
-	Ping(errs chan error)
+	Ping() error
 	GetQuitChannel() <-chan struct{}
-	GetErrorChannel() chan error
 }
 
 //Auth is the container for authentication data of dialer

@@ -23,14 +23,6 @@ func SetTimeout(timeout time.Duration) DialerConfig {
 	}
 }
 
-//SetPingInterval sets the interval of ping sending for know is
-//connection is alive and in consequence the client is connected
-func SetPingInterval(interval time.Duration) DialerConfig {
-	return func(ws *websocket) {
-		ws.pingInterval = interval
-	}
-}
-
 //SetWritingWait sets the time for waiting that writing occur
 func SetWritingWait(wait time.Duration) DialerConfig {
 	return func(ws *websocket) {

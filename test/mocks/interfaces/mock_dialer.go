@@ -134,15 +134,17 @@ func (mr *MockDialerMockRecorder) GetAuth() *gomock.Call {
 }
 
 // Ping mocks base method
-func (m *MockDialer) Ping(errs chan error) {
+func (m *MockDialer) Ping() error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Ping", errs)
+	ret := m.ctrl.Call(m, "Ping")
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Ping indicates an expected call of Ping
-func (mr *MockDialerMockRecorder) Ping(errs interface{}) *gomock.Call {
+func (mr *MockDialerMockRecorder) Ping() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockDialer)(nil).Ping), errs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockDialer)(nil).Ping))
 }
 
 // GetQuitChannel mocks base method
@@ -157,18 +159,4 @@ func (m *MockDialer) GetQuitChannel() <-chan struct{} {
 func (mr *MockDialerMockRecorder) GetQuitChannel() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQuitChannel", reflect.TypeOf((*MockDialer)(nil).GetQuitChannel))
-}
-
-// GetErrorChannel mocks base method
-func (m *MockDialer) GetErrorChannel() chan error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetErrorChannel")
-	ret0, _ := ret[0].(chan error)
-	return ret0
-}
-
-// GetErrorChannel indicates an expected call of GetErrorChannel
-func (mr *MockDialerMockRecorder) GetErrorChannel() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetErrorChannel", reflect.TypeOf((*MockDialer)(nil).GetErrorChannel))
 }

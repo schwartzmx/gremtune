@@ -34,10 +34,6 @@ type websocket struct {
 	// connected flags the websocket as connected or not connected
 	connected bool
 
-	// pingInterval is the interval that is used to check if the connection
-	// is still alive
-	pingInterval time.Duration
-
 	// writingWait is the maximum time a write operation will wait to start
 	// sending data on the socket. If this duration has been exceeded
 	// the operation will fail with an error.
@@ -61,21 +57,17 @@ type websocket struct {
 	// wsDialerFactory is a factory that creates
 	// dialers (functions that can establish a websocket connection)
 	wsDialerFactory websocketDialerFactory
-
-	errorChannel chan error
 }
 
 // NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewDialer(host string, errorChannel chan error, configs ...DialerConfig) (interfaces.Dialer, error) {
+func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) {
 	createdWebsocket := &websocket{
 		timeout:         5 * time.Second,
-		pingInterval:    60 * time.Second,
 		writingWait:     15 * time.Second,
 		readingWait:     15 * time.Second,
 		connected:       false,
 		disposed:        false,
 		quit:            make(chan struct{}),
-		errorChannel:    errorChannel,
 		readBufSize:     8192,
 		writeBufSize:    8192,
 		host:            host,
@@ -103,15 +95,7 @@ func NewDialer(host string, errorChannel chan error, configs ...DialerConfig) (i
 		return nil, fmt.Errorf("The factory for websocket dialers is nil")
 	}
 
-	if createdWebsocket.errorChannel == nil {
-		return nil, fmt.Errorf("The error channel is nil")
-	}
-
 	return createdWebsocket, nil
-}
-
-func (ws *websocket) GetErrorChannel() chan error {
-	return ws.errorChannel
 }
 
 func (ws *websocket) Connect() error {
@@ -138,6 +122,7 @@ func (ws *websocket) Connect() error {
 	})
 
 	ws.connected = true
+
 	return nil
 }
 
@@ -149,7 +134,6 @@ func (ws *websocket) GetQuitChannel() <-chan struct{} {
 func (ws *websocket) IsConnected() bool {
 	ws.mux.RLock()
 	defer ws.mux.RUnlock()
-
 	return ws.connected && ws.conn != nil
 }
 
@@ -198,27 +182,19 @@ func (ws *websocket) GetAuth() interfaces.Auth {
 	return ws.auth
 }
 
-func (ws *websocket) Ping(errs chan error) {
-	ticker := time.NewTicker(ws.pingInterval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			connected := true
-			if err := ws.conn.WriteControl(gorilla.PingMessage, []byte{}, time.Now().Add(ws.writingWait)); err != nil {
-				errs <- err
-				connected = false
-			}
-			ws.setIsConnected(connected)
-
-		case <-ws.quit:
-			return
-		}
+func (ws *websocket) Ping() error {
+	if ws.conn == nil {
+		return fmt.Errorf("Not connected")
 	}
-}
 
-func (ws *websocket) setIsConnected(connected bool) {
+	connected := true
+	err := ws.conn.WriteControl(gorilla.PingMessage, []byte{}, time.Now().Add(ws.writingWait))
+	if err != nil {
+		connected = false
+	}
+
 	ws.mux.Lock()
 	defer ws.mux.Unlock()
 	ws.connected = connected
+	return err
 }

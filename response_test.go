@@ -16,9 +16,9 @@ var dummySuccessfulResponse = []byte(`{"result":{"data":[{"id": 2,"label": "pers
  "requestId":"1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
  "status":{"code":200,"attributes":{},"message":""}}`)
 
-var dummyNeedAuthenticationResponse = []byte(`{"result":{},
- "requestId":"1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
- "status":{"code":407,"attributes":{},"message":""}}`)
+//var dummyNeedAuthenticationResponse = []byte(`{"result":{},
+// "requestId":"1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
+// "status":{"code":407,"attributes":{},"message":""}}`)
 
 var dummySuccessfulResponseMarshalled = Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
@@ -26,23 +26,23 @@ var dummySuccessfulResponseMarshalled = Response{
 	Result:    Result{Data: []byte("testData")},
 }
 
-var dummyNeedAuthenticationResponseMarshalled = Response{
-	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
-	Status:    Status{Code: 407},
-	Result:    Result{Data: []byte("")},
-}
+//var dummyNeedAuthenticationResponseMarshalled = Response{
+//	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
+//	Status:    Status{Code: 407},
+//	Result:    Result{Data: []byte("")},
+//}
 
-var dummyPartialResponse1Marshalled = Response{
-	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
-	Status:    Status{Code: 206}, // Code 206 indicates that the response is not the terminating response in a sequence of responses
-	Result:    Result{Data: []byte("testPartialData1")},
-}
+//var dummyPartialResponse1Marshalled = Response{
+//	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
+//	Status:    Status{Code: 206}, // Code 206 indicates that the response is not the terminating response in a sequence of responses
+//	Result:    Result{Data: []byte("testPartialData1")},
+//}
 
-var dummyPartialResponse2Marshalled = Response{
-	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
-	Status:    Status{Code: 200},
-	Result:    Result{Data: []byte("testPartialData2")},
-}
+//var dummyPartialResponse2Marshalled = Response{
+//	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
+//	Status:    Status{Code: 200},
+//	Result:    Result{Data: []byte("testPartialData2")},
+//}
 
 // TestResponseHandling tests the overall response handling mechanism of gremtune
 func TestResponseHandling(t *testing.T) {
