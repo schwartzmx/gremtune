@@ -9,7 +9,11 @@ help: ## Prints the help
 
 build: sep ## Builds the library
 	@echo "--> Build"
-	@go build .
+	@go build -race .
+
+race: sep ## Runs all unit test with race condition detection activated
+	@echo "--> Run the unit-tests with race condition detection"
+	@go test -timeout 30s -race -run "^Test.*[^IT]$$"
 
 test: sep ## Runs all unittests and generates a coverage report.
 	@echo "--> Run the unit-tests"
@@ -21,7 +25,7 @@ test.integration: sep ## Runs all integration tests. As precondition a local gre
 
 bench: sep ## Execute benchmarks
 	@echo "--> Execute benchmarks"
-	@go test -timeout 30s -v -bench "BenchmarkPoolExecute.*"
+	@go test -race -timeout 30s -v -bench "BenchmarkPoolExecute.*"
 
 lint: ## Runs the linter to check for coding-style issues
 	@echo "--> Lint project"

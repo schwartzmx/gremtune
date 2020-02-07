@@ -39,6 +39,9 @@ jobs:
       - name: Run the unit tests
         run: make test
 
+      - name: Check for race conditions
+        run: make race
+
       - name: Start the local gremlin as preparation for the integration test and run the integration tests
         run: |
           make infra.up
