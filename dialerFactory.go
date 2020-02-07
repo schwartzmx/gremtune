@@ -5,10 +5,11 @@ import (
 	"time"
 
 	gorilla "github.com/gorilla/websocket"
+	"github.com/schwartzmx/gremtune/interfaces"
 )
 
 // websocketDialer is a function type for dialing/ connecting to a websocket server and creating a WebsocketConnection
-type websocketDialer func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error)
+type websocketDialer func(urlStr string, requestHeader http.Header) (interfaces.WebsocketConnection, *http.Response, error)
 
 // websocketDialerFactory is a function type that is able to create websocketDialer's
 type websocketDialerFactory func(writeBufferSize, readBufferSize int, handshakeTimout time.Duration) websocketDialer
@@ -24,24 +25,7 @@ var gorillaWebsocketDialerFactory = func(writeBufferSize, readBufferSize int, ha
 	}
 
 	// return the websocketDialer, wrapping the gorilla websocket dial call
-	return func(urlStr string, requestHeader http.Header) (WebsocketConnection, *http.Response, error) {
+	return func(urlStr string, requestHeader http.Header) (interfaces.WebsocketConnection, *http.Response, error) {
 		return dialer.Dial(urlStr, requestHeader)
 	}
-}
-
-type dialer interface {
-	connect() error
-	IsConnected() bool
-	IsDisposed() bool
-	write([]byte) error
-	read() (int, []byte, error)
-	close() error
-	getAuth() *auth
-	ping(errs chan error)
-}
-
-//Auth is the container for authentication data of dialer
-type auth struct {
-	username string
-	password string
 }

@@ -36,7 +36,8 @@ gen-mocks: sep ## Generates test doubles (mocks).
 	@echo "--> generate mocks (github.com/golang/mock/gomock is required for this)"
 	@go get github.com/golang/mock/gomock
 	@go install github.com/golang/mock/mockgen
-	@mockgen -source=connection.go -destination test/mocks/connection/mock_connection.go
+	@mockgen -source=interfaces/websocketConnection.go -destination test/mocks/interfaces/mock_websocketConnection.go
+	@mockgen -source=interfaces/dialer.go -destination test/mocks/interfaces/mock_dialer.go
 
 infra.up: ## Starts up the infra components
 	make -C infra up

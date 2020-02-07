@@ -1,6 +1,10 @@
 package gremtune
 
-import "time"
+import (
+	"time"
+
+	"github.com/schwartzmx/gremtune/interfaces"
+)
 
 //DialerConfig is the struct for defining configuration for WebSocket dialer
 type DialerConfig func(*websocket)
@@ -8,7 +12,7 @@ type DialerConfig func(*websocket)
 //SetAuthentication sets on dialer credentials for authentication
 func SetAuthentication(username string, password string) DialerConfig {
 	return func(ws *websocket) {
-		ws.auth = &auth{username: username, password: password}
+		ws.auth = &interfaces.Auth{Username: username, Password: password}
 	}
 }
 

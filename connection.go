@@ -8,17 +8,10 @@ import (
 
 	"sync"
 
+	"github.com/schwartzmx/gremtune/interfaces"
+
 	gorilla "github.com/gorilla/websocket"
 )
-
-// WebsocketConnection is the minimal interface needed to act on a websocket
-type WebsocketConnection interface {
-	SetPongHandler(handler func(appData string) error)
-	WriteMessage(messageType int, data []byte) error
-	ReadMessage() (messageType int, p []byte, err error)
-	Close() error
-	WriteControl(messageType int, data []byte, deadline time.Time) error
-}
 
 // websocket is the dialer for a WebsocketConnection
 type websocket struct {
@@ -29,8 +22,8 @@ type websocket struct {
 	host string
 
 	// conn is the actual connection
-	conn WebsocketConnection
-	auth *auth
+	conn interfaces.WebsocketConnection
+	auth *interfaces.Auth
 
 	// disposed flags the websocket as
 	// 'has been closed and can't be reused'
@@ -69,7 +62,7 @@ type websocket struct {
 }
 
 // NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
+func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) {
 	createdWebsocket := &websocket{
 		timeout:         5 * time.Second,
 		pingInterval:    60 * time.Second,
@@ -107,7 +100,7 @@ func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
 	return createdWebsocket, nil
 }
 
-func (ws *websocket) connect() error {
+func (ws *websocket) Connect() error {
 	if ws.disposed {
 		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused connect() -> close() -> connect() is not permitted")
 	}
@@ -147,11 +140,11 @@ func (ws *websocket) IsDisposed() bool {
 	return ws.disposed
 }
 
-func (ws *websocket) write(msg []byte) error {
+func (ws *websocket) Write(msg []byte) error {
 	return ws.conn.WriteMessage(2, msg)
 }
 
-func (ws *websocket) read() (msgType int, msg []byte, err error) {
+func (ws *websocket) Read() (msgType int, msg []byte, err error) {
 	return ws.conn.ReadMessage()
 }
 
@@ -161,7 +154,7 @@ func (ws *websocket) read() (msgType int, msg []byte, err error) {
 // Hence after closing a websocket one has to create a new one instead of
 // reusing the closed one and call connect on it.
 // Caution!: This method can only called once each second call will result in an error.
-func (ws *websocket) close() error {
+func (ws *websocket) Close() error {
 	if ws.disposed {
 		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused close() -> close() is not permitted")
 	}
@@ -183,14 +176,14 @@ func (ws *websocket) close() error {
 	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, "")) //Cleanly close the connection with the server
 }
 
-func (ws *websocket) getAuth() *auth {
+func (ws *websocket) GetAuth() *interfaces.Auth {
 	if ws.auth == nil {
 		panic("You must create a Secure Dialer for authenticate with the server")
 	}
 	return ws.auth
 }
 
-func (ws *websocket) ping(errs chan error) {
+func (ws *websocket) Ping(errs chan error) {
 	ticker := time.NewTicker(ws.pingInterval)
 	defer ticker.Stop()
 	for {

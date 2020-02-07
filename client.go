@@ -6,11 +6,12 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/schwartzmx/gremtune/interfaces"
 )
 
 // Client is a container for the gremtune client.
 type Client struct {
-	conn                   dialer
+	conn                   interfaces.Dialer
 	requests               chan []byte
 	responses              chan []byte
 	results                *sync.Map
@@ -20,7 +21,7 @@ type Client struct {
 	Errored                bool
 }
 
-func newClient() *Client {
+func newClient(dialer interfaces.Dialer) *Client {
 	return &Client{
 		requests:               make(chan []byte, 3), // c.requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
 		responses:              make(chan []byte, 3), // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
@@ -31,12 +32,10 @@ func newClient() *Client {
 }
 
 // Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
-func Dial(conn dialer, errs chan error) (*Client, error) {
-	client := newClient()
-	client.conn = conn
+func Dial(conn interfaces.Dialer, errs chan error) (*Client, error) {
+	client := newClient(conn)
 
-	// Connects to Gremlin Server
-	err := conn.connect()
+	err := client.conn.Connect()
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +44,7 @@ func Dial(conn dialer, errs chan error) (*Client, error) {
 
 	go client.writeWorker(errs, quit)
 	go client.readWorker(errs, quit)
-	go conn.ping(errs)
+	go conn.Ping(errs)
 
 	return client, nil
 }
@@ -102,8 +101,8 @@ func (c *Client) executeAsync(query string, bindings, rebindings *map[string]str
 }
 
 func (c *Client) authenticate(requestID string) (err error) {
-	auth := c.conn.getAuth()
-	req, err := prepareAuthRequest(requestID, auth.username, auth.password)
+	auth := c.conn.GetAuth()
+	req, err := prepareAuthRequest(requestID, auth.Username, auth.Password)
 	if err != nil {
 		return
 	}
@@ -178,7 +177,7 @@ func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
 // Close closes the underlying connection and marks the client as closed.
 func (c *Client) Close() {
 	if c.conn != nil {
-		c.conn.close()
+		c.conn.Close()
 	}
 }
 
@@ -187,7 +186,7 @@ func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWork
 		select {
 		case msg := <-c.requests:
 			c.mux.Lock()
-			err := c.conn.write(msg)
+			err := c.conn.Write(msg)
 			if err != nil {
 				errs <- err
 				c.Errored = true
@@ -204,7 +203,7 @@ func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWork
 
 func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
 	for {
-		msgType, msg, err := c.conn.read()
+		msgType, msg, err := c.conn.Read()
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
 			return
 		}
