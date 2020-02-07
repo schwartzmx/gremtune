@@ -158,3 +158,17 @@ func (mr *MockDialerMockRecorder) GetQuitChannel() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQuitChannel", reflect.TypeOf((*MockDialer)(nil).GetQuitChannel))
 }
+
+// GetErrorChannel mocks base method
+func (m *MockDialer) GetErrorChannel() chan error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetErrorChannel")
+	ret0, _ := ret[0].(chan error)
+	return ret0
+}
+
+// GetErrorChannel indicates an expected call of GetErrorChannel
+func (mr *MockDialerMockRecorder) GetErrorChannel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetErrorChannel", reflect.TypeOf((*MockDialer)(nil).GetErrorChannel))
+}

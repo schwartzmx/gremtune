@@ -61,17 +61,21 @@ type websocket struct {
 	// wsDialerFactory is a factory that creates
 	// dialers (functions that can establish a websocket connection)
 	wsDialerFactory websocketDialerFactory
+
+	errorChannel chan error
 }
 
 // NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) {
+func NewDialer(host string, errorChannel chan error, configs ...DialerConfig) (interfaces.Dialer, error) {
 	createdWebsocket := &websocket{
 		timeout:         5 * time.Second,
 		pingInterval:    60 * time.Second,
 		writingWait:     15 * time.Second,
 		readingWait:     15 * time.Second,
 		connected:       false,
+		disposed:        false,
 		quit:            make(chan struct{}),
+		errorChannel:    errorChannel,
 		readBufSize:     8192,
 		writeBufSize:    8192,
 		host:            host,
@@ -99,7 +103,15 @@ func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) 
 		return nil, fmt.Errorf("The factory for websocket dialers is nil")
 	}
 
+	if createdWebsocket.errorChannel == nil {
+		return nil, fmt.Errorf("The error channel is nil")
+	}
+
 	return createdWebsocket, nil
+}
+
+func (ws *websocket) GetErrorChannel() chan error {
+	return ws.errorChannel
 }
 
 func (ws *websocket) Connect() error {
@@ -197,6 +209,7 @@ func (ws *websocket) Ping(errs chan error) {
 				errs <- err
 				connected = false
 			}
+			// FIXME: move it to a function (setIsConnected)
 			ws.mux.Lock()
 			ws.connected = connected
 			ws.mux.Unlock()

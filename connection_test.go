@@ -15,7 +15,13 @@ import (
 )
 
 func TestNewDialer(t *testing.T) {
-	dialer, err := NewDialer("ws://localhost")
+	// GIVEN
+	errorChannel := make(chan error)
+
+	// WHEN
+	dialer, err := NewDialer("ws://localhost", errorChannel)
+
+	// THEN
 	assert.NotNil(t, dialer)
 	assert.NoError(t, err)
 }
@@ -23,22 +29,32 @@ func TestNewDialer(t *testing.T) {
 func TestNewDialerFail(t *testing.T) {
 
 	// WHEN - invalid host
-	dialer, err := NewDialer("invalid host")
+	errorChannel := make(chan error)
+	dialer, err := NewDialer("invalid host", errorChannel)
 	assert.Nil(t, dialer)
 	assert.Error(t, err)
 
 	// WHEN - read buffer invalid
-	dialer, err = NewDialer("ws://host", SetBufferSize(0, 10))
+	dialer, err = NewDialer("ws://host", errorChannel, SetBufferSize(0, 10))
 	assert.Nil(t, dialer)
 	assert.Error(t, err)
 
 	// WHEN - write buffer invalid
-	dialer, err = NewDialer("ws://host", SetBufferSize(10, 0))
+	dialer, err = NewDialer("ws://host", errorChannel, SetBufferSize(10, 0))
 	assert.Nil(t, dialer)
 	assert.Error(t, err)
 
 	// WHEN - dialerFactory is nil
-	dialer, err = NewDialer("ws://host", websocketDialerFactoryFun(nil))
+	dialer, err = NewDialer("ws://host", errorChannel, websocketDialerFactoryFun(nil))
+	assert.Nil(t, dialer)
+	assert.Error(t, err)
+
+	// WHEN - errorChannel is nil
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
+	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+	dialer, err = NewDialer("ws://host", nil, websocketDialerFactoryFun(mockedDialerFactory))
 	assert.Nil(t, dialer)
 	assert.Error(t, err)
 }
@@ -49,8 +65,9 @@ func TestConnect(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+	errorChannel := make(chan error)
 
-	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	dialer, err := NewDialer("ws://localhost", errorChannel, websocketDialerFactoryFun(mockedDialerFactory))
 	require.NoError(t, err)
 	require.NotNil(t, dialer)
 
@@ -69,8 +86,9 @@ func TestConnectFail(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, true)
+	errorChannel := make(chan error)
 
-	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	dialer, err := NewDialer("ws://localhost", errorChannel, websocketDialerFactoryFun(mockedDialerFactory))
 	require.NoError(t, err)
 	require.NotNil(t, dialer)
 
@@ -88,8 +106,9 @@ func TestConnectReconnect(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+	errorChannel := make(chan error)
 
-	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	dialer, err := NewDialer("ws://localhost", errorChannel, websocketDialerFactoryFun(mockedDialerFactory))
 	require.NoError(t, err)
 	require.NotNil(t, dialer)
 
@@ -116,8 +135,9 @@ func TestConnectClose(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+	errorChannel := make(chan error)
 
-	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	dialer, err := NewDialer("ws://localhost", errorChannel, websocketDialerFactoryFun(mockedDialerFactory))
 	require.NoError(t, err)
 	require.NotNil(t, dialer)
 
@@ -140,8 +160,9 @@ func TestConnectCloseOnNotConnectedWebsocket(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+	errorChannel := make(chan error)
 
-	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	dialer, err := NewDialer("ws://localhost", errorChannel, websocketDialerFactoryFun(mockedDialerFactory))
 	require.NoError(t, err)
 	require.NotNil(t, dialer)
 
@@ -158,8 +179,9 @@ func TestConnectCloseFail(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+	errorChannel := make(chan error)
 
-	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	dialer, err := NewDialer("ws://localhost", errorChannel, websocketDialerFactoryFun(mockedDialerFactory))
 	require.NoError(t, err)
 	require.NotNil(t, dialer)
 
@@ -186,8 +208,9 @@ func TestPing(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+	errorChannel := make(chan error)
 
-	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory), SetPingInterval(time.Millisecond*100))
+	dialer, err := NewDialer("ws://localhost", errorChannel, websocketDialerFactoryFun(mockedDialerFactory), SetPingInterval(time.Millisecond*100))
 	require.NoError(t, err)
 	require.NotNil(t, dialer)
 
