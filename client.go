@@ -224,6 +224,7 @@ func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
 
 // Close closes the underlying connection and marks the client as closed.
 func (c *Client) Close() error {
+
 	if c.conn == nil {
 		return fmt.Errorf("Connection is nil")
 	}

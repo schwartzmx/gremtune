@@ -54,7 +54,7 @@ func TestDial(t *testing.T) {
 	mockedDialer.EXPECT().Read().Return(1, nil, fmt.Errorf("Read failed")).AnyTimes()
 	mockedDialer.EXPECT().Close().Do(func() {
 		close(quitChannel)
-	})
+	}).Return(nil)
 	client, err := Dial(mockedDialer, errorChannel)
 	require.NotNil(t, client)
 	require.NoError(t, err)
@@ -153,9 +153,12 @@ func TestWriteWorkerFail(t *testing.T) {
 		conn:     mockedDialer,
 		requests: dataChannel,
 	}
+	wg := sync.WaitGroup{}
 	errorChannel := make(chan error)
 	var errors []error
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		// just consume the errors to avoid blocking
 		for err := range errorChannel {
 			errors = append(errors, err)
@@ -163,7 +166,6 @@ func TestWriteWorkerFail(t *testing.T) {
 	}()
 
 	quitChannel := make(chan struct{})
-	wg := sync.WaitGroup{}
 	packet := []byte("ABCDEFG")
 	numPackets := 10
 
@@ -171,25 +173,25 @@ func TestWriteWorkerFail(t *testing.T) {
 	mockedDialer.EXPECT().Write(packet).Return(fmt.Errorf("Write failed")).Times(numPackets)
 	mockedDialer.EXPECT().Close().DoAndReturn(func() {
 		close(quitChannel)
-		close(errorChannel)
 	}).Return(nil)
 
 	client.wg.Add(1)
 	go client.writeWorker(errorChannel, quitChannel)
 
 	// send some data on the channel
-	wg.Add(1)
+	//wg.Add(1)
 	go func() {
+		//	defer wg.Done()
 		for i := 0; i < numPackets; i++ {
 			dataChannel <- packet
 		}
-		wg.Done()
 	}()
 
 	// wait until data was written and consumed
-	wg.Wait()
 	time.Sleep(time.Millisecond * 100)
 	client.Close()
+	close(errorChannel)
+	wg.Wait()
 
 	// THEN
 	assert.Len(t, errors, numPackets)
