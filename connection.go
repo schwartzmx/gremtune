@@ -91,6 +91,10 @@ func NewDialer(host string, configs ...DialerConfig) (dialer, error) {
 }
 
 func (ws *websocket) connect() error {
+	if ws.disposed {
+		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused connect() -> close() -> connect() is not permitted")
+	}
+
 	// create the function that shall be used for dialing
 	dial := ws.wsDialerFactory(ws.writeBufSize, ws.readBufSize, ws.timeout)
 
@@ -115,7 +119,7 @@ func (ws *websocket) connect() error {
 
 // IsConnected returns whether the underlying websocket is connected
 func (ws *websocket) IsConnected() bool {
-	return ws.connected
+	return ws.connected && ws.conn != nil
 }
 
 // IsDisposed returns whether the underlying websocket is disposed
@@ -131,15 +135,31 @@ func (ws *websocket) read() (msgType int, msg []byte, err error) {
 	return ws.conn.ReadMessage()
 }
 
+// close closes the websocket
+// Caution!: After calling this function the whole websocket is invalid
+// since the internal quit channel is also closed and won't be recreated.
+// Hence after closing a websocket one has to create a new one instead of
+// reusing the closed one and call connect on it.
+// Caution!: This method can only called once each second call will result in an error.
 func (ws *websocket) close() error {
+	if ws.disposed {
+		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused close() -> close() is not permitted")
+	}
+
+	// clean up in any case
 	defer func() {
 		// close the channel to send the quit notification
 		// to all workers
 		close(ws.quit)
-		ws.conn.Close()
+		if ws.conn != nil {
+			ws.conn.Close()
+		}
 		ws.disposed = true
 	}()
 
+	if !ws.IsConnected() {
+		return nil
+	}
 	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, "")) //Cleanly close the connection with the server
 }
 
