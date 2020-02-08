@@ -105,13 +105,17 @@ func (c *Client) saveResponse(resp Response, err error) {
 	}
 }
 
-// retrieveResponseAsync retrieves the response saved by saveResponse and send the retrieved reponse to the channel .
+// retrieveResponseAsync retrieves the response saved by saveResponse and send the retrieved repose to the channel .
 func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResponse) {
 	var responseProcessedIndex int
 	responseNotifier, _ := c.responseNotifier.Load(id)
 	responseStatusNotifier, _ := c.responseStatusNotifier.Load(id)
+
 	for status := range responseStatusNotifier.(chan int) {
 		_ = status
+
+		// this block retrieves all but the last of the partial responses
+		// and sends it to the response channel
 		if dataI, ok := c.results.Load(id); ok {
 			d := dataI.([]interface{})
 			// Only retrieve all but one from the partial responses saved in results Map that are not sent to responseChannel
@@ -123,30 +127,38 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 				responseChannel <- asyncResponse
 			}
 		}
-		//Checks to see If there was an Error or full response has been provided by Neptune
-		if len(responseNotifier.(chan error)) > 0 {
-			//Checks to see If there was an Error or will get nil when final response has been provided by Neptune
-			err := <-responseNotifier.(chan error)
-			if dataI, ok := c.results.Load(id); ok {
-				d := dataI.([]interface{})
-				// Retrieve all the partial responses that are not sent to responseChannel
-				for i := responseProcessedIndex; i < len(d); i++ {
-					responseProcessedIndex++
-					asyncResponse := AsyncResponse{}
-					asyncResponse.Response = d[i].(Response)
-					//when final partial response it sent it also sends the error message if there was an error on the last partial response retrival
-					if responseProcessedIndex == len(d) && err != nil {
-						asyncResponse.ErrorMessage = err.Error()
-					}
-					// Send the Partial response object to the responseChannel
-					responseChannel <- asyncResponse
-				}
-			}
-			// All the Partial response object including the final one has been sent to the responseChannel
-			break
+
+		responseNotifierChannel := responseNotifier.(chan error)
+		// Checks to see If there was an Error or full response that has been provided by cosmos
+		// If not, then continue with consuming the other partial messages
+		if len(responseNotifierChannel) <= 0 {
+			continue
 		}
+
+		//Checks to see If there was an Error or will get nil when final response has been provided by cosmos
+		err := <-responseNotifierChannel
+
+		if dataI, ok := c.results.Load(id); ok {
+			d := dataI.([]interface{})
+			// Retrieve all the partial responses that are not sent to responseChannel
+			for i := responseProcessedIndex; i < len(d); i++ {
+				responseProcessedIndex++
+				asyncResponse := AsyncResponse{}
+				asyncResponse.Response = d[i].(Response)
+				//when final partial response it sent it also sends the error message if there was an error on the last partial response retrival
+				if responseProcessedIndex == len(d) && err != nil {
+					asyncResponse.ErrorMessage = err.Error()
+				}
+				// Send the Partial response object to the responseChannel
+				responseChannel <- asyncResponse
+			}
+		}
+		// All the Partial response object including the final one has been sent to the responseChannel
+		break
 	}
-	// All the Partial response object including the final one has been sent to the responseChannel so closing responseStatusNotifier, responseNotifier, responseChannel and removing all the reponse stored
+
+	// All the Partial response object including the final one has been sent to the responseChannel
+	// so closing responseStatusNotifier, responseNotifier, responseChannel and removing all the repose stored
 	close(responseStatusNotifier.(chan int))
 	close(responseNotifier.(chan error))
 	c.responseNotifier.Delete(id)

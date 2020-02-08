@@ -235,6 +235,28 @@ func TestResponseDeletion(t *testing.T) {
 	assert.False(t, ok)
 }
 
+func TestAsyncResponseRetrieval(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	c := newClient(mockedDialer)
+
+	c.saveResponse(dummyPartialResponse1Marshalled, nil)
+	c.saveResponse(dummyPartialResponse2Marshalled, nil)
+
+	responseChannel := make(chan AsyncResponse, 10)
+	c.retrieveResponseAsync(dummyPartialResponse1Marshalled.RequestID, responseChannel)
+
+	resp := <-responseChannel
+	expectedAsync := AsyncResponse{Response: dummyPartialResponse1Marshalled}
+	assert.Equal(t, expectedAsync, resp)
+
+	resp = <-responseChannel
+	expectedAsync = AsyncResponse{Response: dummyPartialResponse2Marshalled}
+	assert.Equal(t, expectedAsync, resp)
+}
+
 var codes = []struct {
 	code int
 }{
