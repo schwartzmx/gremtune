@@ -47,11 +47,11 @@ type Response struct {
 }
 
 // ToString returns a string representation of the Response struct
-func (r Response) ToString() string {
+func (r Response) String() string {
 	return fmt.Sprintf("Response \nRequestID: %v, \nStatus: {%#v}, \nResult: {%#v}\n", r.RequestID, r.Status, r.Result)
 }
 
-func (c *Client) handleResponse(msg []byte) (err error) {
+func (c *Client) handleResponse(msg []byte) error {
 	resp, err := marshalResponse(msg)
 
 	if resp.Status.Code == statusAuthenticate { //Server request authentication
@@ -59,7 +59,7 @@ func (c *Client) handleResponse(msg []byte) (err error) {
 	}
 
 	c.saveResponse(resp, err)
-	return
+	return err
 }
 
 // marshalResponse creates a response struct for every incoming response for further manipulation
@@ -96,6 +96,10 @@ func (c *Client) saveResponse(resp Response, err error) {
 		// Channel is not full so adding the response status to the channel else it will cause the method to wait till the response is read by requester
 		responseStatusNotifier.(chan int) <- resp.Status.Code
 	}
+
+	// post an error in case it is not a partial messsage.
+	// note that here the given error can be nil.
+	// this is the good case that just completes the retrieval of the response
 	if resp.Status.Code != statusPartialContent {
 		respNotifier.(chan error) <- err
 	}
@@ -152,25 +156,43 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 }
 
 // retrieveResponse retrieves the response saved by saveResponse.
-func (c *Client) retrieveResponse(id string) (data []Response, err error) {
-	resp, _ := c.responseNotifier.Load(id)
-	responseStatusNotifier, _ := c.responseStatusNotifier.Load(id)
-	err = <-resp.(chan error)
-	if err == nil {
-		if dataI, ok := c.results.Load(id); ok {
-			d := dataI.([]interface{})
-			data = make([]Response, len(d))
-			for i := range d {
-				data[i] = d[i].(Response)
-			}
-			close(resp.(chan error))
-			close(responseStatusNotifier.(chan int))
-			c.responseNotifier.Delete(id)
-			c.responseStatusNotifier.Delete(id)
-			c.deleteResponse(id)
-		}
+func (c *Client) retrieveResponse(id string) ([]Response, error) {
+	resp, ok := c.responseNotifier.Load(id)
+	if !ok {
+		return nil, fmt.Errorf("Response with id %s not found", id)
 	}
-	return
+
+	responseStatusNotifier, ok := c.responseStatusNotifier.Load(id)
+	if !ok {
+		return nil, fmt.Errorf("Response with id %s not found", id)
+	}
+
+	responseErrorChannel := resp.(chan error)
+	err := <-responseErrorChannel
+	if err != nil {
+		return nil, err
+	}
+
+	dataI, ok := c.results.Load(id)
+	if !ok {
+		return nil, fmt.Errorf("No result for response with id %s found", id)
+	}
+
+	// cast the given data into an array of Responses
+	d := dataI.([]interface{})
+	data := make([]Response, len(d))
+	for i := range d {
+		data[i] = d[i].(Response)
+	}
+
+	// cleanup
+	close(responseErrorChannel)
+	close(responseStatusNotifier.(chan int))
+	c.responseNotifier.Delete(id)
+	c.responseStatusNotifier.Delete(id)
+	c.deleteResponse(id)
+
+	return data, nil
 }
 
 // deleteRespones deletes the response from the container. Used for cleanup purposes by requester.
