@@ -14,6 +14,75 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func packedRequest2Request(packedRequest []byte) (request, error) {
+
+	// the actual request is prepended by the mimetype and its length
+	lenMimeType := len(MimeType)
+
+	// remove the mimetype and the byte that specifies the length of the mimetype
+	lenToRemove := lenMimeType + 1
+	requestData := packedRequest[lenToRemove:]
+
+	// now we have only the bytes of the request
+	// --> unmarshal it
+	result := request{}
+	if err := json.Unmarshal(requestData, &result); err != nil {
+		return request{}, err
+	}
+	return result, nil
+}
+
+func TestExecuteRequest(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	client := newClient(mockedDialer)
+
+	mockedDialer.EXPECT().IsDisposed().Return(false)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		resp, err := client.Execute("g.V()")
+		assert.NotEmpty(t, resp)
+		assert.NoError(t, err)
+	}()
+
+	// catch the request that should be send over the wire
+	requestToSend := <-client.requests
+	// convert it to a readable request
+	req, err := packedRequest2Request(requestToSend)
+	require.NoError(t, err)
+
+	// now create the according response
+	response := Response{RequestID: req.RequestID, Status: Status{Code: statusSuccess}}
+	packet, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	// now inject send the response
+	err = client.handleResponse(packet)
+	require.NoError(t, err)
+
+	// wait until the execution has been completed
+	wg.Wait()
+}
+
+func TestExecuteRequestFail(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	client := newClient(mockedDialer)
+
+	mockedDialer.EXPECT().IsDisposed().Return(true)
+
+	resp, err := client.Execute("g.V()")
+	assert.Empty(t, resp)
+	assert.Error(t, err)
+}
+
 func TestValidateCredentials(t *testing.T) {
 	assert.Error(t, validateCredentials(interfaces.Auth{}))
 	assert.Error(t, validateCredentials(interfaces.Auth{Username: "Hans"}))

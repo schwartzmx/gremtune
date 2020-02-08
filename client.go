@@ -82,31 +82,37 @@ func (c *Client) pingWorker(errs chan error, quit <-chan struct{}) {
 	}
 }
 
-func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) (resp []Response, err error) {
+func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) ([]Response, error) {
 	var req request
 	var id string
+	var err error
+
 	if bindings != nil && rebindings != nil {
 		req, id, err = prepareRequestWithBindings(query, *bindings, *rebindings)
 	} else {
 		req, id, err = prepareRequest(query)
 	}
+
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	msg, err := packageRequest(req)
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
+
 	c.responseNotifier.Store(id, make(chan error, 1))
 	c.responseStatusNotifier.Store(id, make(chan int, 1))
 	c.dispatchRequest(msg)
-	resp, err = c.retrieveResponse(id)
+
+	// this call blocks until the response has been retrieved from the server
+	resp, err := c.retrieveResponse(id)
+
 	if err != nil {
 		err = errors.Wrapf(err, "query: %s", query)
 	}
-	return
+	return resp, err
 }
 
 func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan AsyncResponse) (err error) {

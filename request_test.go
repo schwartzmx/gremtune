@@ -54,11 +54,10 @@ func TestRequestPackaging(t *testing.T) {
 
 	var expected []byte
 
-	mimetype := []byte("application/vnd.gremlin-v2.0+json")
-	mimetypelen := byte(len(mimetype))
+	mimetypelen := byte(len(MimeType))
 
 	expected = append(expected, mimetypelen)
-	expected = append(expected, mimetype...)
+	expected = append(expected, MimeType...)
 	expected = append(expected, j...)
 
 	assert.Equal(t, msg, expected)

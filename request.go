@@ -7,6 +7,9 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+// MimeType used for communication with the gremlin server.
+var MimeType = []byte("application/vnd.gremlin-v2.0+json")
+
 // request is a container for all evaluation request parameters to be sent to the Gremlin Server.
 type request struct {
 	RequestID string                 `json:"requestId"`
@@ -84,11 +87,10 @@ func packageRequest(req request) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	mimeType := []byte("application/vnd.gremlin-v2.0+json")
-	mimetypelen := byte(len(mimeType))
+	mimetypelen := byte(len(MimeType))
 
 	//mimetypelen is the fixed length of mimeType in hex
-	msg := append([]byte{mimetypelen}, mimeType...)
+	msg := append([]byte{mimetypelen}, MimeType...)
 	msg = append(msg, j...)
 
 	return msg, nil
