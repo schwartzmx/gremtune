@@ -32,6 +32,48 @@ func packedRequest2Request(packedRequest []byte) (request, error) {
 	return result, nil
 }
 
+func TestExecuteAsyncRequest(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	client := newClient(mockedDialer)
+
+	mockedDialer.EXPECT().IsDisposed().Return(false)
+
+	responseChannel := make(chan AsyncResponse)
+
+	err := client.ExecuteAsync("g.V()", responseChannel)
+	require.NoError(t, err)
+
+	// catch the request that should be send over the wire
+	requestToSend := <-client.requests
+	// convert it to a readable request
+	req, err := packedRequest2Request(requestToSend)
+	require.NoError(t, err)
+
+	// read back the response
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		response := <-responseChannel
+		assert.Equal(t, req.RequestID, response.Response.RequestID)
+	}()
+
+	// now create the according response
+	response := Response{RequestID: req.RequestID, Status: Status{Code: statusSuccess}}
+	packet, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	// now inject send the response
+	err = client.handleResponse(packet)
+	require.NoError(t, err)
+
+	// wait until the response was read
+	wg.Wait()
+}
+
 func TestExecuteRequest(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
