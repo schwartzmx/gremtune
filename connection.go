@@ -24,9 +24,6 @@ type websocket struct {
 	// conn is the actual connection
 	conn interfaces.WebsocketConnection
 
-	// auth auth information like username and password
-	auth interfaces.Auth
-
 	// disposed flags the websocket as
 	// 'has been closed and can't be reused'
 	disposed bool
@@ -217,10 +214,6 @@ func (ws *websocket) Close() error {
 	}
 	//Cleanly close the connection with the server
 	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, ""))
-}
-
-func (ws *websocket) GetAuth() interfaces.Auth {
-	return ws.auth
 }
 
 // Ping sends a websocket ping frame to the peer.

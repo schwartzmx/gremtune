@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/schwartzmx/gremtune/interfaces"
 	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -126,9 +125,9 @@ func TestExecuteRequestFail(t *testing.T) {
 }
 
 func TestValidateCredentials(t *testing.T) {
-	assert.Error(t, validateCredentials(interfaces.Auth{}))
-	assert.Error(t, validateCredentials(interfaces.Auth{Username: "Hans"}))
-	assert.NoError(t, validateCredentials(interfaces.Auth{Username: "Hans", Password: "PW"}))
+	assert.Error(t, validateCredentials(Auth{}))
+	assert.Error(t, validateCredentials(Auth{Username: "Hans"}))
+	assert.NoError(t, validateCredentials(Auth{Username: "Hans", Password: "PW"}))
 }
 
 func TestNewClient(t *testing.T) {

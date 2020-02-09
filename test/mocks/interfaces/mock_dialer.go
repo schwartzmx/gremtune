@@ -6,7 +6,6 @@ package mock_interfaces
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	interfaces "github.com/schwartzmx/gremtune/interfaces"
 	reflect "reflect"
 )
 
@@ -117,20 +116,6 @@ func (m *MockDialer) Close() error {
 func (mr *MockDialerMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockDialer)(nil).Close))
-}
-
-// GetAuth mocks base method
-func (m *MockDialer) GetAuth() interfaces.Auth {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAuth")
-	ret0, _ := ret[0].(interfaces.Auth)
-	return ret0
-}
-
-// GetAuth indicates an expected call of GetAuth
-func (mr *MockDialerMockRecorder) GetAuth() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuth", reflect.TypeOf((*MockDialer)(nil).GetAuth))
 }
 
 // Ping mocks base method

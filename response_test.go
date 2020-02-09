@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/schwartzmx/gremtune/interfaces"
 	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -75,11 +74,9 @@ func TestAuthRequested(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
-	c := newClient(mockedDialer)
-	auth := interfaces.Auth{Username: "test", Password: "test"}
+	c := newClient(mockedDialer, SetAuth("username", "password"))
 
 	// WHEN
-	mockedDialer.EXPECT().GetAuth().Return(auth)
 	err := c.handleResponse(dummyNeedAuthenticationResponse)
 
 	// THEN

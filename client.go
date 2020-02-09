@@ -22,15 +22,41 @@ type Client struct {
 	mux                    sync.RWMutex
 	Errored                bool
 
+	// auth auth information like username and password
+	auth Auth
+
 	// pingInterval is the interval that is used to check if the connection
-	// is still alive
+	// is still alive. The interval to send the ping frame to the peer.
 	pingInterval time.Duration
 
 	wg sync.WaitGroup
 }
 
-func newClient(dialer interfaces.Dialer) *Client {
-	return &Client{
+//Auth is the container for authentication data of dialer
+type Auth struct {
+	Username string
+	Password string
+}
+
+// ClientOption is the struct for defining optional parameters for the Client
+type ClientOption func(*Client)
+
+// SetAuth sets credentials for an authenticated connection
+func SetAuth(username string, password string) ClientOption {
+	return func(c *Client) {
+		c.auth = Auth{Username: username, Password: password}
+	}
+}
+
+// PingInterval sets the ping interval, which is the interval to send the ping frame to the peer
+func PingInterval(interval time.Duration) ClientOption {
+	return func(c *Client) {
+		c.pingInterval = interval
+	}
+}
+
+func newClient(dialer interfaces.Dialer, options ...ClientOption) *Client {
+	client := &Client{
 		conn:                   dialer,
 		requests:               make(chan []byte, 3), // c.requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
 		responses:              make(chan []byte, 3), // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
@@ -39,6 +65,12 @@ func newClient(dialer interfaces.Dialer) *Client {
 		responseStatusNotifier: &sync.Map{},
 		pingInterval:           60 * time.Second,
 	}
+
+	for _, opt := range options {
+		opt(client)
+	}
+
+	return client
 }
 
 // Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
@@ -139,7 +171,7 @@ func (c *Client) executeAsync(query string, bindings, rebindings *map[string]str
 	return
 }
 
-func validateCredentials(auth interfaces.Auth) error {
+func validateCredentials(auth Auth) error {
 	if len(auth.Username) == 0 {
 		return fmt.Errorf("Username is missing")
 	}
@@ -151,12 +183,11 @@ func validateCredentials(auth interfaces.Auth) error {
 }
 
 func (c *Client) authenticate(requestID string) error {
-	auth := c.conn.GetAuth()
-	if err := validateCredentials(auth); err != nil {
+	if err := validateCredentials(c.auth); err != nil {
 		return err
 	}
 
-	req, err := prepareAuthRequest(requestID, auth.Username, auth.Password)
+	req, err := prepareAuthRequest(requestID, c.auth.Username, c.auth.Password)
 	if err != nil {
 		return err
 	}
