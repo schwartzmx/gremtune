@@ -60,20 +60,6 @@ func (mr *MockDialerMockRecorder) IsConnected() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConnected", reflect.TypeOf((*MockDialer)(nil).IsConnected))
 }
 
-// IsDisposed mocks base method
-func (m *MockDialer) IsDisposed() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsDisposed")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsDisposed indicates an expected call of IsDisposed
-func (mr *MockDialerMockRecorder) IsDisposed() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDisposed", reflect.TypeOf((*MockDialer)(nil).IsDisposed))
-}
-
 // Write mocks base method
 func (m *MockDialer) Write(arg0 []byte) error {
 	m.ctrl.T.Helper()
@@ -130,18 +116,4 @@ func (m *MockDialer) Ping() error {
 func (mr *MockDialerMockRecorder) Ping() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockDialer)(nil).Ping))
-}
-
-// GetQuitChannel mocks base method
-func (m *MockDialer) GetQuitChannel() <-chan struct{} {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetQuitChannel")
-	ret0, _ := ret[0].(<-chan struct{})
-	return ret0
-}
-
-// GetQuitChannel indicates an expected call of GetQuitChannel
-func (mr *MockDialerMockRecorder) GetQuitChannel() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQuitChannel", reflect.TypeOf((*MockDialer)(nil).GetQuitChannel))
 }

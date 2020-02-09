@@ -24,10 +24,6 @@ type websocket struct {
 	// conn is the actual connection
 	conn interfaces.WebsocketConnection
 
-	// disposed flags the websocket as
-	// 'has been closed and can't be reused'
-	disposed bool
-
 	// connected flags the websocket as connected or not connected
 	connected bool
 
@@ -61,7 +57,6 @@ func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) 
 		writingWait:     15 * time.Second,
 		readingWait:     15 * time.Second,
 		connected:       false,
-		disposed:        false,
 		readBufSize:     8192,
 		writeBufSize:    8192,
 		host:            host,
@@ -102,15 +97,11 @@ func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) 
 // This function should not be called if the websocket is already disposed.
 // In case of an error it is safer to just create a new dialer via NewDialer
 func (ws *websocket) Connect() error {
-	if ws.disposed {
-		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused connect() -> close() -> connect() is not permitted")
-	}
 
 	// create the function that shall be used for dialing
 	dial := ws.wsDialerFactory(ws.writeBufSize, ws.readBufSize, ws.timeout)
 
 	conn, response, err := dial(ws.host, http.Header{})
-	ws.conn = conn
 	if err != nil {
 		ws.setConnected(false)
 
@@ -125,6 +116,7 @@ func (ws *websocket) Connect() error {
 		// Probably '/gremlin' has to be added to the used hostname
 		return fmt.Errorf("%s", errMsg)
 	}
+	ws.conn = conn
 
 	// Install the handler for pong messages from the peer.
 	// As stated in the documentation (see :https://github.com/gorilla/websocket/blob/master/conn.go#L1156)
@@ -155,9 +147,9 @@ func (ws *websocket) IsConnected() bool {
 
 // IsDisposed returns whether the underlying websocket is disposed or not.
 // Disposed websockets are dead, they can't be reused by calling Connect() again.
-func (ws *websocket) IsDisposed() bool {
-	return ws.disposed
-}
+//func (ws *websocket) IsDisposed() bool {
+//	return ws.disposed
+//}
 
 // Write writes the given data chunk on the socket
 func (ws *websocket) Write(msg []byte) error {
@@ -194,16 +186,12 @@ func (ws *websocket) Read() (messageType int, msg []byte, err error) {
 // reusing the closed one and call connect on it.
 // Caution!: This method can only called once. Each second call will result in an error.
 func (ws *websocket) Close() error {
-	if ws.disposed {
-		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused close() -> close() is not permitted")
-	}
 
 	// clean up in any case
 	defer func() {
 		if ws.conn != nil {
 			ws.conn.Close()
 		}
-		ws.disposed = true
 	}()
 
 	if !ws.IsConnected() {

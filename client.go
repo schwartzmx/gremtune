@@ -206,8 +206,8 @@ func (c *Client) authenticate(requestID string) error {
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
 func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []Response, err error) {
-	if c.conn.IsDisposed() {
-		return resp, errors.New("you cannot write on disposed connection")
+	if !c.conn.IsConnected() {
+		return resp, fmt.Errorf("Can't write - no connection")
 	}
 	resp, err = c.executeRequest(query, &bindings, &rebindings)
 	return
@@ -215,8 +215,8 @@ func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[stri
 
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
 func (c *Client) Execute(query string) (resp []Response, err error) {
-	if c.conn.IsDisposed() {
-		return resp, errors.New("you cannot write on disposed connection")
+	if !c.conn.IsConnected() {
+		return resp, fmt.Errorf("Can't write - no connection")
 	}
 	resp, err = c.executeRequest(query, nil, nil)
 	return
@@ -224,8 +224,8 @@ func (c *Client) Execute(query string) (resp []Response, err error) {
 
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
 func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) (err error) {
-	if c.conn.IsDisposed() {
-		return errors.New("you cannot write on disposed connection")
+	if !c.conn.IsConnected() {
+		return fmt.Errorf("Can't write - no connection")
 	}
 	err = c.executeAsync(query, nil, nil, responseChannel)
 	return
@@ -233,8 +233,8 @@ func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) 
 
 // ExecuteFileWithBindings takes a file path to a Gremlin script, sends it to Gremlin Server with bindings, and returns the result.
 func (c *Client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []Response, err error) {
-	if c.conn.IsDisposed() {
-		return resp, errors.New("you cannot write on disposed connection")
+	if !c.conn.IsConnected() {
+		return resp, fmt.Errorf("Can't write - no connection")
 	}
 	d, err := ioutil.ReadFile(path) // Read script from file
 	if err != nil {
@@ -248,8 +248,8 @@ func (c *Client) ExecuteFileWithBindings(path string, bindings, rebindings map[s
 
 // ExecuteFile takes a file path to a Gremlin script, sends it to Gremlin Server, and returns the result.
 func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
-	if c.conn.IsDisposed() {
-		return resp, errors.New("you cannot write on disposed connection")
+	if !c.conn.IsConnected() {
+		return resp, fmt.Errorf("Can't write - no connection")
 	}
 	d, err := ioutil.ReadFile(path) // Read script from file
 	if err != nil {

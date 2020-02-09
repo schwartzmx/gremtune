@@ -38,7 +38,7 @@ func TestExecuteAsyncRequest(t *testing.T) {
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	client := newClient(mockedDialer)
 
-	mockedDialer.EXPECT().IsDisposed().Return(false)
+	mockedDialer.EXPECT().IsConnected().Return(true)
 
 	responseChannel := make(chan AsyncResponse)
 
@@ -80,7 +80,7 @@ func TestExecuteRequest(t *testing.T) {
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	client := newClient(mockedDialer)
 
-	mockedDialer.EXPECT().IsDisposed().Return(false)
+	mockedDialer.EXPECT().IsConnected().Return(true)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -117,7 +117,7 @@ func TestExecuteRequestFail(t *testing.T) {
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	client := newClient(mockedDialer)
 
-	mockedDialer.EXPECT().IsDisposed().Return(true)
+	mockedDialer.EXPECT().IsConnected().Return(false)
 
 	resp, err := client.Execute("g.V()")
 	assert.Empty(t, resp)

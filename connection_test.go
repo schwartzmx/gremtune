@@ -157,34 +157,6 @@ func TestConnectCloseOnNotConnectedWebsocket(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestConnectCloseFail(t *testing.T) {
-	// GIVEN
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
-	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
-
-	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
-	require.NoError(t, err)
-	require.NotNil(t, dialer)
-
-	// WHEN connected
-	mockedWebsocketConnection.EXPECT().SetPongHandler(gomock.Any())
-	err = dialer.Connect()
-	require.NoError(t, err)
-
-	mockedWebsocketConnection.EXPECT().WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, "")).Return(nil)
-	mockedWebsocketConnection.EXPECT().Close()
-	err = dialer.Close()
-	require.NoError(t, err)
-
-	// WHEN close is called again on a disposed websocket
-	err = dialer.Close()
-
-	// THEN
-	assert.Error(t, err)
-}
-
 func TestPing(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
