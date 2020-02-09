@@ -13,14 +13,30 @@ import (
 
 // Client is a container for the gremtune client.
 type Client struct {
-	conn                   interfaces.Dialer
-	requests               chan []byte
-	responses              chan []byte
-	results                *sync.Map
-	responseNotifier       *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
-	responseStatusNotifier *sync.Map // responseStatusNotifier notifies the requester that a response has arrived for the request with the code
-	mux                    sync.RWMutex
-	Errored                bool
+	// conn is the entity that manages the websocket connection
+	conn interfaces.Dialer
+
+	// requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
+	requests chan []byte
+
+	// results is a container for the responses received from the peer.
+	// The responses are stored per request id.
+	// For each request (Id) there might be 0..n responses.
+	// <RequestID string,responses []Response>
+	results *sync.Map
+
+	// responseNotifier notifies the requester that a response has arrived for a specific request
+	// <RequestID string,errorChannel chan error>
+	// As notification object error is used.
+	// In case of an error an error is sent on the channel.
+	// !!! In case there is new (unprocessed) data available, nil is sent on the channel.
+	responseNotifier *sync.Map
+
+	// responseStatusNotifier notifies the requester that a response has arrived for a specific request with a specific (http like) status code
+	// <RequestID string,codeChannel chan int>
+	responseStatusNotifier *sync.Map
+
+	Errored bool
 
 	// auth auth information like username and password
 	auth Auth
@@ -29,7 +45,8 @@ type Client struct {
 	// is still alive. The interval to send the ping frame to the peer.
 	pingInterval time.Duration
 
-	wg sync.WaitGroup
+	wg  sync.WaitGroup
+	mux sync.RWMutex
 
 	// quitChannel channel to notify workers that they should stop
 	quitChannel chan struct{}
@@ -61,8 +78,7 @@ func PingInterval(interval time.Duration) ClientOption {
 func newClient(dialer interfaces.Dialer, options ...ClientOption) *Client {
 	client := &Client{
 		conn:                   dialer,
-		requests:               make(chan []byte, 3), // c.requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
-		responses:              make(chan []byte, 3), // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
+		requests:               make(chan []byte, 3),
 		results:                &sync.Map{},
 		responseNotifier:       &sync.Map{},
 		responseStatusNotifier: &sync.Map{},
