@@ -8,5 +8,4 @@ type Dialer interface {
 	Read() (int, []byte, error)
 	Close() error
 	Ping() error
-	GetQuitChannel() <-chan struct{}
 }

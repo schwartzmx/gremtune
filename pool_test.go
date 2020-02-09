@@ -4,17 +4,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPurge(t *testing.T) {
 	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+
 	n := time.Now()
 	// invalid has timedout and should be cleaned up
-	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Client: &Client{}}}
+	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Client: newClient(mockedDialer)}}
 	// valid has not yet timed out and should remain in the idle pool
-	valid := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Client: &Client{}}}
+	valid := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Client: newClient(mockedDialer)}}
 
 	// Pool has a 30 second timeout and an idle connection slice containing both
 	// the invalid and valid idle connections
@@ -22,6 +28,7 @@ func TestPurge(t *testing.T) {
 	assert.Len(t, p.idle, 2, "Expected 2 idle connections")
 
 	// WHEN
+	mockedDialer.EXPECT().Close()
 	p.purge()
 
 	// THEN
@@ -93,13 +100,17 @@ func TestFirst(t *testing.T) {
 
 func TestGetAndDial(t *testing.T) {
 	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+
 	n := time.Now()
 	pool := &Pool{IdleTimeout: time.Second * 30}
-	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Pool: pool, Client: &Client{}}}
+	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Pool: pool, Client: newClient(mockedDialer)}}
 	idle := []*idleConnection{invalid}
 	pool.idle = idle
 
-	client := &Client{}
+	client := newClient(mockedDialer)
 	pool.Dial = func() (*Client, error) {
 		return client, nil
 	}
@@ -108,6 +119,7 @@ func TestGetAndDial(t *testing.T) {
 	assert.Equal(t, invalid, pool.idle[0], "Expected invalid connection")
 
 	// WHEN
+	mockedDialer.EXPECT().Close()
 	conn, err := pool.Get()
 	assert.NoError(t, err)
 	assert.Len(t, pool.idle, 0, "Expected 0 idle connections")

@@ -30,6 +30,9 @@ type Client struct {
 	pingInterval time.Duration
 
 	wg sync.WaitGroup
+
+	// quitChannel channel to notify workers that they should stop
+	quitChannel chan struct{}
 }
 
 //Auth is the container for authentication data of Client
@@ -64,6 +67,7 @@ func newClient(dialer interfaces.Dialer, options ...ClientOption) *Client {
 		responseNotifier:       &sync.Map{},
 		responseStatusNotifier: &sync.Map{},
 		pingInterval:           60 * time.Second,
+		quitChannel:            make(chan struct{}),
 	}
 
 	for _, opt := range options {
@@ -86,13 +90,11 @@ func Dial(conn interfaces.Dialer, errorChannel chan error) (*Client, error) {
 		return nil, err
 	}
 
-	quitChannel := client.conn.GetQuitChannel()
-
 	// Start all worker (run async)
 	client.wg.Add(3)
-	go client.writeWorker(errorChannel, quitChannel)
-	go client.readWorker(errorChannel, quitChannel)
-	go client.pingWorker(errorChannel, quitChannel)
+	go client.writeWorker(errorChannel, client.quitChannel)
+	go client.readWorker(errorChannel, client.quitChannel)
+	go client.pingWorker(errorChannel, client.quitChannel)
 
 	return client, nil
 }
@@ -261,6 +263,9 @@ func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
 
 // Close closes the underlying connection and marks the client as closed.
 func (c *Client) Close() error {
+
+	// notify the workers to stop working
+	close(c.quitChannel)
 
 	if c.conn == nil {
 		return fmt.Errorf("Connection is nil")

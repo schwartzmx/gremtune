@@ -165,7 +165,6 @@ func TestDial(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Connect().Return(nil)
-	mockedDialer.EXPECT().GetQuitChannel().Return(quitChannel)
 	mockedDialer.EXPECT().Read().Return(1, nil, fmt.Errorf("Read failed")).AnyTimes()
 	mockedDialer.EXPECT().Close().Do(func() {
 		close(quitChannel)
@@ -192,22 +191,16 @@ func TestPingWorker(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
-	client := &Client{
-		conn:         mockedDialer,
-		pingInterval: time.Millisecond * 100,
-	}
+	client := newClient(mockedDialer, PingInterval(time.Millisecond*100))
 	errorChannel := make(chan error, 5)
-	quitChannel := make(chan struct{})
 
 	// WHEN
 	mockedDialer.EXPECT().Ping().Return(nil)
 	mockedDialer.EXPECT().Ping().Return(fmt.Errorf("Error")).AnyTimes()
-	mockedDialer.EXPECT().Close().DoAndReturn(func() {
-		close(quitChannel)
-	}).Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil)
 
 	client.wg.Add(1)
-	go client.pingWorker(errorChannel, quitChannel)
+	go client.pingWorker(errorChannel, client.quitChannel)
 
 	time.Sleep(time.Millisecond * 500)
 	client.Close()
@@ -222,24 +215,20 @@ func TestWriteWorker(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	dataChannel := make(chan []byte)
-	client := &Client{
-		conn:     mockedDialer,
-		requests: dataChannel,
-	}
+	client := newClient(mockedDialer)
+	client.requests = dataChannel
 	errorChannel := make(chan error)
-	quitChannel := make(chan struct{})
+
 	wg := sync.WaitGroup{}
 	packet := []byte("ABCDEFG")
 	numPackets := 10
 
 	// WHEN
 	mockedDialer.EXPECT().Write(packet).Return(nil).Times(numPackets)
-	mockedDialer.EXPECT().Close().DoAndReturn(func() {
-		close(quitChannel)
-	}).Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil)
 
 	client.wg.Add(1)
-	go client.writeWorker(errorChannel, quitChannel)
+	go client.writeWorker(errorChannel, client.quitChannel)
 
 	// send some data on the channel
 	wg.Add(1)
@@ -265,10 +254,9 @@ func TestWriteWorkerFail(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	dataChannel := make(chan []byte, 11)
-	client := &Client{
-		conn:     mockedDialer,
-		requests: dataChannel,
-	}
+	client := newClient(mockedDialer)
+	client.requests = dataChannel
+
 	wg := sync.WaitGroup{}
 	errorChannel := make(chan error)
 	var errors []error
@@ -281,18 +269,15 @@ func TestWriteWorkerFail(t *testing.T) {
 		}
 	}()
 
-	quitChannel := make(chan struct{})
 	packet := []byte("ABCDEFG")
 	numPackets := 10
 
 	// WHEN
 	mockedDialer.EXPECT().Write(packet).Return(fmt.Errorf("Write failed")).Times(numPackets)
-	mockedDialer.EXPECT().Close().DoAndReturn(func() {
-		close(quitChannel)
-	}).Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil)
 
 	client.wg.Add(1)
-	go client.writeWorker(errorChannel, quitChannel)
+	go client.writeWorker(errorChannel, client.quitChannel)
 
 	// send some data on the channel
 	//wg.Add(1)
@@ -319,26 +304,19 @@ func TestReadWorker(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
-	client := &Client{
-		conn:                   mockedDialer,
-		responseNotifier:       &sync.Map{},
-		responseStatusNotifier: &sync.Map{},
-		results:                &sync.Map{},
-	}
+	client := newClient(mockedDialer)
+
 	errorChannel := make(chan error, 1)
-	quitChannel := make(chan struct{})
 	response := Response{RequestID: "ABCDEF", Status: Status{Code: statusSuccess}}
 	packet, err := json.Marshal(response)
 	require.NoError(t, err)
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(1, packet, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().DoAndReturn(func() {
-		close(quitChannel)
-	}).Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil)
 
 	client.wg.Add(1)
-	go client.readWorker(errorChannel, quitChannel)
+	go client.readWorker(errorChannel, client.quitChannel)
 	client.Close()
 
 	// THEN
@@ -354,26 +332,19 @@ func TestReadWorkerFailOnInvalidResponse(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
-	client := &Client{
-		conn:                   mockedDialer,
-		responseNotifier:       &sync.Map{},
-		responseStatusNotifier: &sync.Map{},
-		results:                &sync.Map{},
-	}
+	client := newClient(mockedDialer)
+
 	errorChannel := make(chan error, 1)
-	quitChannel := make(chan struct{})
 	response := Response{RequestID: "ABCDEF", Status: Status{Code: statusMalformedRequest}}
 	packet, err := json.Marshal(response)
 	require.NoError(t, err)
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(1, packet, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().DoAndReturn(func() {
-		close(quitChannel)
-	}).Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil)
 
 	client.wg.Add(1)
-	go client.readWorker(errorChannel, quitChannel)
+	go client.readWorker(errorChannel, client.quitChannel)
 	client.Close()
 
 	// THEN
@@ -386,23 +357,16 @@ func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
-	client := &Client{
-		conn:                   mockedDialer,
-		responseNotifier:       &sync.Map{},
-		responseStatusNotifier: &sync.Map{},
-		results:                &sync.Map{},
-	}
+	client := newClient(mockedDialer)
+
 	errorChannel := make(chan error, 1)
-	quitChannel := make(chan struct{})
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(-1, nil, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().DoAndReturn(func() {
-		close(quitChannel)
-	}).Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil)
 
 	client.wg.Add(1)
-	go client.readWorker(errorChannel, quitChannel)
+	go client.readWorker(errorChannel, client.quitChannel)
 	client.Close()
 
 	// THEN
