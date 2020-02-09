@@ -250,6 +250,67 @@ func TestRead(t *testing.T) {
 	assert.Equal(t, datalen, nBytes)
 }
 
+func TestMultiReconnectAndParallelRead(t *testing.T) {
+	// This test shall ensure that there are no race conditions when creating and reading from a connection.
+	// Hence it should be run with -race.
+	// The test reconnects multiple times and checks for the connection in parallel.
+
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
+	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+
+	dialer, err := NewDialer("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	require.NoError(t, err)
+	require.NotNil(t, dialer)
+
+	// WHEN - multiple reconnects and parallel checks
+	mockedWebsocketConnection.EXPECT().SetReadDeadline(gomock.Any()).AnyTimes()
+	mockedWebsocketConnection.EXPECT().SetWriteDeadline(gomock.Any()).AnyTimes()
+	mockedWebsocketConnection.EXPECT().WriteControl(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockedWebsocketConnection.EXPECT().ReadMessage().AnyTimes()
+	mockedWebsocketConnection.EXPECT().WriteMessage(gomock.Any(), gomock.Any()).AnyTimes()
+
+	quitChannel := make(chan struct{})
+	// parallel checker
+	go func() {
+		for {
+			dialer.IsConnected()
+			select {
+			case <-quitChannel:
+				return
+			default:
+				continue
+			}
+		}
+	}()
+	// parallel read, ping write
+	go func() {
+		for {
+			err := dialer.Ping()
+			require.NoError(t, err)
+			_, _, err = dialer.Read()
+			require.NoError(t, err)
+			err = dialer.Write([]byte("HUHU"))
+			require.NoError(t, err)
+			select {
+			case <-quitChannel:
+				return
+			default:
+				continue
+			}
+		}
+	}()
+
+	for i := 0; i < 100; i++ {
+		mockedWebsocketConnection.EXPECT().SetPongHandler(gomock.Any())
+		require.NoError(t, dialer.Connect())
+		require.True(t, dialer.IsConnected())
+	}
+	close(quitChannel)
+}
+
 func newMockedDialerFactory(websocketConnection interfaces.WebsocketConnection, fail bool) websocketDialerFactory {
 
 	dialerFuncSuccess := func(urlStr string, requestHeader http.Header) (interfaces.WebsocketConnection, *http.Response, error) {
