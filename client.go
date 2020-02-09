@@ -32,7 +32,7 @@ type Client struct {
 	wg sync.WaitGroup
 }
 
-//Auth is the container for authentication data of dialer
+//Auth is the container for authentication data of Client
 type Auth struct {
 	Username string
 	Password string

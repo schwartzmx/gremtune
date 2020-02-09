@@ -92,9 +92,18 @@ func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) 
 		return nil, fmt.Errorf("The factory for websocket dialers is nil")
 	}
 
+	// TODO: Check if it makes more sense to call Connect() at this point.
+	// Anyway Connect() should only be called once. Hence it could be refactored
+	// to an internal function which is called right when the dialer is created.
+	// But probably one want's to create a dialer and then want's to do a delayed connect (e.g. pool)?!
+	// This allows the separation of dialer:= NewDialer() and Dial(dialer)
 	return createdWebsocket, nil
 }
 
+// Connect connects to the peer and actually opens the connection.
+// This function has to be called before writing/ reading from/ to the socket.
+// This function should not be called if the websocket is already disposed.
+// In case of an error it is safer to just create a new dialer via NewDialer
 func (ws *websocket) Connect() error {
 	if ws.disposed {
 		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused connect() -> close() -> connect() is not permitted")
