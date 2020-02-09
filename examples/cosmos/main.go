@@ -42,12 +42,12 @@ func main() {
 	errs := make(chan error)
 	go panicOnErrorOnChannel(errs)
 
-	dialer, err := gremtune.NewDialer(host, gremtune.SetAuthentication(username, password))
+	dialer, err := gremtune.NewDialer(host)
 	if err != nil {
 		log.Fatalf("Failed to create the dialer: %s", err)
 	}
 
-	gremlinClient, err := gremtune.Dial(dialer, errs) // Returns a gremtune client to interact with
+	gremlinClient, err := gremtune.Dial(dialer, errs, gremtune.SetAuth(username, password)) // Returns a gremtune client to interact with
 	if err != nil {
 		log.Fatalf("Failed to create the gremlin client: %s", err)
 	}

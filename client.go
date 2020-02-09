@@ -78,12 +78,12 @@ func newClient(dialer interfaces.Dialer, options ...ClientOption) *Client {
 }
 
 // Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
-func Dial(conn interfaces.Dialer, errorChannel chan error) (*Client, error) {
+func Dial(conn interfaces.Dialer, errorChannel chan error, options ...ClientOption) (*Client, error) {
 
 	if conn == nil {
 		return nil, fmt.Errorf("Dialer is nil")
 	}
-	client := newClient(conn)
+	client := newClient(conn, options...)
 
 	err := client.conn.Connect()
 	if err != nil {
