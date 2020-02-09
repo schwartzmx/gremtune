@@ -164,6 +164,12 @@ func (ws *websocket) IsDisposed() bool {
 
 // Write writes the given data chunk on the socket
 func (ws *websocket) Write(msg []byte) error {
+
+	// ensure to not block forever
+	if err := ws.conn.SetWriteDeadline(time.Now().Add(ws.writingWait)); err != nil {
+		return err
+	}
+
 	return ws.conn.WriteMessage(gorilla.BinaryMessage, msg)
 }
 
@@ -175,6 +181,12 @@ func (ws *websocket) Write(msg []byte) error {
 // - gorilla.PingMessage
 // - gorilla.PongMessage
 func (ws *websocket) Read() (messageType int, msg []byte, err error) {
+
+	// ensure to not block forever
+	if err := ws.conn.SetReadDeadline(time.Now().Add(ws.readingWait)); err != nil {
+		return 0, nil, err
+	}
+
 	return ws.conn.ReadMessage()
 }
 

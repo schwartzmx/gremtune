@@ -235,6 +235,49 @@ func TestPingFailWhenNotConnected(t *testing.T) {
 	assert.False(t, dialer.IsConnected())
 }
 
+func TestWrite(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
+	dialer := &websocket{
+		conn:      mockedWebsocketConnection,
+		connected: true,
+	}
+	data := []byte("hello")
+
+	// WHEN
+	mockedWebsocketConnection.EXPECT().SetWriteDeadline(gomock.Any()).Return(nil)
+	mockedWebsocketConnection.EXPECT().WriteMessage(gorilla.BinaryMessage, data).Return(nil)
+	err := dialer.Write(data)
+
+	// THEN
+	assert.NoError(t, err)
+}
+
+func TestRead(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
+	dialer := &websocket{
+		conn:      mockedWebsocketConnection,
+		connected: true,
+	}
+	data := []byte("hello")
+	datalen := len(data)
+
+	// WHEN
+	mockedWebsocketConnection.EXPECT().SetReadDeadline(gomock.Any()).Return(nil)
+	mockedWebsocketConnection.EXPECT().ReadMessage().Return(datalen, data, nil)
+	nBytes, dataReceived, err := dialer.Read()
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Equal(t, data, dataReceived)
+	assert.Equal(t, datalen, nBytes)
+}
+
 func newMockedDialerFactory(websocketConnection interfaces.WebsocketConnection, fail bool) websocketDialerFactory {
 
 	dialerFuncSuccess := func(urlStr string, requestHeader http.Header) (interfaces.WebsocketConnection, *http.Response, error) {

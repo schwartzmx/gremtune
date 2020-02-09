@@ -9,4 +9,6 @@ type WebsocketConnection interface {
 	ReadMessage() (messageType int, p []byte, err error)
 	Close() error
 	WriteControl(messageType int, data []byte, deadline time.Time) error
+	SetReadDeadline(t time.Time) error
+	SetWriteDeadline(t time.Time) error
 }
