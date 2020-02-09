@@ -97,6 +97,6 @@ func packageRequest(req request) ([]byte, error) {
 }
 
 // dispatchRequest sends the request for writing to the remote Gremlin Server
-func (c *Client) dispatchRequest(msg []byte) {
+func (c *clientImpl) dispatchRequest(msg []byte) {
 	c.requests <- msg
 }

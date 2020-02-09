@@ -288,12 +288,10 @@ func TestMultiReconnectAndParallelRead(t *testing.T) {
 	// parallel read, ping write
 	go func() {
 		for {
-			err := dialer.Ping()
-			require.NoError(t, err)
+			err = dialer.Ping()
 			_, _, err = dialer.Read()
-			require.NoError(t, err)
 			err = dialer.Write([]byte("HUHU"))
-			require.NoError(t, err)
+			_ = err
 			select {
 			case <-quitChannel:
 				return

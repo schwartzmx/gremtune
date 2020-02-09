@@ -147,7 +147,7 @@ func TestNewClient(t *testing.T) {
 	assert.NotNil(t, client.results)
 	assert.NotNil(t, client.responseNotifier)
 	assert.NotNil(t, client.responseStatusNotifier)
-	assert.False(t, client.Errored)
+	assert.False(t, client.HadError())
 }
 
 func TestDial(t *testing.T) {
@@ -239,7 +239,7 @@ func TestWriteWorker(t *testing.T) {
 
 	// THEN
 	assert.Empty(t, errorChannel)
-	assert.False(t, client.Errored)
+	assert.False(t, client.HadError())
 }
 
 func TestWriteWorkerFail(t *testing.T) {
@@ -290,7 +290,7 @@ func TestWriteWorkerFail(t *testing.T) {
 
 	// THEN
 	assert.Len(t, errors, numPackets)
-	assert.True(t, client.Errored)
+	assert.True(t, client.HadError())
 }
 
 func TestReadWorker(t *testing.T) {
@@ -315,7 +315,7 @@ func TestReadWorker(t *testing.T) {
 
 	// THEN
 	assert.Empty(t, errorChannel)
-	assert.False(t, client.Errored)
+	assert.False(t, client.HadError())
 	assert.NotEmpty(t, client.results)
 	_, ok := client.results.Load(response.RequestID)
 	assert.True(t, ok)
@@ -343,7 +343,7 @@ func TestReadWorkerFailOnInvalidResponse(t *testing.T) {
 
 	// THEN
 	assert.NotEmpty(t, errorChannel)
-	assert.True(t, client.Errored)
+	assert.True(t, client.HadError())
 }
 
 func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
@@ -365,5 +365,5 @@ func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
 
 	// THEN
 	assert.NotEmpty(t, errorChannel)
-	assert.True(t, client.Errored)
+	assert.True(t, client.HadError())
 }
