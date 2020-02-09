@@ -15,13 +15,14 @@ func TestPurge(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	mockedClientInvalid := mock_interfaces.NewMockClient(mockCtrl)
+	mockedClientValid := mock_interfaces.NewMockClient(mockCtrl)
 
 	n := time.Now()
 	// invalid has timedout and should be cleaned up
-	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Client: newClient(mockedDialer)}}
+	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Client: mockedClientInvalid}}
 	// valid has not yet timed out and should remain in the idle pool
-	valid := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Client: newClient(mockedDialer)}}
+	valid := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Client: mockedClientValid}}
 
 	// Pool has a 30 second timeout and an idle connection slice containing both
 	// the invalid and valid idle connections
@@ -29,7 +30,9 @@ func TestPurge(t *testing.T) {
 	assert.Len(t, p.idle, 2, "Expected 2 idle connections")
 
 	// WHEN
-	mockedDialer.EXPECT().Close()
+	mockedClientValid.EXPECT().HadError().Return(false)
+	mockedClientInvalid.EXPECT().HadError().Return(false)
+	mockedClientInvalid.EXPECT().Close()
 	p.purge()
 
 	// THEN
@@ -37,28 +40,32 @@ func TestPurge(t *testing.T) {
 	assert.Equal(t, valid.t, p.idle[0].t, "Expected the valid connection to remain in idle pool")
 }
 
-// FIXME: Write test using a mocked client
-//func TestPurgeErrorClosedConnection(t *testing.T) {
-//	// GIVEN
-//	n := time.Now()
-//	p := &Pool{IdleTimeout: time.Second * 30}
-//	valid := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Client: &Client{}}}
-//	client := &Client{}
-//	closed := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Pool: p, Client: client}}
-//	idle := []*idleConnection{valid, closed}
-//	p.idle = idle
-//
-//	// Simulate error
-//	closed.pc.Client.HadError() = true
-//	assert.Len(t, p.idle, 2, "Expected 2 idle connections")
-//
-//	// WHEN
-//	p.purge()
-//
-//	// THEN
-//	assert.Len(t, p.idle, 1, "Expected 1 idle connection after purge")
-//	assert.Equal(t, valid.t, p.idle[0].t, "Expected the valid connection to remain in idle pool")
-//}
+func TestPurgeErrorClosedConnection(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedClientValid := mock_interfaces.NewMockClient(mockCtrl)
+	mockedClientClosed := mock_interfaces.NewMockClient(mockCtrl)
+
+	n := time.Now()
+	p := &Pool{IdleTimeout: time.Second * 30}
+	valid := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Client: mockedClientValid}}
+	closed := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Pool: p, Client: mockedClientClosed}}
+	idle := []*idleConnection{valid, closed}
+	p.idle = idle
+
+	mockedClientValid.EXPECT().HadError().Return(false)
+	// Simulate error
+	mockedClientClosed.EXPECT().HadError().Return(true)
+	assert.Len(t, p.idle, 2, "Expected 2 idle connections")
+
+	// WHEN
+	p.purge()
+
+	// THEN
+	assert.Len(t, p.idle, 1, "Expected 1 idle connection after purge")
+	assert.Equal(t, valid.t, p.idle[0].t, "Expected the valid connection to remain in idle pool")
+}
 
 func TestPooledConnectionClose(t *testing.T) {
 	// GIVEN
@@ -78,12 +85,16 @@ func TestPooledConnectionClose(t *testing.T) {
 
 func TestFirst(t *testing.T) {
 	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedClient := mock_interfaces.NewMockClient(mockCtrl)
+
 	n := time.Now()
 	pool := &Pool{MaxActive: 1, IdleTimeout: 30 * time.Second}
 	idled := []*idleConnection{
-		&idleConnection{t: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: &clientImpl{}}}, // expired
-		&idleConnection{t: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: &clientImpl{}}}, // expired
-		&idleConnection{pc: &PooledConnection{Pool: pool, Client: &clientImpl{}}},                              // valid
+		&idleConnection{t: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedClient}}, // expired
+		&idleConnection{t: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedClient}}, // expired
+		&idleConnection{pc: &PooledConnection{Pool: pool, Client: &clientImpl{}}},                             // valid
 	}
 	pool.idle = idled
 	assert.Len(t, pool.idle, 3, "Expected 3 idle connections")
@@ -104,28 +115,30 @@ func TestGetAndDial(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	mockedClient1 := mock_interfaces.NewMockClient(mockCtrl)
+	mockedClient2 := mock_interfaces.NewMockClient(mockCtrl)
 
 	n := time.Now()
 	pool := &Pool{IdleTimeout: time.Second * 30}
-	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Pool: pool, Client: newClient(mockedDialer)}}
+	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedClient1}}
 	idle := []*idleConnection{invalid}
 	pool.idle = idle
 
-	client := newClient(mockedDialer)
 	pool.Dial = func() (interfaces.Client, error) {
-		return client, nil
+		return mockedClient2, nil
 	}
 
 	assert.Len(t, pool.idle, 1, "Expected 1 idle connections")
 	assert.Equal(t, invalid, pool.idle[0], "Expected invalid connection")
 
 	// WHEN
-	mockedDialer.EXPECT().Close()
+	mockedClient1.EXPECT().HadError().Return(false)
+	mockedClient1.EXPECT().Close()
+	mockedClient2.EXPECT().HadError().Return(false)
 	conn, err := pool.Get()
 	assert.NoError(t, err)
 	assert.Len(t, pool.idle, 0, "Expected 0 idle connections")
-	assert.Equal(t, client, conn.Client, "Expected correct client to be returned")
+	assert.Equal(t, mockedClient1, conn.Client, "Expected correct client to be returned")
 	assert.Equal(t, 1, pool.active, "Expected 1 active connections")
 
 	// Close the connection and ensure it was returned to the idle pool
@@ -138,6 +151,6 @@ func TestGetAndDial(t *testing.T) {
 	conn, err = pool.Get()
 	assert.NoError(t, err)
 	require.NotNil(t, conn)
-	assert.Equal(t, client, conn.Client, "Expected the same connection to be reused")
+	assert.Equal(t, mockedClient1, conn.Client, "Expected the same connection to be reused")
 	assert.Equal(t, 1, pool.active, "Expected 1 active connections")
 }
