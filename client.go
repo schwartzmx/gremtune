@@ -94,7 +94,7 @@ func newClient(dialer interfaces.Dialer, options ...ClientOption) *Client {
 }
 
 // Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
-func Dial(conn interfaces.Dialer, errorChannel chan error, options ...ClientOption) (*Client, error) {
+func Dial(conn interfaces.Dialer, errorChannel chan error, options ...ClientOption) (interfaces.Client, error) {
 
 	if conn == nil {
 		return nil, fmt.Errorf("Dialer is nil")
@@ -115,6 +115,14 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...ClientOpti
 	return client, nil
 }
 
+func (c *Client) HadError() bool {
+	return c.Errored
+}
+
+func (c *Client) IsConnected() bool {
+	return c.conn.IsConnected()
+}
+
 func (c *Client) pingWorker(errs chan error, quit <-chan struct{}) {
 	ticker := time.NewTicker(c.pingInterval)
 	defer ticker.Stop()
@@ -132,7 +140,7 @@ func (c *Client) pingWorker(errs chan error, quit <-chan struct{}) {
 	}
 }
 
-func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) ([]Response, error) {
+func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) ([]interfaces.Response, error) {
 	var req request
 	var id string
 	var err error
@@ -165,7 +173,7 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 	return resp, err
 }
 
-func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan AsyncResponse) (err error) {
+func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan interfaces.AsyncResponse) (err error) {
 	var req request
 	var id string
 	if bindings != nil && rebindings != nil {
@@ -221,7 +229,7 @@ func (c *Client) authenticate(requestID string) error {
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []Response, err error) {
+func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}
@@ -230,7 +238,7 @@ func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[stri
 }
 
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (c *Client) Execute(query string) (resp []Response, err error) {
+func (c *Client) Execute(query string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}
@@ -239,7 +247,7 @@ func (c *Client) Execute(query string) (resp []Response, err error) {
 }
 
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
-func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) (err error) {
+func (c *Client) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
 	if !c.conn.IsConnected() {
 		return fmt.Errorf("Can't write - no connection")
 	}
@@ -248,7 +256,7 @@ func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) 
 }
 
 // ExecuteFileWithBindings takes a file path to a Gremlin script, sends it to Gremlin Server with bindings, and returns the result.
-func (c *Client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []Response, err error) {
+func (c *Client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}
@@ -263,7 +271,7 @@ func (c *Client) ExecuteFileWithBindings(path string, bindings, rebindings map[s
 }
 
 // ExecuteFile takes a file path to a Gremlin script, sends it to Gremlin Server, and returns the result.
-func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
+func (c *Client) ExecuteFile(path string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}

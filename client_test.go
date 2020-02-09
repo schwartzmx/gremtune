@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/schwartzmx/gremtune/interfaces"
 	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func TestExecuteAsyncRequest(t *testing.T) {
 
 	mockedDialer.EXPECT().IsConnected().Return(true)
 
-	responseChannel := make(chan AsyncResponse)
+	responseChannel := make(chan interfaces.AsyncResponse)
 
 	err := client.ExecuteAsync("g.V()", responseChannel)
 	require.NoError(t, err)
@@ -61,7 +62,7 @@ func TestExecuteAsyncRequest(t *testing.T) {
 	}()
 
 	// now create the according response
-	response := Response{RequestID: req.RequestID, Status: Status{Code: statusSuccess}}
+	response := interfaces.Response{RequestID: req.RequestID, Status: interfaces.Status{Code: interfaces.StatusSuccess}}
 	packet, err := json.Marshal(response)
 	require.NoError(t, err)
 
@@ -98,7 +99,7 @@ func TestExecuteRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	// now create the according response
-	response := Response{RequestID: req.RequestID, Status: Status{Code: statusSuccess}}
+	response := interfaces.Response{RequestID: req.RequestID, Status: interfaces.Status{Code: interfaces.StatusSuccess}}
 	packet, err := json.Marshal(response)
 	require.NoError(t, err)
 
@@ -176,12 +177,7 @@ func TestDial(t *testing.T) {
 
 	// THEN
 	assert.NoError(t, err)
-	assert.NotNil(t, client.conn)
-	assert.NotNil(t, client.requests)
-	assert.NotNil(t, client.results)
-	assert.NotNil(t, client.responseNotifier)
-	assert.NotNil(t, client.responseStatusNotifier)
-	assert.True(t, client.Errored)
+	assert.True(t, client.HadError())
 }
 
 func TestPingWorker(t *testing.T) {
@@ -305,7 +301,7 @@ func TestReadWorker(t *testing.T) {
 	client := newClient(mockedDialer)
 
 	errorChannel := make(chan error, 1)
-	response := Response{RequestID: "ABCDEF", Status: Status{Code: statusSuccess}}
+	response := interfaces.Response{RequestID: "ABCDEF", Status: interfaces.Status{Code: interfaces.StatusSuccess}}
 	packet, err := json.Marshal(response)
 	require.NoError(t, err)
 
@@ -333,7 +329,7 @@ func TestReadWorkerFailOnInvalidResponse(t *testing.T) {
 	client := newClient(mockedDialer)
 
 	errorChannel := make(chan error, 1)
-	response := Response{RequestID: "ABCDEF", Status: Status{Code: statusMalformedRequest}}
+	response := interfaces.Response{RequestID: "ABCDEF", Status: interfaces.Status{Code: interfaces.StatusMalformedRequest}}
 	packet, err := json.Marshal(response)
 	require.NoError(t, err)
 

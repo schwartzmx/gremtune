@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/schwartzmx/gremtune/interfaces"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +16,7 @@ var failingErrorChannelConsumerFunc = func(errChan chan error, t *testing.T) {
 	t.Fatalf("Lost connection to the database: %s", err.Error())
 }
 
-func newTestClient(t *testing.T, errChan chan error) *Client {
+func newTestClient(t *testing.T, errChan chan error) interfaces.Client {
 	dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
 	require.NotNil(t, dialer, "Dialer is nil")
 	require.NoError(t, err)
@@ -25,11 +26,12 @@ func newTestClient(t *testing.T, errChan chan error) *Client {
 }
 
 func newTestPool(t *testing.T, errChan chan error) *Pool {
-	dialFn := func() (*Client, error) {
+	dialFn := func() (interfaces.Client, error) {
 		dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
 		require.NoError(t, err)
 		c, err := Dial(dialer, errChan)
 		require.NoError(t, err)
+
 		return c, err
 	}
 
@@ -40,7 +42,7 @@ func newTestPool(t *testing.T, errChan chan error) *Pool {
 	}
 }
 
-func truncateData(t *testing.T, client *Client) {
+func truncateData(t *testing.T, client interfaces.Client) {
 	t.Log("Removing all data from gremlin server started...")
 
 	_, err := client.Execute(`g.V('1234').drop()`)
@@ -51,7 +53,7 @@ func truncateData(t *testing.T, client *Client) {
 	t.Log("Removing all data from gremlin server completed...")
 }
 
-func seedData(t *testing.T, client *Client) {
+func seedData(t *testing.T, client interfaces.Client) {
 	truncateData(t, client)
 
 	t.Log("Seeding data started...")

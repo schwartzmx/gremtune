@@ -3,58 +3,14 @@ package gremtune
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/schwartzmx/gremtune/interfaces"
 )
-
-const (
-	statusSuccess                  = 200
-	statusNoContent                = 204
-	statusPartialContent           = 206
-	statusUnauthorized             = 401
-	statusAuthenticate             = 407
-	statusMalformedRequest         = 498
-	statusInvalidRequestArguments  = 499
-	statusServerError              = 500
-	statusScriptEvaluationError    = 597
-	statusServerTimeout            = 598
-	statusServerSerializationError = 599
-)
-
-// Status struct is used to hold properties returned from requests to the gremlin server
-type Status struct {
-	Message    string                 `json:"message"`
-	Code       int                    `json:"code"`
-	Attributes map[string]interface{} `json:"attributes"`
-}
-
-// Result struct is used to hold properties returned for results from requests to the gremlin server
-type Result struct {
-	// Query Response Data
-	Data json.RawMessage        `json:"data"`
-	Meta map[string]interface{} `json:"meta"`
-}
-
-// AsyncResponse structs holds the entire response from requests to the gremlin server
-type AsyncResponse struct {
-	Response     Response `json:"response"`     //Partial Response object
-	ErrorMessage string   `json:"errorMessage"` // Error message if there was an error
-}
-
-// Response structs holds the entire response from requests to the gremlin server
-type Response struct {
-	RequestID string `json:"requestId"`
-	Status    Status `json:"status"`
-	Result    Result `json:"result"`
-}
-
-// ToString returns a string representation of the Response struct
-func (r Response) String() string {
-	return fmt.Sprintf("Response \nRequestID: %v, \nStatus: {%#v}, \nResult: {%#v}\n", r.RequestID, r.Status, r.Result)
-}
 
 func (c *Client) handleResponse(msg []byte) error {
 	resp, err := marshalResponse(msg)
 
-	if resp.Status.Code == statusAuthenticate { //Server request authentication
+	if resp.Status.Code == interfaces.StatusAuthenticate { //Server request authentication
 		return c.authenticate(resp.RequestID)
 	}
 
@@ -63,18 +19,18 @@ func (c *Client) handleResponse(msg []byte) error {
 }
 
 // marshalResponse creates a response struct for every incoming response for further manipulation
-func marshalResponse(msg []byte) (resp Response, err error) {
+func marshalResponse(msg []byte) (resp interfaces.Response, err error) {
 	err = json.Unmarshal(msg, &resp)
 	if err != nil {
 		return
 	}
 
-	err = resp.detectError()
+	err = resp.DetectError()
 	return
 }
 
 // saveResponse makes the response available for retrieval by the requester. Mutexes are used for thread safety.
-func (c *Client) saveResponse(resp Response, err error) {
+func (c *Client) saveResponse(resp interfaces.Response, err error) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	var container []interface{}
@@ -100,13 +56,13 @@ func (c *Client) saveResponse(resp Response, err error) {
 	// post an error in case it is not a partial messsage.
 	// note that here the given error can be nil.
 	// this is the good case that just completes the retrieval of the response
-	if resp.Status.Code != statusPartialContent {
+	if resp.Status.Code != interfaces.StatusPartialContent {
 		respNotifier.(chan error) <- err
 	}
 }
 
 // retrieveResponseAsync retrieves the response saved by saveResponse and send the retrieved repose to the channel .
-func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResponse) {
+func (c *Client) retrieveResponseAsync(id string, responseChannel chan interfaces.AsyncResponse) {
 	var responseProcessedIndex int
 	responseNotifier, _ := c.responseNotifier.Load(id)
 	responseStatusNotifier, _ := c.responseStatusNotifier.Load(id)
@@ -121,8 +77,8 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 			// Only retrieve all but one from the partial responses saved in results Map that are not sent to responseChannel
 			for i := responseProcessedIndex; i < len(d)-1; i++ {
 				responseProcessedIndex++
-				var asyncResponse AsyncResponse = AsyncResponse{}
-				asyncResponse.Response = d[i].(Response)
+				var asyncResponse interfaces.AsyncResponse = interfaces.AsyncResponse{}
+				asyncResponse.Response = d[i].(interfaces.Response)
 				// Send the Partial response object to the responseChannel
 				responseChannel <- asyncResponse
 			}
@@ -143,8 +99,8 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 			// Retrieve all the partial responses that are not sent to responseChannel
 			for i := responseProcessedIndex; i < len(d); i++ {
 				responseProcessedIndex++
-				asyncResponse := AsyncResponse{}
-				asyncResponse.Response = d[i].(Response)
+				asyncResponse := interfaces.AsyncResponse{}
+				asyncResponse.Response = d[i].(interfaces.Response)
 				//when final partial response it sent it also sends the error message if there was an error on the last partial response retrival
 				if responseProcessedIndex == len(d) && err != nil {
 					asyncResponse.ErrorMessage = err.Error()
@@ -168,7 +124,7 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 }
 
 // retrieveResponse retrieves the response saved by saveResponse.
-func (c *Client) retrieveResponse(id string) ([]Response, error) {
+func (c *Client) retrieveResponse(id string) ([]interfaces.Response, error) {
 	resp, ok := c.responseNotifier.Load(id)
 	if !ok {
 		return nil, fmt.Errorf("Response with id %s not found", id)
@@ -192,9 +148,9 @@ func (c *Client) retrieveResponse(id string) ([]Response, error) {
 
 	// cast the given data into an array of Responses
 	d := dataI.([]interface{})
-	data := make([]Response, len(d))
+	data := make([]interfaces.Response, len(d))
 	for i := range d {
-		data[i] = d[i].(Response)
+		data[i] = d[i].(interfaces.Response)
 	}
 
 	// cleanup
@@ -210,31 +166,4 @@ func (c *Client) retrieveResponse(id string) ([]Response, error) {
 // deleteRespones deletes the response from the container. Used for cleanup purposes by requester.
 func (c *Client) deleteResponse(id string) {
 	c.results.Delete(id)
-}
-
-// responseDetectError detects any possible errors in responses from Gremlin Server and generates an error for each code
-func (r *Response) detectError() (err error) {
-	switch r.Status.Code {
-	case statusSuccess, statusNoContent, statusPartialContent:
-		break
-	case statusUnauthorized:
-		err = fmt.Errorf("UNAUTHORIZED - Response Message: %s", r.Status.Message)
-	case statusAuthenticate:
-		err = fmt.Errorf("AUTHENTICATE - Response Message: %s", r.Status.Message)
-	case statusMalformedRequest:
-		err = fmt.Errorf("MALFORMED REQUEST - Response Message: %s", r.Status.Message)
-	case statusInvalidRequestArguments:
-		err = fmt.Errorf("INVALID REQUEST ARGUMENTS - Response Message: %s", r.Status.Message)
-	case statusServerError:
-		err = fmt.Errorf("SERVER ERROR - Response Message: %s", r.Status.Message)
-	case statusScriptEvaluationError:
-		err = fmt.Errorf("SCRIPT EVALUATION ERROR - Response Message: %s", r.Status.Message)
-	case statusServerTimeout:
-		err = fmt.Errorf("SERVER TIMEOUT - Response Message: %s", r.Status.Message)
-	case statusServerSerializationError:
-		err = fmt.Errorf("SERVER SERIALIZATION ERROR - Response Message: %s", r.Status.Message)
-	default:
-		err = fmt.Errorf("UNKNOWN ERROR - Response Message: %s", r.Status.Message)
-	}
-	return
 }

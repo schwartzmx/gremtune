@@ -3,9 +3,11 @@ package gremtune
 import (
 	"sync"
 	"testing"
+
+	"github.com/schwartzmx/gremtune/interfaces"
 )
 
-var benchmarkClient *Client
+var benchmarkClient interfaces.Client
 var benchmarkPool *Pool
 
 var once sync.Once

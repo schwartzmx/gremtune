@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/schwartzmx/gremtune/interfaces"
 )
 
 // Pool maintains a list of connections.
 type Pool struct {
-	Dial        func() (*Client, error)
+	Dial        func() (interfaces.Client, error)
 	MaxActive   int
 	IdleTimeout time.Duration
 	mu          sync.Mutex
@@ -21,7 +23,7 @@ type Pool struct {
 // PooledConnection represents a shared and reusable connection.
 type PooledConnection struct {
 	Pool   *Pool
-	Client *Client
+	Client interfaces.Client
 }
 
 type idleConnection struct {
@@ -105,7 +107,7 @@ func (p *Pool) purge() {
 		now := time.Now()
 		for _, v := range p.idle {
 			// If the client has an error then exclude it from the pool
-			if v.pc.Client.Errored {
+			if v.pc.Client.HadError() {
 				continue
 			}
 
@@ -152,7 +154,7 @@ func (p *Pool) Close() {
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (p *Pool) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []Response, err error) {
+func (p *Pool) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
 		fmt.Printf("Error aquiring connection from pool: %s", err)
@@ -163,7 +165,7 @@ func (p *Pool) ExecuteWithBindings(query string, bindings, rebindings map[string
 }
 
 // Execute grabs a connection from the pool, formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (p *Pool) Execute(query string) (resp []Response, err error) {
+func (p *Pool) Execute(query string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
 		fmt.Printf("Error aquiring connection from pool: %s", err)

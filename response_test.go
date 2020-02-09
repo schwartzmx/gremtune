@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/schwartzmx/gremtune/interfaces"
 	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,31 +23,31 @@ var dummyNeedAuthenticationResponse = []byte(`{"result":{},
  "requestId":"1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
  "status":{"code":407,"attributes":{},"message":""}}`)
 
-var dummySuccessfulResponseMarshalled = Response{
+var dummySuccessfulResponseMarshalled = interfaces.Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
-	Status:    Status{Code: 200, Attributes: map[string]interface{}{}},
-	Result: Result{Data: []byte(`[{"id": 2,"label": "person","type": "vertex","properties": [
+	Status:    interfaces.Status{Code: 200, Attributes: map[string]interface{}{}},
+	Result: interfaces.Result{Data: []byte(`[{"id": 2,"label": "person","type": "vertex","properties": [
 	  {"id": 2, "value": "vadas", "label": "name"},
 	  {"id": 3, "value": 27, "label": "age"}]}
 	]`), Meta: map[string]interface{}{}},
 }
 
-var dummyNeedAuthenticationResponseMarshalled = Response{
+var dummyNeedAuthenticationResponseMarshalled = interfaces.Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
-	Status:    Status{Code: 407},
-	Result:    Result{Data: []byte("")},
+	Status:    interfaces.Status{Code: 407},
+	Result:    interfaces.Result{Data: []byte("")},
 }
 
-var dummyPartialResponse1Marshalled = Response{
+var dummyPartialResponse1Marshalled = interfaces.Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
-	Status:    Status{Code: 206}, // Code 206 indicates that the response is not the terminating response in a sequence of responses
-	Result:    Result{Data: []byte("testPartialData1")},
+	Status:    interfaces.Status{Code: 206}, // Code 206 indicates that the response is not the terminating response in a sequence of responses
+	Result:    interfaces.Result{Data: []byte("testPartialData1")},
 }
 
-var dummyPartialResponse2Marshalled = Response{
+var dummyPartialResponse2Marshalled = interfaces.Response{
 	RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
-	Status:    Status{Code: 200},
-	Result:    Result{Data: []byte("testPartialData2")},
+	Status:    interfaces.Status{Code: 200},
+	Result:    interfaces.Result{Data: []byte("testPartialData2")},
 }
 
 // TestResponseHandling tests the overall response handling mechanism of gremtune
@@ -60,7 +61,7 @@ func TestResponseHandling(t *testing.T) {
 	err := c.handleResponse(dummySuccessfulResponse)
 	require.NoError(t, err)
 
-	var expected []Response
+	var expected []interfaces.Response
 	expected = append(expected, dummySuccessfulResponseMarshalled)
 
 	r, err := c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)
@@ -111,7 +112,7 @@ func TestAuthCompleted(t *testing.T) {
 	err := c.handleResponse(dummySuccessfulResponse) //If authentication is successful the server returns the origin petition
 	require.NoError(t, err)
 
-	var expectedSuccessful []Response
+	var expectedSuccessful []interfaces.Response
 	expectedSuccessful = append(expectedSuccessful, dummySuccessfulResponseMarshalled)
 
 	response, err := c.retrieveResponse(dummySuccessfulResponseMarshalled.RequestID)
@@ -189,7 +190,7 @@ func TestResponseRetrieval(t *testing.T) {
 	resp, err := c.retrieveResponse(dummyPartialResponse1Marshalled.RequestID)
 	require.NoError(t, err)
 
-	var expected []Response
+	var expected []interfaces.Response
 	expected = append(expected, dummyPartialResponse1Marshalled)
 	expected = append(expected, dummyPartialResponse2Marshalled)
 
@@ -242,15 +243,15 @@ func TestAsyncResponseRetrieval(t *testing.T) {
 	c.saveResponse(dummyPartialResponse1Marshalled, nil)
 	c.saveResponse(dummyPartialResponse2Marshalled, nil)
 
-	responseChannel := make(chan AsyncResponse, 10)
+	responseChannel := make(chan interfaces.AsyncResponse, 10)
 	c.retrieveResponseAsync(dummyPartialResponse1Marshalled.RequestID, responseChannel)
 
 	resp := <-responseChannel
-	expectedAsync := AsyncResponse{Response: dummyPartialResponse1Marshalled}
+	expectedAsync := interfaces.AsyncResponse{Response: dummyPartialResponse1Marshalled}
 	assert.Equal(t, expectedAsync, resp)
 
 	resp = <-responseChannel
-	expectedAsync = AsyncResponse{Response: dummyPartialResponse2Marshalled}
+	expectedAsync = interfaces.AsyncResponse{Response: dummyPartialResponse2Marshalled}
 	assert.Equal(t, expectedAsync, resp)
 }
 
@@ -274,12 +275,12 @@ var codes = []struct {
 // Tests detection of errors and if an error is generated for a specific error code
 func TestResponseErrorDetection(t *testing.T) {
 	for _, co := range codes {
-		dummyResponse := Response{
+		dummyResponse := interfaces.Response{
 			RequestID: "",
-			Status:    Status{Code: co.code},
-			Result:    Result{},
+			Status:    interfaces.Status{Code: co.code},
+			Result:    interfaces.Result{},
 		}
-		err := dummyResponse.detectError()
+		err := dummyResponse.DetectError()
 		switch {
 		case co.code == 200:
 			if err != nil {
