@@ -1,181 +1,200 @@
 package gremtune
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"sync"
 
-	"github.com/gorilla/websocket"
-	"github.com/pkg/errors"
+	"github.com/schwartzmx/gremtune/interfaces"
+
+	gorilla "github.com/gorilla/websocket"
 )
 
-type dialer interface {
-	connect() error
-	IsConnected() bool
-	IsDisposed() bool
-	write([]byte) error
-	read() (int, []byte, error)
-	close() error
-	getAuth() *auth
-	ping(errs chan error)
-}
+// websocket is the dialer for a WebsocketConnection
+type websocket struct {
+	// the host to establish the connection with
+	// it is expected to specify the protocol as part of the host
+	// supported protocols are ws and wss
+	// example: ws://localhost:8182/gremlin
+	host string
 
-/////
-/*
-WebSocket Connection
-*/
-/////
+	// conn is the actual connection
+	conn interfaces.WebsocketConnection
 
-// Ws is the dialer for a WebSocket connection
-type Ws struct {
-	host         string
-	conn         *websocket.Conn
-	auth         *auth
-	disposed     bool
-	connected    bool
-	pingInterval time.Duration
-	writingWait  time.Duration
-	readingWait  time.Duration
-	timeout      time.Duration
+	// auth auth information like username and password
+	auth interfaces.Auth
+
+	// disposed flags the websocket as
+	// 'has been closed and can't be reused'
+	disposed bool
+
+	// connected flags the websocket as connected or not connected
+	connected bool
+
+	// writingWait is the maximum time a write operation will wait to start
+	// sending data on the socket. If this duration has been exceeded
+	// the operation will fail with an error.
+	writingWait time.Duration
+
+	// readingWait is the maximum time a read operation will wait until
+	// data is received on the socket. If this duration has been exceeded
+	// the operation will fail with an error.
+	readingWait time.Duration
+
+	// timeout for the initial handshake
+	timeout time.Duration
+
 	readBufSize  int
 	writeBufSize int
-	quit         chan struct{}
-	sync.RWMutex
+
+	// quitChannel channel for quit notification
+	quitChannel chan struct{}
+	mux         sync.RWMutex
+
+	// wsDialerFactory is a factory that creates
+	// dialers (functions that can establish a websocket connection)
+	wsDialerFactory websocketDialerFactory
 }
 
-//Auth is the container for authentication data of dialer
-type auth struct {
-	username string
-	password string
-}
-
-func (ws *Ws) connect() (err error) {
-	d := websocket.Dialer{
-		WriteBufferSize:  ws.writeBufSize,
-		ReadBufferSize:   ws.readBufSize,
-		HandshakeTimeout: ws.timeout, // Timeout or else we'll hang forever and never fail on bad hosts.
+// NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
+func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) {
+	createdWebsocket := &websocket{
+		timeout:         5 * time.Second,
+		writingWait:     15 * time.Second,
+		readingWait:     15 * time.Second,
+		connected:       false,
+		disposed:        false,
+		quitChannel:     make(chan struct{}),
+		readBufSize:     8192,
+		writeBufSize:    8192,
+		host:            host,
+		wsDialerFactory: gorillaWebsocketDialerFactory, // use the gorilla websocket as default
 	}
-	ws.conn, _, err = d.Dial(ws.host, http.Header{})
-	if err != nil {
 
+	for _, conf := range configs {
+		conf(createdWebsocket)
+	}
+
+	// verify setup and fail as early as possible
+	if !strings.HasPrefix(createdWebsocket.host, "ws://") && !strings.HasPrefix(createdWebsocket.host, "wss://") {
+		return nil, fmt.Errorf("Host '%s' is invalid, expected protocol 'ws://' or 'wss://' missing", createdWebsocket.host)
+	}
+
+	if createdWebsocket.readBufSize <= 0 {
+		return nil, fmt.Errorf("Invalid size for read buffer: %d", createdWebsocket.readBufSize)
+	}
+
+	if createdWebsocket.writeBufSize <= 0 {
+		return nil, fmt.Errorf("Invalid size for write buffer: %d", createdWebsocket.writeBufSize)
+	}
+
+	if createdWebsocket.wsDialerFactory == nil {
+		return nil, fmt.Errorf("The factory for websocket dialers is nil")
+	}
+
+	return createdWebsocket, nil
+}
+
+func (ws *websocket) Connect() error {
+	if ws.disposed {
+		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused connect() -> close() -> connect() is not permitted")
+	}
+
+	// create the function that shall be used for dialing
+	dial := ws.wsDialerFactory(ws.writeBufSize, ws.readBufSize, ws.timeout)
+
+	conn, _, err := dial(ws.host, http.Header{})
+	ws.conn = conn
+	if err != nil {
+		ws.connected = false
 		// As of 3.2.2 the URL has changed.
 		// https://groups.google.com/forum/#!msg/gremlin-users/x4hiHsmTsHM/Xe4GcPtRCAAJ
-		ws.host = ws.host + "/gremlin"
-		ws.conn, _, err = d.Dial(ws.host, http.Header{})
+		// Probably '/gremlin' has to be added to the used hostname
+		return fmt.Errorf("Dial failed: %s. Probably '/gremlin' has to be added to the used hostname", err)
 	}
 
-	if err == nil {
+	ws.conn.SetPongHandler(func(appData string) error {
 		ws.connected = true
-		ws.conn.SetPongHandler(func(appData string) error {
-			ws.connected = true
-			return nil
-		})
-	}
-	return
+		return nil
+	})
+
+	ws.connected = true
+
+	return nil
+}
+
+func (ws *websocket) GetQuitChannel() <-chan struct{} {
+	return ws.quitChannel
 }
 
 // IsConnected returns whether the underlying websocket is connected
-func (ws *Ws) IsConnected() bool {
-	return ws.connected
+func (ws *websocket) IsConnected() bool {
+	ws.mux.RLock()
+	defer ws.mux.RUnlock()
+	return ws.connected && ws.conn != nil
 }
 
 // IsDisposed returns whether the underlying websocket is disposed
-func (ws *Ws) IsDisposed() bool {
+func (ws *websocket) IsDisposed() bool {
 	return ws.disposed
 }
 
-func (ws *Ws) write(msg []byte) (err error) {
-	err = ws.conn.WriteMessage(2, msg)
-	return
+func (ws *websocket) Write(msg []byte) error {
+	return ws.conn.WriteMessage(2, msg)
 }
 
-func (ws *Ws) read() (msgType int, msg []byte, err error) {
-	msgType, msg, err = ws.conn.ReadMessage()
-	return
+func (ws *websocket) Read() (msgType int, msg []byte, err error) {
+	return ws.conn.ReadMessage()
 }
 
-func (ws *Ws) close() (err error) {
+// close closes the websocket
+// Caution!: After calling this function the whole websocket is invalid
+// since the internal quit channel is also closed and won't be recreated.
+// Hence after closing a websocket one has to create a new one instead of
+// reusing the closed one and call connect on it.
+// Caution!: This method can only called once each second call will result in an error.
+func (ws *websocket) Close() error {
+	if ws.disposed {
+		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused close() -> close() is not permitted")
+	}
+
+	// clean up in any case
 	defer func() {
-		close(ws.quit)
-		ws.conn.Close()
+		// close the channel to send the quit notification
+		// to all workers
+		close(ws.quitChannel)
+		if ws.conn != nil {
+			ws.conn.Close()
+		}
 		ws.disposed = true
 	}()
 
-	err = ws.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")) //Cleanly close the connection with the server
-	return
+	if !ws.IsConnected() {
+		return nil
+	}
+	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, "")) //Cleanly close the connection with the server
 }
 
-func (ws *Ws) getAuth() *auth {
-	if ws.auth == nil {
-		panic("You must create a Secure Dialer for authenticate with the server")
-	}
+func (ws *websocket) GetAuth() interfaces.Auth {
 	return ws.auth
 }
 
-func (ws *Ws) ping(errs chan error) {
-	ticker := time.NewTicker(ws.pingInterval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			connected := true
-			if err := ws.conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(ws.writingWait)); err != nil {
-				errs <- err
-				connected = false
-			}
-			ws.Lock()
-			ws.connected = connected
-			ws.Unlock()
-
-		case <-ws.quit:
-			return
-		}
+func (ws *websocket) Ping() error {
+	if ws.conn == nil {
+		return fmt.Errorf("Not connected")
 	}
-}
 
-func (c *Client) writeWorker(errs chan error, quit chan struct{}) { // writeWorker works on a loop and dispatches messages as soon as it receives them
-	for {
-		select {
-		case msg := <-c.requests:
-			c.Lock()
-			err := c.conn.write(msg)
-			if err != nil {
-				errs <- err
-				c.Errored = true
-				c.Unlock()
-				break
-			}
-			c.Unlock()
-
-		case <-quit:
-			return
-		}
+	connected := true
+	err := ws.conn.WriteControl(gorilla.PingMessage, []byte{}, time.Now().Add(ws.writingWait))
+	if err != nil {
+		connected = false
 	}
-}
 
-func (c *Client) readWorker(errs chan error, quit chan struct{}) { // readWorker works on a loop and sorts messages as soon as it receives them
-	for {
-		msgType, msg, err := c.conn.read()
-		if msgType == -1 { // msgType == -1 is noFrame (close connection)
-			return
-		}
-		if err != nil {
-			errs <- errors.Wrapf(err, "Receive message type: %d", msgType)
-			c.Errored = true
-			break
-		}
-		if msg != nil {
-			// FIXME: At the moment the error returned by handle response is just ignored.
-			err = c.handleResponse(msg)
-			_ = err
-		}
-
-		select {
-		case <-quit:
-			return
-		default:
-			continue
-		}
-	}
+	ws.mux.Lock()
+	defer ws.mux.Unlock()
+	ws.connected = connected
+	return err
 }

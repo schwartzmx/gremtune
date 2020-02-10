@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,11 +54,10 @@ func TestRequestPackaging(t *testing.T) {
 
 	var expected []byte
 
-	mimetype := []byte("application/vnd.gremlin-v2.0+json")
-	mimetypelen := byte(len(mimetype))
+	lenMimeType := byte(len(MimeType))
 
-	expected = append(expected, mimetypelen)
-	expected = append(expected, mimetype...)
+	expected = append(expected, lenMimeType)
+	expected = append(expected, MimeType...)
 	expected = append(expected, j...)
 
 	assert.Equal(t, msg, expected)
@@ -64,6 +65,10 @@ func TestRequestPackaging(t *testing.T) {
 
 // TestRequestDispatch tests the ability for a requester to send a request to the client for writing to Gremlin Server
 func TestRequestDispatch(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	testRequest := request{
 		RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",
 		Op:        "eval",
@@ -74,26 +79,39 @@ func TestRequestDispatch(t *testing.T) {
 			"language": "gremlin-groovy",
 		},
 	}
-	c := newClient()
+	c := newClient(mockedDialer)
 	msg, err := packageRequest(testRequest)
 	require.NoError(t, err)
 
+	// WHEN
 	c.dispatchRequest(msg)
-	req := <-c.requests // c.requests is the channel where all requests are sent for writing to Gremlin Server, write workers listen on this channel
+	// c.requests is the channel where all requests are sent for writing
+	// to Gremlin Server, write workers listen on this channel
+	req := <-c.requests
+
+	// THEN
 	assert.Equal(t, msg, req)
 }
 
 // TestAuthRequestDispatch tests the ability for a requester to send a request to the client for writing to Gremlin Server
 func TestAuthRequestDispatch(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	id := "1d6d02bd-8e56-421d-9438-3bd6d0079ff1"
 	testRequest, _ := prepareAuthRequest(id, "test", "root")
 
-	c := newClient()
+	c := newClient(mockedDialer)
 	msg, err := packageRequest(testRequest)
 	require.NoError(t, err)
 
+	// WHEN
 	c.dispatchRequest(msg)
-	req := <-c.requests // c.requests is the channel where all requests are sent for writing to Gremlin Server, write workers listen on this channel
+	// c.requests is the channel where all requests are sent for writing
+	// to Gremlin Server, write workers listen on this channel
+	req := <-c.requests
+	// THEN
 	assert.Equal(t, msg, req)
 }
 
@@ -109,4 +127,21 @@ func TestAuthRequestPreparation(t *testing.T) {
 
 	assert.Len(t, testRequest.Args, 1)
 	assert.NotEmpty(t, testRequest.Args["sasl"])
+	assert.Equal(t, "AHRlc3QAcm9vdA==", testRequest.Args["sasl"])
+}
+
+func TestPrepareRequest(t *testing.T) {
+	query := "g.V()"
+	testRequest, id, err := prepareRequest(query)
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, id)
+	assert.Equal(t, "", testRequest.Processor)
+	assert.Equal(t, "eval", testRequest.Op)
+
+	assert.Len(t, testRequest.Args, 2)
+	assert.NotEmpty(t, testRequest.Args["language"])
+	assert.Equal(t, "gremlin-groovy", testRequest.Args["language"])
+	assert.NotEmpty(t, testRequest.Args["gremlin"])
+	assert.Equal(t, query, testRequest.Args["gremlin"])
 }

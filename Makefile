@@ -9,11 +9,11 @@ help: ## Prints the help
 
 build: sep ## Builds the library
 	@echo "--> Build"
-	@go build .
+	@go build -race .
 
 test: sep ## Runs all unittests and generates a coverage report.
-	@echo "--> Run the unit-tests"
-	@go test -timeout 30s -run "^Test.*[^IT]$$" -covermode=count
+	@echo "--> Run the unit-tests and checks for race conditions."
+	@go test -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic
 
 test.integration: sep ## Runs all integration tests. As precondition a local gremlin-server has to run and listen on port 8182.
 	@echo "--> Run the integration-tests"
@@ -21,12 +21,19 @@ test.integration: sep ## Runs all integration tests. As precondition a local gre
 
 bench: sep ## Execute benchmarks
 	@echo "--> Execute benchmarks"
-	@go test -timeout 30s -v -bench "BenchmarkPoolExecute.*"
+	@go test -race -timeout 30s -v -bench "BenchmarkPoolExecute.*"
 
 lint: ## Runs the linter to check for coding-style issues
 	@echo "--> Lint project"
 	@echo "!!!!golangci-lint has to be installed. See: https://github.com/golangci/golangci-lint#install"
 	@golangci-lint run --fast
+
+gen-mocks: sep ## Generates test doubles (mocks).
+	@echo "--> generate mocks (github.com/golang/mock/gomock is required for this)"
+	@go get github.com/golang/mock/gomock
+	@go install github.com/golang/mock/mockgen
+	@mockgen -source=interfaces/websocketConnection.go -destination test/mocks/interfaces/mock_websocketConnection.go
+	@mockgen -source=interfaces/dialer.go -destination test/mocks/interfaces/mock_dialer.go
 
 infra.up: ## Starts up the infra components
 	make -C infra up

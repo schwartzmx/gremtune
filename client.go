@@ -1,101 +1,118 @@
 package gremtune
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/schwartzmx/gremtune/interfaces"
 )
 
 // Client is a container for the gremtune client.
 type Client struct {
-	conn                   dialer
+	conn                   interfaces.Dialer
 	requests               chan []byte
 	responses              chan []byte
 	results                *sync.Map
 	responseNotifier       *sync.Map // responseNotifier notifies the requester that a response has arrived for the request
 	responseStatusNotifier *sync.Map // responseStatusNotifier notifies the requester that a response has arrived for the request with the code
-	sync.RWMutex
-	Errored bool
+	mux                    sync.RWMutex
+	Errored                bool
+
+	// pingInterval is the interval that is used to check if the connection
+	// is still alive
+	pingInterval time.Duration
+
+	wg sync.WaitGroup
 }
 
-// NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewDialer(host string, configs ...DialerConfig) (dialer *Ws) {
-	dialer = &Ws{
-		timeout:      5 * time.Second,
-		pingInterval: 60 * time.Second,
-		writingWait:  15 * time.Second,
-		readingWait:  15 * time.Second,
-		connected:    false,
-		quit:         make(chan struct{}),
-		readBufSize:  8192,
-		writeBufSize: 8192,
+func newClient(dialer interfaces.Dialer) *Client {
+	return &Client{
+		conn:                   dialer,
+		requests:               make(chan []byte, 3), // c.requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
+		responses:              make(chan []byte, 3), // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
+		results:                &sync.Map{},
+		responseNotifier:       &sync.Map{},
+		responseStatusNotifier: &sync.Map{},
+		pingInterval:           60 * time.Second,
 	}
-
-	for _, conf := range configs {
-		conf(dialer)
-	}
-
-	dialer.host = host
-	return dialer
-}
-
-func newClient() (c Client) {
-	c.requests = make(chan []byte, 3)  // c.requests takes any request and delivers it to the WriteWorker for dispatch to Gremlin Server
-	c.responses = make(chan []byte, 3) // c.responses takes raw responses from ReadWorker and delivers it for sorting to handelResponse
-	c.results = &sync.Map{}
-	c.responseNotifier = &sync.Map{}
-	c.responseStatusNotifier = &sync.Map{}
-	return
 }
 
 // Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
-func Dial(conn dialer, errs chan error) (c Client, err error) {
-	c = newClient()
-	c.conn = conn
+func Dial(conn interfaces.Dialer, errorChannel chan error) (*Client, error) {
 
-	// Connects to Gremlin Server
-	err = conn.connect()
+	if conn == nil {
+		return nil, fmt.Errorf("Dialer is nil")
+	}
+	client := newClient(conn)
+
+	err := client.conn.Connect()
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	quit := conn.(*Ws).quit
+	quitChannel := client.conn.GetQuitChannel()
 
-	go c.writeWorker(errs, quit)
-	go c.readWorker(errs, quit)
-	go conn.ping(errs)
+	// Start all worker (run async)
+	client.wg.Add(3)
+	go client.writeWorker(errorChannel, quitChannel)
+	go client.readWorker(errorChannel, quitChannel)
+	go client.pingWorker(errorChannel, quitChannel)
 
-	return
+	return client, nil
 }
 
-func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) (resp []Response, err error) {
+func (c *Client) pingWorker(errs chan error, quit <-chan struct{}) {
+	ticker := time.NewTicker(c.pingInterval)
+	defer ticker.Stop()
+	defer c.wg.Done()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := c.conn.Ping(); err != nil {
+				errs <- err
+			}
+		case <-quit:
+			return
+		}
+	}
+}
+
+func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) ([]Response, error) {
 	var req request
 	var id string
+	var err error
+
 	if bindings != nil && rebindings != nil {
 		req, id, err = prepareRequestWithBindings(query, *bindings, *rebindings)
 	} else {
 		req, id, err = prepareRequest(query)
 	}
+
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	msg, err := packageRequest(req)
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
+
 	c.responseNotifier.Store(id, make(chan error, 1))
 	c.responseStatusNotifier.Store(id, make(chan int, 1))
 	c.dispatchRequest(msg)
-	resp, err = c.retrieveResponse(id)
+
+	// this call blocks until the response has been retrieved from the server
+	resp, err := c.retrieveResponse(id)
+
 	if err != nil {
 		err = errors.Wrapf(err, "query: %s", query)
 	}
-	return
+	return resp, err
 }
 
 func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan AsyncResponse) (err error) {
@@ -122,21 +139,36 @@ func (c *Client) executeAsync(query string, bindings, rebindings *map[string]str
 	return
 }
 
-func (c *Client) authenticate(requestID string) (err error) {
-	auth := c.conn.getAuth()
-	req, err := prepareAuthRequest(requestID, auth.username, auth.password)
+func validateCredentials(auth interfaces.Auth) error {
+	if len(auth.Username) == 0 {
+		return fmt.Errorf("Username is missing")
+	}
+
+	if len(auth.Password) == 0 {
+		return fmt.Errorf("Password is missing")
+	}
+	return nil
+}
+
+func (c *Client) authenticate(requestID string) error {
+	auth := c.conn.GetAuth()
+	if err := validateCredentials(auth); err != nil {
+		return err
+	}
+
+	req, err := prepareAuthRequest(requestID, auth.Username, auth.Password)
 	if err != nil {
-		return
+		return err
 	}
 
 	msg, err := packageRequest(req)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 
 	c.dispatchRequest(msg)
-	return
+	return nil
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
@@ -197,8 +229,76 @@ func (c *Client) ExecuteFile(path string) (resp []Response, err error) {
 }
 
 // Close closes the underlying connection and marks the client as closed.
-func (c *Client) Close() {
-	if c.conn != nil {
-		c.conn.close()
+func (c *Client) Close() error {
+
+	if c.conn == nil {
+		return fmt.Errorf("Connection is nil")
+	}
+	// wait for cleanup of all started go routines
+	defer c.wg.Wait()
+
+	return c.conn.Close()
+}
+
+// writeWorker works on a loop and dispatches messages as soon as it receives them
+func (c *Client) writeWorker(errs chan error, quit <-chan struct{}) {
+	defer c.wg.Done()
+	for {
+		select {
+		case msg := <-c.requests:
+			c.mux.Lock()
+			err := c.conn.Write(msg)
+			if err != nil {
+				errs <- err
+				c.Errored = true
+				c.mux.Unlock()
+				break
+			}
+			c.mux.Unlock()
+
+		case <-quit:
+			return
+		}
+	}
+}
+
+// readWorker works on a loop and sorts messages as soon as it receives them
+func (c *Client) readWorker(errs chan error, quit <-chan struct{}) {
+	defer c.wg.Done()
+	for {
+		msgType, msg, err := c.conn.Read()
+		if msgType == -1 { // msgType == -1 is noFrame (close connection)
+			errs <- fmt.Errorf("Received msgType == -1 this is no frame --> close the readworker")
+			c.Errored = true
+
+			// FIXME: This looks weird. In case a malformed package is sent here the readWorker
+			// is just closed. But what happens afterwards? No one is reading any more?!
+			// And the connection is not really closed. Hence no reconnect will happen.
+			// The only chance would be that the one who consumes the error messages
+			// of the error channel closes the connection immediately if an error arrives.
+			return
+		}
+
+		var errorToPost error
+		if err != nil {
+			errorToPost = err
+		} else if msg == nil {
+			errorToPost = fmt.Errorf("Receive message type: %d, but message was nil", msgType)
+		} else {
+			// handle the message
+			errorToPost = c.handleResponse(msg)
+		}
+
+		if errorToPost != nil {
+			errs <- errorToPost
+			c.Errored = true
+		}
+
+		select {
+		case <-quit:
+			return
+		default:
+			continue
+		}
 	}
 }

@@ -47,11 +47,11 @@ type Response struct {
 }
 
 // ToString returns a string representation of the Response struct
-func (r Response) ToString() string {
+func (r Response) String() string {
 	return fmt.Sprintf("Response \nRequestID: %v, \nStatus: {%#v}, \nResult: {%#v}\n", r.RequestID, r.Status, r.Result)
 }
 
-func (c *Client) handleResponse(msg []byte) (err error) {
+func (c *Client) handleResponse(msg []byte) error {
 	resp, err := marshalResponse(msg)
 
 	if resp.Status.Code == statusAuthenticate { //Server request authentication
@@ -59,7 +59,7 @@ func (c *Client) handleResponse(msg []byte) (err error) {
 	}
 
 	c.saveResponse(resp, err)
-	return
+	return err
 }
 
 // marshalResponse creates a response struct for every incoming response for further manipulation
@@ -75,8 +75,8 @@ func marshalResponse(msg []byte) (resp Response, err error) {
 
 // saveResponse makes the response available for retrieval by the requester. Mutexes are used for thread safety.
 func (c *Client) saveResponse(resp Response, err error) {
-	c.Lock()
-	defer c.Unlock()
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	var container []interface{}
 	existingData, ok := c.results.Load(resp.RequestID) // Retrieve old data container (for requests with multiple responses)
 	if ok {
@@ -85,26 +85,37 @@ func (c *Client) saveResponse(resp Response, err error) {
 	newdata := append(container, resp)       // Create new data container with new data
 	c.results.Store(resp.RequestID, newdata) // Add new data to buffer for future retrieval
 
-	// FIXME: At the moment the case if the load or store was not successfull is not handled. The according return value is just ignored
+	// obtain or create (if needed) the error notification channel for the currently active response
 	respNotifier, _ := c.responseNotifier.LoadOrStore(resp.RequestID, make(chan error, 1))
-	// FIXME: At the moment the case if the load or store was not successfull is not handled. The according return value is just ignored
+	// obtain or create (if needed) the status notification channel for the currently active response
 	responseStatusNotifier, _ := c.responseStatusNotifier.LoadOrStore(resp.RequestID, make(chan int, 1))
+
+	// FIXME: This looks weird. the status code of the current response is only posted to the responseStatusNotifier channel
+	// if there is space left on the channel. If not then the status is just silently not posted (ignored).
 	if cap(responseStatusNotifier.(chan int)) > len(responseStatusNotifier.(chan int)) {
 		// Channel is not full so adding the response status to the channel else it will cause the method to wait till the response is read by requester
 		responseStatusNotifier.(chan int) <- resp.Status.Code
 	}
+
+	// post an error in case it is not a partial messsage.
+	// note that here the given error can be nil.
+	// this is the good case that just completes the retrieval of the response
 	if resp.Status.Code != statusPartialContent {
 		respNotifier.(chan error) <- err
 	}
 }
 
-// retrieveResponseAsync retrieves the response saved by saveResponse and send the retrieved reponse to the channel .
+// retrieveResponseAsync retrieves the response saved by saveResponse and send the retrieved repose to the channel .
 func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResponse) {
 	var responseProcessedIndex int
 	responseNotifier, _ := c.responseNotifier.Load(id)
 	responseStatusNotifier, _ := c.responseStatusNotifier.Load(id)
+
 	for status := range responseStatusNotifier.(chan int) {
 		_ = status
+
+		// this block retrieves all but the last of the partial responses
+		// and sends it to the response channel
 		if dataI, ok := c.results.Load(id); ok {
 			d := dataI.([]interface{})
 			// Only retrieve all but one from the partial responses saved in results Map that are not sent to responseChannel
@@ -116,30 +127,38 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 				responseChannel <- asyncResponse
 			}
 		}
-		//Checks to see If there was an Error or full response has been provided by Neptune
-		if len(responseNotifier.(chan error)) > 0 {
-			//Checks to see If there was an Error or will get nil when final reponse has been provided by Neptune
-			err := <-responseNotifier.(chan error)
-			if dataI, ok := c.results.Load(id); ok {
-				d := dataI.([]interface{})
-				// Retrieve all the partial responses that are not sent to responseChannel
-				for i := responseProcessedIndex; i < len(d); i++ {
-					responseProcessedIndex++
-					asyncResponse := AsyncResponse{}
-					asyncResponse.Response = d[i].(Response)
-					//when final partial response it sent it also sends the error message if there was an error on the last partial response retrival
-					if responseProcessedIndex == len(d) && err != nil {
-						asyncResponse.ErrorMessage = err.Error()
-					}
-					// Send the Partial response object to the responseChannel
-					responseChannel <- asyncResponse
-				}
-			}
-			// All the Partial response object including the final one has been sent to the responseChannel
-			break
+
+		responseNotifierChannel := responseNotifier.(chan error)
+		// Checks to see If there was an Error or full response that has been provided by cosmos
+		// If not, then continue with consuming the other partial messages
+		if len(responseNotifierChannel) <= 0 {
+			continue
 		}
+
+		//Checks to see If there was an Error or will get nil when final response has been provided by cosmos
+		err := <-responseNotifierChannel
+
+		if dataI, ok := c.results.Load(id); ok {
+			d := dataI.([]interface{})
+			// Retrieve all the partial responses that are not sent to responseChannel
+			for i := responseProcessedIndex; i < len(d); i++ {
+				responseProcessedIndex++
+				asyncResponse := AsyncResponse{}
+				asyncResponse.Response = d[i].(Response)
+				//when final partial response it sent it also sends the error message if there was an error on the last partial response retrival
+				if responseProcessedIndex == len(d) && err != nil {
+					asyncResponse.ErrorMessage = err.Error()
+				}
+				// Send the Partial response object to the responseChannel
+				responseChannel <- asyncResponse
+			}
+		}
+		// All the Partial response object including the final one has been sent to the responseChannel
+		break
 	}
-	// All the Partial response object including the final one has been sent to the responseChannel so closing responseStatusNotifier, responseNotifier, responseChannel and removing all the reponse stored
+
+	// All the Partial response object including the final one has been sent to the responseChannel
+	// so closing responseStatusNotifier, responseNotifier, responseChannel and removing all the repose stored
 	close(responseStatusNotifier.(chan int))
 	close(responseNotifier.(chan error))
 	c.responseNotifier.Delete(id)
@@ -149,25 +168,43 @@ func (c *Client) retrieveResponseAsync(id string, responseChannel chan AsyncResp
 }
 
 // retrieveResponse retrieves the response saved by saveResponse.
-func (c *Client) retrieveResponse(id string) (data []Response, err error) {
-	resp, _ := c.responseNotifier.Load(id)
-	responseStatusNotifier, _ := c.responseStatusNotifier.Load(id)
-	err = <-resp.(chan error)
-	if err == nil {
-		if dataI, ok := c.results.Load(id); ok {
-			d := dataI.([]interface{})
-			data = make([]Response, len(d))
-			for i := range d {
-				data[i] = d[i].(Response)
-			}
-			close(resp.(chan error))
-			close(responseStatusNotifier.(chan int))
-			c.responseNotifier.Delete(id)
-			c.responseStatusNotifier.Delete(id)
-			c.deleteResponse(id)
-		}
+func (c *Client) retrieveResponse(id string) ([]Response, error) {
+	resp, ok := c.responseNotifier.Load(id)
+	if !ok {
+		return nil, fmt.Errorf("Response with id %s not found", id)
 	}
-	return
+
+	responseStatusNotifier, ok := c.responseStatusNotifier.Load(id)
+	if !ok {
+		return nil, fmt.Errorf("Response with id %s not found", id)
+	}
+
+	responseErrorChannel := resp.(chan error)
+	err := <-responseErrorChannel
+	if err != nil {
+		return nil, err
+	}
+
+	dataI, ok := c.results.Load(id)
+	if !ok {
+		return nil, fmt.Errorf("No result for response with id %s found", id)
+	}
+
+	// cast the given data into an array of Responses
+	d := dataI.([]interface{})
+	data := make([]Response, len(d))
+	for i := range d {
+		data[i] = d[i].(Response)
+	}
+
+	// cleanup
+	close(responseErrorChannel)
+	close(responseStatusNotifier.(chan int))
+	c.responseNotifier.Delete(id)
+	c.responseStatusNotifier.Delete(id)
+	c.deleteResponse(id)
+
+	return data, nil
 }
 
 // deleteRespones deletes the response from the container. Used for cleanup purposes by requester.
