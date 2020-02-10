@@ -11,8 +11,8 @@ import (
 	"github.com/schwartzmx/gremtune/interfaces"
 )
 
-// clientImpl is a container for the gremtune client.
-type clientImpl struct {
+// client is a container for the gremtune client.
+type client struct {
 	// conn is the entity that manages the websocket connection
 	conn interfaces.Dialer
 
@@ -59,24 +59,24 @@ type auth struct {
 }
 
 // clientOption is the struct for defining optional parameters for the Client
-type clientOption func(*clientImpl)
+type clientOption func(*client)
 
 // SetAuth sets credentials for an authenticated connection
 func SetAuth(username string, password string) clientOption {
-	return func(c *clientImpl) {
+	return func(c *client) {
 		c.auth = auth{username: username, password: password}
 	}
 }
 
 // PingInterval sets the ping interval, which is the interval to send the ping frame to the peer
 func PingInterval(interval time.Duration) clientOption {
-	return func(c *clientImpl) {
+	return func(c *client) {
 		c.pingInterval = interval
 	}
 }
 
-func newClient(dialer interfaces.Dialer, options ...clientOption) *clientImpl {
-	client := &clientImpl{
+func newClient(dialer interfaces.Dialer, options ...clientOption) *client {
+	client := &client{
 		conn:                   dialer,
 		requests:               make(chan []byte, 3),
 		results:                &sync.Map{},
@@ -116,15 +116,15 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOpti
 	return client, nil
 }
 
-func (c *clientImpl) HadError() bool {
+func (c *client) HadError() bool {
 	return c.errored
 }
 
-func (c *clientImpl) IsConnected() bool {
+func (c *client) IsConnected() bool {
 	return c.conn.IsConnected()
 }
 
-func (c *clientImpl) pingWorker(errs chan error, quit <-chan struct{}) {
+func (c *client) pingWorker(errs chan error, quit <-chan struct{}) {
 	ticker := time.NewTicker(c.pingInterval)
 	defer ticker.Stop()
 	defer c.wg.Done()
@@ -141,7 +141,7 @@ func (c *clientImpl) pingWorker(errs chan error, quit <-chan struct{}) {
 	}
 }
 
-func (c *clientImpl) executeRequest(query string, bindings, rebindings *map[string]string) ([]interfaces.Response, error) {
+func (c *client) executeRequest(query string, bindings, rebindings *map[string]string) ([]interfaces.Response, error) {
 	var req request
 	var id string
 	var err error
@@ -174,7 +174,7 @@ func (c *clientImpl) executeRequest(query string, bindings, rebindings *map[stri
 	return resp, err
 }
 
-func (c *clientImpl) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan interfaces.AsyncResponse) (err error) {
+func (c *client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan interfaces.AsyncResponse) (err error) {
 	var req request
 	var id string
 	if bindings != nil && rebindings != nil {
@@ -209,7 +209,7 @@ func validateCredentials(auth auth) error {
 	return nil
 }
 
-func (c *clientImpl) authenticate(requestID string) error {
+func (c *client) authenticate(requestID string) error {
 	if err := validateCredentials(c.auth); err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func (c *clientImpl) authenticate(requestID string) error {
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (c *clientImpl) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+func (c *client) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}
@@ -239,7 +239,7 @@ func (c *clientImpl) ExecuteWithBindings(query string, bindings, rebindings map[
 }
 
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (c *clientImpl) Execute(query string) (resp []interfaces.Response, err error) {
+func (c *client) Execute(query string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}
@@ -248,7 +248,7 @@ func (c *clientImpl) Execute(query string) (resp []interfaces.Response, err erro
 }
 
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
-func (c *clientImpl) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
+func (c *client) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
 	if !c.conn.IsConnected() {
 		return fmt.Errorf("Can't write - no connection")
 	}
@@ -257,7 +257,7 @@ func (c *clientImpl) ExecuteAsync(query string, responseChannel chan interfaces.
 }
 
 // ExecuteFileWithBindings takes a file path to a Gremlin script, sends it to Gremlin Server with bindings, and returns the result.
-func (c *clientImpl) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+func (c *client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}
@@ -272,7 +272,7 @@ func (c *clientImpl) ExecuteFileWithBindings(path string, bindings, rebindings m
 }
 
 // ExecuteFile takes a file path to a Gremlin script, sends it to Gremlin Server, and returns the result.
-func (c *clientImpl) ExecuteFile(path string) (resp []interfaces.Response, err error) {
+func (c *client) ExecuteFile(path string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}
@@ -287,7 +287,7 @@ func (c *clientImpl) ExecuteFile(path string) (resp []interfaces.Response, err e
 }
 
 // Close closes the underlying connection and marks the client as closed.
-func (c *clientImpl) Close() error {
+func (c *client) Close() error {
 
 	// notify the workers to stop working
 	close(c.quitChannel)
@@ -302,7 +302,7 @@ func (c *clientImpl) Close() error {
 }
 
 // writeWorker works on a loop and dispatches messages as soon as it receives them
-func (c *clientImpl) writeWorker(errs chan error, quit <-chan struct{}) {
+func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
 	defer c.wg.Done()
 	for {
 		select {
@@ -324,7 +324,7 @@ func (c *clientImpl) writeWorker(errs chan error, quit <-chan struct{}) {
 }
 
 // readWorker works on a loop and sorts messages as soon as it receives them
-func (c *clientImpl) readWorker(errs chan error, quit <-chan struct{}) {
+func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 	defer c.wg.Done()
 	for {
 		msgType, msg, err := c.conn.Read()

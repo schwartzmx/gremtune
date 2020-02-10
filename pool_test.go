@@ -113,7 +113,7 @@ func TestFirst(t *testing.T) {
 	idled := []*idleConnection{
 		&idleConnection{t: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
 		&idleConnection{t: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
-		&idleConnection{pc: &PooledConnection{Pool: pool, Client: &clientImpl{}}},                                    // valid
+		&idleConnection{pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor}},                              // valid
 	}
 	pool.idle = idled
 	assert.Len(t, pool.idle, 3, "Expected 3 idle connections")

@@ -7,7 +7,7 @@ import (
 	"github.com/schwartzmx/gremtune/interfaces"
 )
 
-func (c *clientImpl) handleResponse(msg []byte) error {
+func (c *client) handleResponse(msg []byte) error {
 	resp, err := marshalResponse(msg)
 
 	if resp.Status.Code == interfaces.StatusAuthenticate { //Server request authentication
@@ -30,7 +30,7 @@ func marshalResponse(msg []byte) (resp interfaces.Response, err error) {
 }
 
 // saveResponse makes the response available for retrieval by the requester. Mutexes are used for thread safety.
-func (c *clientImpl) saveResponse(resp interfaces.Response, err error) {
+func (c *client) saveResponse(resp interfaces.Response, err error) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	var container []interface{}
@@ -62,7 +62,7 @@ func (c *clientImpl) saveResponse(resp interfaces.Response, err error) {
 }
 
 // retrieveResponseAsync retrieves the response saved by saveResponse and send the retrieved repose to the channel .
-func (c *clientImpl) retrieveResponseAsync(id string, responseChannel chan interfaces.AsyncResponse) {
+func (c *client) retrieveResponseAsync(id string, responseChannel chan interfaces.AsyncResponse) {
 	var responseProcessedIndex int
 	responseNotifier, _ := c.responseNotifier.Load(id)
 	responseStatusNotifier, _ := c.responseStatusNotifier.Load(id)
@@ -124,7 +124,7 @@ func (c *clientImpl) retrieveResponseAsync(id string, responseChannel chan inter
 }
 
 // retrieveResponse retrieves the response saved by saveResponse.
-func (c *clientImpl) retrieveResponse(id string) ([]interfaces.Response, error) {
+func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 	resp, ok := c.responseNotifier.Load(id)
 	if !ok {
 		return nil, fmt.Errorf("Response with id %s not found", id)
@@ -164,6 +164,6 @@ func (c *clientImpl) retrieveResponse(id string) ([]interfaces.Response, error) 
 }
 
 // deleteRespones deletes the response from the container. Used for cleanup purposes by requester.
-func (c *clientImpl) deleteResponse(id string) {
+func (c *client) deleteResponse(id string) {
 	c.results.Delete(id)
 }
