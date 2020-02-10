@@ -12,7 +12,7 @@ import (
 
 type SuiteIntegrationTests struct {
 	suite.Suite
-	client             interfaces.Client
+	client             interfaces.QueryExecutor
 	clientErrorChannel chan error
 	pool               *Pool
 	poolErrorChannel   chan error

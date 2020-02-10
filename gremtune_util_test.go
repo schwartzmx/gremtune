@@ -37,8 +37,8 @@ func newTestPool(t *testing.T, errChan chan error) *Pool {
 
 	return &Pool{
 		createQueryExecutor: createQueryExecutorFn,
-		MaxActive:           10,
-		IdleTimeout:         time.Duration(10 * time.Second),
+		maxActive:           10,
+		idleTimeout:         time.Duration(10 * time.Second),
 	}
 }
 

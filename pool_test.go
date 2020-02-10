@@ -20,7 +20,7 @@ func TestNewPool(t *testing.T) {
 		return mockedQueryExecutor, nil
 	}
 	// WHEN
-	pool, err := NewPool(clientFactory)
+	pool, err := NewPool(clientFactory, 10, time.Second*30)
 
 	// THEN
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestPurge(t *testing.T) {
 
 	// Pool has a 30 second timeout and an idle connection slice containing both
 	// the invalid and valid idle connections
-	p := &Pool{IdleTimeout: time.Second * 30, idle: []*idleConnection{invalid, valid}}
+	p := &Pool{idleTimeout: time.Second * 30, idle: []*idleConnection{invalid, valid}}
 	assert.Len(t, p.idle, 2, "Expected 2 idle connections")
 
 	// WHEN
@@ -67,7 +67,7 @@ func TestPurgeErrorClosedConnection(t *testing.T) {
 	mockedQueryExecutorClosed := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
 	n := time.Now()
-	p := &Pool{IdleTimeout: time.Second * 30}
+	p := &Pool{idleTimeout: time.Second * 30}
 	valid := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Client: mockedQueryExecutorValid}}
 	closed := &idleConnection{t: n.Add(30 * time.Second), pc: &PooledConnection{Pool: p, Client: mockedQueryExecutorClosed}}
 	idle := []*idleConnection{valid, closed}
@@ -109,7 +109,7 @@ func TestFirst(t *testing.T) {
 	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
 	n := time.Now()
-	pool := &Pool{MaxActive: 1, IdleTimeout: 30 * time.Second}
+	pool := &Pool{maxActive: 1, idleTimeout: 30 * time.Second}
 	idled := []*idleConnection{
 		&idleConnection{t: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
 		&idleConnection{t: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
@@ -138,7 +138,7 @@ func TestGetAndDial(t *testing.T) {
 	mockedQueryExecutor2 := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
 	n := time.Now()
-	pool := &Pool{IdleTimeout: time.Second * 30}
+	pool := &Pool{idleTimeout: time.Second * 30}
 	invalid := &idleConnection{t: n.Add(-30 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor1}}
 	idle := []*idleConnection{invalid}
 	pool.idle = idle

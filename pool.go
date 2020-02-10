@@ -13,8 +13,8 @@ type QueryExecutorFactoryFunc func() (interfaces.QueryExecutor, error)
 // Pool maintains a pool of connections to the cosmos db.
 type Pool struct {
 	createQueryExecutor QueryExecutorFactoryFunc
-	MaxActive           int
-	IdleTimeout         time.Duration
+	maxActive           int
+	idleTimeout         time.Duration
 	mu                  sync.Mutex
 	idle                []*idleConnection
 	active              int
@@ -28,18 +28,26 @@ type PooledConnection struct {
 	Client interfaces.QueryExecutor
 }
 
-func NewPool(createQueryExecutor QueryExecutorFactoryFunc) (interfaces.QueryExecutor, error) {
+func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections int, idleTimeout time.Duration) (interfaces.QueryExecutor, error) {
 
 	if createQueryExecutor == nil {
 		return nil, fmt.Errorf("Given createQueryExecutor is nil")
 	}
 
+	if maxActiveConnections < 1 {
+		return nil, fmt.Errorf("maxActiveConnections has to be >=1")
+	}
+
+	if idleTimeout <= time.Second*0 {
+		return nil, fmt.Errorf("maxActiveConnections has to be >0")
+	}
+
 	return &Pool{
 		createQueryExecutor: createQueryExecutor,
-		MaxActive:           10,
+		maxActive:           maxActiveConnections,
 		active:              0,
 		closed:              false,
-		IdleTimeout:         time.Second * 30,
+		idleTimeout:         idleTimeout,
 		idle:                make([]*idleConnection, 0),
 	}, nil
 }
@@ -87,7 +95,7 @@ func (p *Pool) Get() (*PooledConnection, error) {
 		}
 
 		// No idle connections, try dialing a new one
-		if p.MaxActive == 0 || p.active < p.MaxActive {
+		if p.maxActive == 0 || p.active < p.maxActive {
 			p.active++
 			createQueryExecutor := p.createQueryExecutor
 
@@ -132,7 +140,7 @@ func (p *Pool) put(pc *PooledConnection) {
 // purge removes expired idle connections from the pool.
 // It is not threadsafe. The caller should manage locking the pool.
 func (p *Pool) purge() {
-	if timeout := p.IdleTimeout; timeout > 0 {
+	if timeout := p.idleTimeout; timeout > 0 {
 		var valid []*idleConnection
 		now := time.Now()
 		for _, v := range p.idle {
