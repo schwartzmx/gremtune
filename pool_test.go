@@ -11,6 +11,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewPooledClient(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedClient := mock_interfaces.NewMockClient(mockCtrl)
+	clientFactory := func() (interfaces.Client, error) {
+		return mockedClient, nil
+	}
+	// WHEN
+	pool, err := NewPooledClient(clientFactory)
+
+	// THEN
+	require.NoError(t, err)
+	require.NotNil(t, pool)
+	poolImpl := pool.(*Pool)
+	assert.NotNil(t, poolImpl.Dial)
+	assert.NotNil(t, poolImpl.idle)
+}
+
 func TestPurge(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)

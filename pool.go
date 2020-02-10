@@ -8,6 +8,8 @@ import (
 	"github.com/schwartzmx/gremtune/interfaces"
 )
 
+type ClientFactoryFunc func() (interfaces.Client, error)
+
 // Pool maintains a list of connections.
 type Pool struct {
 	Dial        func() (interfaces.Client, error)
@@ -26,10 +28,36 @@ type PooledConnection struct {
 	Client interfaces.Client
 }
 
+func NewPooledClient(clientFactory ClientFactoryFunc) (interfaces.Client, error) {
+
+	if clientFactory == nil {
+		return nil, fmt.Errorf("Given clientfactory is nil")
+	}
+
+	return &Pool{
+		Dial:        clientFactory,
+		MaxActive:   10,
+		active:      0,
+		closed:      false,
+		IdleTimeout: time.Second * 30,
+		idle:        make([]*idleConnection, 0),
+	}, nil
+}
+
 type idleConnection struct {
 	pc *PooledConnection
 	// t is the time the connection was idled
 	t time.Time
+}
+
+func (p *Pool) IsConnected() bool {
+	// TODO: Implement
+	return true
+}
+
+func (p *Pool) HadError() bool {
+	// TODO: Implement
+	return false
 }
 
 // Get will return an available pooled connection. Either an idle connection or
@@ -44,6 +72,8 @@ func (p *Pool) Get() (*PooledConnection, error) {
 
 	// Wait loop
 	for {
+		// TODO: Ensure to return only clients that are connected
+
 		// Try to grab first available idle connection
 		if conn := p.first(); conn != nil {
 
@@ -143,7 +173,7 @@ func (p *Pool) first() *idleConnection {
 }
 
 // Close closes the pool.
-func (p *Pool) Close() {
+func (p *Pool) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -151,6 +181,8 @@ func (p *Pool) Close() {
 		c.pc.Client.Close()
 	}
 	p.closed = true
+
+	return nil
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
@@ -171,8 +203,46 @@ func (p *Pool) Execute(query string) (resp []interfaces.Response, err error) {
 		fmt.Printf("Error aquiring connection from pool: %s", err)
 		return nil, err
 	}
+	// put the connection back into the idle pool
 	defer pc.Close()
+
 	return pc.Client.Execute(query)
+}
+
+func (p *Pool) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
+	pc, err := p.Get()
+	if err != nil {
+		fmt.Printf("Error aquiring connection from pool: %s", err)
+		return err
+	}
+	// put the connection back into the idle pool
+	defer pc.Close()
+
+	return pc.Client.ExecuteAsync(query, responseChannel)
+}
+
+func (p *Pool) ExecuteFile(path string) (resp []interfaces.Response, err error) {
+	pc, err := p.Get()
+	if err != nil {
+		fmt.Printf("Error aquiring connection from pool: %s", err)
+		return nil, err
+	}
+	// put the connection back into the idle pool
+	defer pc.Close()
+
+	return pc.Client.ExecuteFile(path)
+}
+
+func (p *Pool) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+	pc, err := p.Get()
+	if err != nil {
+		fmt.Printf("Error aquiring connection from pool: %s", err)
+		return nil, err
+	}
+	// put the connection back into the idle pool
+	defer pc.Close()
+
+	return pc.Client.ExecuteFileWithBindings(path, bindings, rebindings)
 }
 
 // Close signals that the caller is finished with the connection and should be

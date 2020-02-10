@@ -93,7 +93,8 @@ func newClient(dialer interfaces.Dialer, options ...ClientOption) *clientImpl {
 	return client
 }
 
-// Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
+// Dial returns a client for interaction with the Gremlin Server specified in the host IP.
+// The client is already connected.
 func Dial(conn interfaces.Dialer, errorChannel chan error, options ...ClientOption) (interfaces.Client, error) {
 
 	if conn == nil {
