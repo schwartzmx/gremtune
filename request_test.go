@@ -54,9 +54,9 @@ func TestRequestPackaging(t *testing.T) {
 
 	var expected []byte
 
-	mimetypelen := byte(len(MimeType))
+	lenMimeType := byte(len(MimeType))
 
-	expected = append(expected, mimetypelen)
+	expected = append(expected, lenMimeType)
 	expected = append(expected, MimeType...)
 	expected = append(expected, j...)
 

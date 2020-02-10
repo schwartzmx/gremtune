@@ -87,10 +87,10 @@ func packageRequest(req request) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	mimetypelen := byte(len(MimeType))
+	lenMimeType := byte(len(MimeType))
 
-	//mimetypelen is the fixed length of mimeType in hex
-	msg := append([]byte{mimetypelen}, MimeType...)
+	//lenMimeType is the fixed length of mimeType in hex
+	msg := append([]byte{lenMimeType}, MimeType...)
 	msg = append(msg, j...)
 
 	return msg, nil

@@ -36,11 +36,8 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
 
-      - name: Run the unit tests
+      - name: Run the unit tests and check for race conditions
         run: make test
-
-      - name: Check for race conditions
-        run: make race
 
       - name: Start the local gremlin as preparation for the integration test and run the integration tests
         run: |
