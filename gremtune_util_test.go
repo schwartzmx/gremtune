@@ -25,7 +25,7 @@ func newTestClient(t *testing.T, errChan chan error) interfaces.QueryExecutor {
 	return client
 }
 
-func newTestPool(t *testing.T, errChan chan error) *Pool {
+func newTestPool(t *testing.T, errChan chan error) *pool {
 	createQueryExecutorFn := func() (interfaces.QueryExecutor, error) {
 		dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
 		require.NoError(t, err)
@@ -35,7 +35,7 @@ func newTestPool(t *testing.T, errChan chan error) *Pool {
 		return c, err
 	}
 
-	return &Pool{
+	return &pool{
 		createQueryExecutor: createQueryExecutorFn,
 		maxActive:           10,
 		idleTimeout:         time.Duration(10 * time.Second),

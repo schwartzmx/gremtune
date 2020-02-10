@@ -10,8 +10,8 @@ import (
 
 type QueryExecutorFactoryFunc func() (interfaces.QueryExecutor, error)
 
-// Pool maintains a pool of connections to the cosmos db.
-type Pool struct {
+// pool maintains a pool of connections to the cosmos db.
+type pool struct {
 	// createQueryExecutor function that returns new connected QueryExecutors
 	createQueryExecutor QueryExecutorFactoryFunc
 
@@ -37,11 +37,11 @@ type Pool struct {
 
 // pooledConnection represents a shared and reusable connection.
 type pooledConnection struct {
-	Pool   *Pool
-	Client interfaces.QueryExecutor
+	pool   *pool
+	client interfaces.QueryExecutor
 }
 
-// NewPool creates a new Pool which is a QueryExecutor
+// NewPool creates a new pool which is a QueryExecutor
 func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections int, idleTimeout time.Duration) (interfaces.QueryExecutor, error) {
 
 	if createQueryExecutor == nil {
@@ -56,7 +56,7 @@ func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections 
 		return nil, fmt.Errorf("maxActiveConnections has to be >=0")
 	}
 
-	return &Pool{
+	return &pool{
 		createQueryExecutor: createQueryExecutor,
 		maxActive:           maxActiveConnections,
 		active:              0,
@@ -73,12 +73,12 @@ type idleConnection struct {
 	idleSince time.Time
 }
 
-func (p *Pool) IsConnected() bool {
+func (p *pool) IsConnected() bool {
 	// TODO: Implement
 	return true
 }
 
-func (p *Pool) HadError() bool {
+func (p *pool) HadError() bool {
 	// TODO: Implement
 	return false
 }
@@ -86,7 +86,7 @@ func (p *Pool) HadError() bool {
 // Get will return an available pooled connection. Either an idle connection or
 // by dialing a new one if the pool does not currently have a maximum number
 // of active connections.
-func (p *Pool) Get() (*pooledConnection, error) {
+func (p *pool) Get() (*pooledConnection, error) {
 	// Lock the pool to keep the kids out.
 	p.mu.Lock()
 
@@ -104,7 +104,7 @@ func (p *Pool) Get() (*pooledConnection, error) {
 			p.idleConnections = append(p.idleConnections[:0], p.idleConnections[1:]...)
 			p.active++
 			p.mu.Unlock()
-			pc := &pooledConnection{Pool: p, Client: conn.pc.Client}
+			pc := &pooledConnection{pool: p, client: conn.pc.client}
 			return pc, nil
 
 		}
@@ -126,7 +126,7 @@ func (p *Pool) Get() (*pooledConnection, error) {
 				return nil, err
 			}
 
-			pc := &pooledConnection{Pool: p, Client: dc}
+			pc := &pooledConnection{pool: p, client: dc}
 			return pc, nil
 		}
 
@@ -141,9 +141,9 @@ func (p *Pool) Get() (*pooledConnection, error) {
 
 // put pushes the supplied pooledConnection to the top of the idle slice to be reused.
 // It is not threadsafe. The caller should manage locking the pool.
-func (p *Pool) put(pc *pooledConnection) {
+func (p *pool) put(pc *pooledConnection) {
 	if p.closed {
-		pc.Client.Close()
+		pc.client.Close()
 		return
 	}
 	idle := &idleConnection{pc: pc, idleSince: time.Now()}
@@ -154,7 +154,7 @@ func (p *Pool) put(pc *pooledConnection) {
 
 // purge removes expired idle connections from the pool.
 // It is not threadsafe. The caller should manage locking the pool.
-func (p *Pool) purge() {
+func (p *pool) purge() {
 	timeout := p.idleTimeout
 	// don't clean up in case there is no timeout specified
 	if timeout <= 0 {
@@ -165,14 +165,14 @@ func (p *Pool) purge() {
 	now := time.Now()
 	for _, idleConnection := range p.idleConnections {
 		// If the client has an error then exclude it from the pool
-		if idleConnection.pc.Client.HadError() {
+		if idleConnection.pc.client.HadError() {
 			// Force underlying connection closed
-			idleConnection.pc.Client.Close()
+			idleConnection.pc.client.Close()
 			continue
 		}
 
 		// If the client is not connected any more then exclude it from the pool
-		if !idleConnection.pc.Client.IsConnected() {
+		if !idleConnection.pc.client.IsConnected() {
 			continue
 		}
 
@@ -182,7 +182,7 @@ func (p *Pool) purge() {
 		} else {
 			// expired -> don't add it to the idle connection list
 			// Force underlying connection closed
-			idleConnection.pc.Client.Close()
+			idleConnection.pc.client.Close()
 		}
 	}
 	p.idleConnections = idleConnectionsAfterPurge
@@ -190,7 +190,7 @@ func (p *Pool) purge() {
 
 // release decrements active and alerts waiters.
 // It is not threadsafe. The caller should manage locking the pool.
-func (p *Pool) release() {
+func (p *pool) release() {
 	if p.closed {
 		return
 	}
@@ -201,7 +201,7 @@ func (p *Pool) release() {
 
 }
 
-func (p *Pool) first() *idleConnection {
+func (p *pool) first() *idleConnection {
 	if len(p.idleConnections) == 0 {
 		return nil
 	}
@@ -209,12 +209,12 @@ func (p *Pool) first() *idleConnection {
 }
 
 // Close closes the pool.
-func (p *Pool) Close() error {
+func (p *pool) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	for _, c := range p.idleConnections {
-		c.pc.Client.Close()
+		c.pc.client.Close()
 	}
 	p.closed = true
 
@@ -222,18 +222,18 @@ func (p *Pool) Close() error {
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (p *Pool) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+func (p *pool) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
 		fmt.Printf("Error aquiring connection from pool: %s", err)
 		return nil, err
 	}
 	defer pc.Close()
-	return pc.Client.ExecuteWithBindings(query, bindings, rebindings)
+	return pc.client.ExecuteWithBindings(query, bindings, rebindings)
 }
 
 // Execute grabs a connection from the pool, formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (p *Pool) Execute(query string) (resp []interfaces.Response, err error) {
+func (p *pool) Execute(query string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
 		fmt.Printf("Error aquiring connection from pool: %s", err)
@@ -242,10 +242,10 @@ func (p *Pool) Execute(query string) (resp []interfaces.Response, err error) {
 	// put the connection back into the idle pool
 	defer pc.Close()
 
-	return pc.Client.Execute(query)
+	return pc.client.Execute(query)
 }
 
-func (p *Pool) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
+func (p *pool) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
 	pc, err := p.Get()
 	if err != nil {
 		fmt.Printf("Error aquiring connection from pool: %s", err)
@@ -254,10 +254,10 @@ func (p *Pool) ExecuteAsync(query string, responseChannel chan interfaces.AsyncR
 	// put the connection back into the idle pool
 	defer pc.Close()
 
-	return pc.Client.ExecuteAsync(query, responseChannel)
+	return pc.client.ExecuteAsync(query, responseChannel)
 }
 
-func (p *Pool) ExecuteFile(path string) (resp []interfaces.Response, err error) {
+func (p *pool) ExecuteFile(path string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
 		fmt.Printf("Error aquiring connection from pool: %s", err)
@@ -266,10 +266,10 @@ func (p *Pool) ExecuteFile(path string) (resp []interfaces.Response, err error) 
 	// put the connection back into the idle pool
 	defer pc.Close()
 
-	return pc.Client.ExecuteFile(path)
+	return pc.client.ExecuteFile(path)
 }
 
-func (p *Pool) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+func (p *pool) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
 		fmt.Printf("Error aquiring connection from pool: %s", err)
@@ -278,15 +278,15 @@ func (p *Pool) ExecuteFileWithBindings(path string, bindings, rebindings map[str
 	// put the connection back into the idle pool
 	defer pc.Close()
 
-	return pc.Client.ExecuteFileWithBindings(path, bindings, rebindings)
+	return pc.client.ExecuteFileWithBindings(path, bindings, rebindings)
 }
 
 // Close signals that the caller is finished with the connection and should be
 // returned to the pool for future use.
 func (pc *pooledConnection) Close() {
-	pc.Pool.mu.Lock()
-	defer pc.Pool.mu.Unlock()
+	pc.pool.mu.Lock()
+	defer pc.pool.mu.Unlock()
 
-	pc.Pool.put(pc)
-	pc.Pool.release()
+	pc.pool.put(pc)
+	pc.pool.release()
 }

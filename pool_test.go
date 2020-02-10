@@ -20,12 +20,12 @@ func TestNewPool(t *testing.T) {
 		return mockedQueryExecutor, nil
 	}
 	// WHEN
-	pool, err := NewPool(clientFactory, 10, time.Second*30)
+	queryExecutor, err := NewPool(clientFactory, 10, time.Second*30)
 
 	// THEN
 	require.NoError(t, err)
-	require.NotNil(t, pool)
-	poolImpl := pool.(*Pool)
+	require.NotNil(t, queryExecutor)
+	poolImpl := queryExecutor.(*pool)
 	assert.NotNil(t, poolImpl.createQueryExecutor)
 	assert.NotNil(t, poolImpl.idleConnections)
 }
@@ -70,13 +70,13 @@ func TestPurge(t *testing.T) {
 
 	n := time.Now()
 	// invalid has timedout and should be cleaned up
-	invalid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorInvalid}}
+	invalid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{client: mockedQueryExecutorInvalid}}
 	// valid has not yet timed out and should remain in the idle pool
-	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorValid}}
+	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{client: mockedQueryExecutorValid}}
 
-	// Pool has a 30 second timeout and an idle connection slice containing both
+	// pool has a 30 second timeout and an idle connection slice containing both
 	// the invalid and valid idle connections
-	p := &Pool{idleTimeout: time.Second * 30, idleConnections: []*idleConnection{invalid, valid}}
+	p := &pool{idleTimeout: time.Second * 30, idleConnections: []*idleConnection{invalid, valid}}
 	assert.Len(t, p.idleConnections, 2, "Expected 2 idle connections")
 
 	// WHEN
@@ -100,11 +100,11 @@ func TestNoPurge(t *testing.T) {
 
 	n := time.Now()
 	// valid has not yet timed out and should remain in the idle pool
-	valid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorValid}}
+	valid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{client: mockedQueryExecutorValid}}
 
-	// Pool has a 30 second timeout and an idle connection slice containing both
+	// pool has a 30 second timeout and an idle connection slice containing both
 	// the invalid and valid idle connections
-	p := &Pool{idleTimeout: 0, idleConnections: []*idleConnection{valid}}
+	p := &pool{idleTimeout: 0, idleConnections: []*idleConnection{valid}}
 	assert.Len(t, p.idleConnections, 1, "Expected 1 idle connections")
 
 	// WHEN
@@ -122,9 +122,9 @@ func TestPurgeOnErroredConnection(t *testing.T) {
 	mockedQueryExecutorWithError := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
 	n := time.Now()
-	p := &Pool{idleTimeout: time.Second * 30}
-	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorValid}}
-	closed := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Pool: p, Client: mockedQueryExecutorWithError}}
+	p := &pool{idleTimeout: time.Second * 30}
+	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{client: mockedQueryExecutorValid}}
+	closed := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{pool: p, client: mockedQueryExecutorWithError}}
 	idle := []*idleConnection{valid, closed}
 	p.idleConnections = idle
 
@@ -151,9 +151,9 @@ func TestPurgeOnClosedConnection(t *testing.T) {
 	mockedQueryExecutorClosed := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
 	n := time.Now()
-	p := &Pool{idleTimeout: time.Second * 30}
-	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorValid}}
-	closed := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Pool: p, Client: mockedQueryExecutorClosed}}
+	p := &pool{idleTimeout: time.Second * 30}
+	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{client: mockedQueryExecutorValid}}
+	closed := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{pool: p, client: mockedQueryExecutorClosed}}
 	idle := []*idleConnection{valid, closed}
 	p.idleConnections = idle
 
@@ -174,8 +174,8 @@ func TestPurgeOnClosedConnection(t *testing.T) {
 
 func TestPooledConnectionClose(t *testing.T) {
 	// GIVEN
-	pool := &Pool{}
-	pc := &pooledConnection{Pool: pool}
+	pool := &pool{}
+	pc := &pooledConnection{pool: pool}
 	assert.Len(t, pool.idleConnections, 0, "Expected 0 idle connections")
 
 	// WHEN
@@ -195,22 +195,22 @@ func TestFirst(t *testing.T) {
 	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
 	n := time.Now()
-	pool := &Pool{maxActive: 1, idleTimeout: 30 * time.Second}
+	filledPool := &pool{maxActive: 1, idleTimeout: 30 * time.Second}
 	idled := []*idleConnection{
-		&idleConnection{idleSince: n.Add(-45 * time.Second), pc: &pooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
-		&idleConnection{idleSince: n.Add(-45 * time.Second), pc: &pooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
-		&idleConnection{pc: &pooledConnection{Pool: pool, Client: mockedQueryExecutor}},                                      // valid
+		&idleConnection{idleSince: n.Add(-45 * time.Second), pc: &pooledConnection{pool: filledPool, client: mockedQueryExecutor}}, // expired
+		&idleConnection{idleSince: n.Add(-45 * time.Second), pc: &pooledConnection{pool: filledPool, client: mockedQueryExecutor}}, // expired
+		&idleConnection{pc: &pooledConnection{pool: filledPool, client: mockedQueryExecutor}},                                      // valid
 	}
-	pool.idleConnections = idled
-	assert.Len(t, pool.idleConnections, 3, "Expected 3 idle connections")
+	filledPool.idleConnections = idled
+	assert.Len(t, filledPool.idleConnections, 3, "Expected 3 idle connections")
 
 	// WHEN
 	// Get should return the last idle connection and purge the others
-	c := pool.first()
-	assert.Equal(t, c, pool.idleConnections[0], "Expected to get first connection in idle slice")
+	c := filledPool.first()
+	assert.Equal(t, c, filledPool.idleConnections[0], "Expected to get first connection in idle slice")
 	// Empty pool should return nil
-	emptyPool := &Pool{}
-	c = emptyPool.first()
+	emptypool := &pool{}
+	c = emptypool.first()
 
 	// THEN
 	assert.Nil(t, c)
@@ -224,8 +224,8 @@ func TestGetAndDial(t *testing.T) {
 	mockedQueryExecutor2 := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
 	n := time.Now()
-	pool := &Pool{idleTimeout: time.Second * 30}
-	invalid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{Pool: pool, Client: mockedQueryExecutor1}}
+	pool := &pool{idleTimeout: time.Second * 30}
+	invalid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{pool: pool, client: mockedQueryExecutor1}}
 	idle := []*idleConnection{invalid}
 	pool.idleConnections = idle
 
@@ -245,7 +245,7 @@ func TestGetAndDial(t *testing.T) {
 	conn, err := pool.Get()
 	assert.NoError(t, err)
 	assert.Len(t, pool.idleConnections, 0, "Expected 0 idle connections")
-	assert.Equal(t, mockedQueryExecutor1, conn.Client, "Expected correct client to be returned")
+	assert.Equal(t, mockedQueryExecutor1, conn.client, "Expected correct client to be returned")
 	assert.Equal(t, 1, pool.active, "Expected 1 active connections")
 
 	// Close the connection and ensure it was returned to the idle pool
@@ -258,6 +258,6 @@ func TestGetAndDial(t *testing.T) {
 	conn, err = pool.Get()
 	assert.NoError(t, err)
 	require.NotNil(t, conn)
-	assert.Equal(t, mockedQueryExecutor1, conn.Client, "Expected the same connection to be reused")
+	assert.Equal(t, mockedQueryExecutor1, conn.client, "Expected the same connection to be reused")
 	assert.Equal(t, 1, pool.active, "Expected 1 active connections")
 }

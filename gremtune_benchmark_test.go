@@ -8,7 +8,7 @@ import (
 )
 
 var benchmarkClient interfaces.QueryExecutor
-var benchmarkPool *Pool
+var benchmarkPool *pool
 
 var once sync.Once
 
@@ -35,7 +35,7 @@ func benchmarkPoolExecute(i int, b *testing.B) {
 	once.Do(initBeforeBenchmark)
 
 	for n := 0; n < i; n++ {
-		go func(p *Pool) {
+		go func(p *pool) {
 			_, err := p.Execute(`g.V('1234').label()`)
 			if err != nil {
 				b.Error(err)

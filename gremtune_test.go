@@ -14,7 +14,7 @@ type SuiteIntegrationTests struct {
 	suite.Suite
 	client             interfaces.QueryExecutor
 	clientErrorChannel chan error
-	pool               *Pool
+	pool               *pool
 	poolErrorChannel   chan error
 }
 
