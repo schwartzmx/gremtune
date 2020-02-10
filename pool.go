@@ -12,14 +12,27 @@ type QueryExecutorFactoryFunc func() (interfaces.QueryExecutor, error)
 
 // Pool maintains a pool of connections to the cosmos db.
 type Pool struct {
+	// createQueryExecutor function that returns new connected QueryExecutors
 	createQueryExecutor QueryExecutorFactoryFunc
-	maxActive           int
-	idleTimeout         time.Duration
-	mu                  sync.Mutex
-	idle                []*idleConnection
-	active              int
-	cond                *sync.Cond
-	closed              bool
+
+	// maxActive is the maximum number of allowed active connections
+	maxActive int
+
+	// idleTimeout is the maximum time a idle connection will be kept in the pool.
+	// If the timeout has been expired, the connection will be closed and removed
+	// from the pool.
+	// If this timeout is set to 0, the timeout is unlimited -> no expiration of connections.
+	idleTimeout time.Duration
+
+	// idleConnections list of idle connections
+	idleConnections []*idleConnection
+
+	// active is the number of currently active connections
+	active int
+
+	closed bool
+	cond   *sync.Cond
+	mu     sync.Mutex
 }
 
 // PooledConnection represents a shared and reusable connection.
@@ -28,6 +41,7 @@ type PooledConnection struct {
 	Client interfaces.QueryExecutor
 }
 
+// NewPool creates a new Pool which is a QueryExecutor
 func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections int, idleTimeout time.Duration) (interfaces.QueryExecutor, error) {
 
 	if createQueryExecutor == nil {
@@ -38,8 +52,8 @@ func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections 
 		return nil, fmt.Errorf("maxActiveConnections has to be >=1")
 	}
 
-	if idleTimeout <= time.Second*0 {
-		return nil, fmt.Errorf("maxActiveConnections has to be >0")
+	if idleTimeout < time.Second*0 {
+		return nil, fmt.Errorf("maxActiveConnections has to be >=0")
 	}
 
 	return &Pool{
@@ -48,14 +62,15 @@ func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections 
 		active:              0,
 		closed:              false,
 		idleTimeout:         idleTimeout,
-		idle:                make([]*idleConnection, 0),
+		idleConnections:     make([]*idleConnection, 0),
 	}, nil
 }
 
 type idleConnection struct {
 	pc *PooledConnection
-	// t is the time the connection was idled
-	t time.Time
+
+	// idleSince is the time the connection was idled
+	idleSince time.Time
 }
 
 func (p *Pool) IsConnected() bool {
@@ -86,7 +101,7 @@ func (p *Pool) Get() (*PooledConnection, error) {
 		if conn := p.first(); conn != nil {
 
 			// Remove the connection from the idle slice
-			p.idle = append(p.idle[:0], p.idle[1:]...)
+			p.idleConnections = append(p.idleConnections[:0], p.idleConnections[1:]...)
 			p.active++
 			p.mu.Unlock()
 			pc := &PooledConnection{Pool: p, Client: conn.pc.Client}
@@ -131,33 +146,46 @@ func (p *Pool) put(pc *PooledConnection) {
 		pc.Client.Close()
 		return
 	}
-	idle := &idleConnection{pc: pc, t: time.Now()}
+	idle := &idleConnection{pc: pc, idleSince: time.Now()}
 	// Prepend the connection to the front of the slice
-	p.idle = append([]*idleConnection{idle}, p.idle...)
+	p.idleConnections = append([]*idleConnection{idle}, p.idleConnections...)
 
 }
 
 // purge removes expired idle connections from the pool.
 // It is not threadsafe. The caller should manage locking the pool.
 func (p *Pool) purge() {
-	if timeout := p.idleTimeout; timeout > 0 {
-		var valid []*idleConnection
-		now := time.Now()
-		for _, v := range p.idle {
-			// If the client has an error then exclude it from the pool
-			if v.pc.Client.HadError() {
-				continue
-			}
-
-			if v.t.Add(timeout).After(now) {
-				valid = append(valid, v)
-			} else {
-				// Force underlying connection closed
-				v.pc.Client.Close()
-			}
-		}
-		p.idle = valid
+	timeout := p.idleTimeout
+	// don't clean up in case there is no timeout specified
+	if timeout <= 0 {
+		return
 	}
+
+	var idleConnectionsAfterPurge []*idleConnection
+	now := time.Now()
+	for _, idleConnection := range p.idleConnections {
+		// If the client has an error then exclude it from the pool
+		if idleConnection.pc.Client.HadError() {
+			// Force underlying connection closed
+			idleConnection.pc.Client.Close()
+			continue
+		}
+
+		// If the client is not connected any more then exclude it from the pool
+		if !idleConnection.pc.Client.IsConnected() {
+			continue
+		}
+
+		if idleConnection.idleSince.Add(timeout).After(now) {
+			// not expired -> keep it in the idle connection list
+			idleConnectionsAfterPurge = append(idleConnectionsAfterPurge, idleConnection)
+		} else {
+			// expired -> don't add it to the idle connection list
+			// Force underlying connection closed
+			idleConnection.pc.Client.Close()
+		}
+	}
+	p.idleConnections = idleConnectionsAfterPurge
 }
 
 // release decrements active and alerts waiters.
@@ -174,10 +202,10 @@ func (p *Pool) release() {
 }
 
 func (p *Pool) first() *idleConnection {
-	if len(p.idle) == 0 {
+	if len(p.idleConnections) == 0 {
 		return nil
 	}
-	return p.idle[0]
+	return p.idleConnections[0]
 }
 
 // Close closes the pool.
@@ -185,7 +213,7 @@ func (p *Pool) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	for _, c := range p.idle {
+	for _, c := range p.idleConnections {
 		c.pc.Client.Close()
 	}
 	p.closed = true
