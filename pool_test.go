@@ -11,6 +11,65 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestClose(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
+	clientFactory := func() (interfaces.QueryExecutor, error) {
+		return mockedQueryExecutor, nil
+	}
+	numActiveConnections := 10
+	queryExecutor, err := NewPool(clientFactory, numActiveConnections, time.Second*30)
+	require.NoError(t, err)
+	require.NotNil(t, queryExecutor)
+	pool := queryExecutor.(*pool)
+
+	mockedQueryExecutor.EXPECT().HadError().Return(false).AnyTimes()
+	mockedQueryExecutor.EXPECT().IsConnected().Return(true).AnyTimes()
+	var pooledConnections []*pooledConnection
+	// open n connections
+	for i := 0; i < numActiveConnections; i++ {
+		pooledConnection, err := pool.Get()
+		assert.NotNil(t, pooledConnection)
+		assert.NoError(t, err)
+		pooledConnections = append(pooledConnections, pooledConnection)
+	}
+	// close the connections -> generate n idle connections
+	for _, pooledConnection := range pooledConnections {
+		pooledConnection.Close()
+	}
+
+	// WHEN
+	mockedQueryExecutor.EXPECT().Close().Return(nil).Times(numActiveConnections)
+	err = pool.Close()
+
+	// THEN
+	assert.NoError(t, err)
+	assert.True(t, pool.closed)
+}
+
+func TestRelease(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
+	clientFactory := func() (interfaces.QueryExecutor, error) {
+		return mockedQueryExecutor, nil
+	}
+	queryExecutor, err := NewPool(clientFactory, 10, time.Second*30)
+	require.NoError(t, err)
+	poolImpl := queryExecutor.(*pool)
+
+	// WHEN
+	for i := 0; i < 10; i++ {
+		poolImpl.release()
+	}
+
+	// THEN
+	assert.GreaterOrEqual(t, poolImpl.active, 0)
+}
+
 func TestNewPool(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
