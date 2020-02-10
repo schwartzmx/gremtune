@@ -35,8 +35,8 @@ type Pool struct {
 	mu     sync.Mutex
 }
 
-// PooledConnection represents a shared and reusable connection.
-type PooledConnection struct {
+// pooledConnection represents a shared and reusable connection.
+type pooledConnection struct {
 	Pool   *Pool
 	Client interfaces.QueryExecutor
 }
@@ -67,7 +67,7 @@ func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections 
 }
 
 type idleConnection struct {
-	pc *PooledConnection
+	pc *pooledConnection
 
 	// idleSince is the time the connection was idled
 	idleSince time.Time
@@ -86,7 +86,7 @@ func (p *Pool) HadError() bool {
 // Get will return an available pooled connection. Either an idle connection or
 // by dialing a new one if the pool does not currently have a maximum number
 // of active connections.
-func (p *Pool) Get() (*PooledConnection, error) {
+func (p *Pool) Get() (*pooledConnection, error) {
 	// Lock the pool to keep the kids out.
 	p.mu.Lock()
 
@@ -104,7 +104,7 @@ func (p *Pool) Get() (*PooledConnection, error) {
 			p.idleConnections = append(p.idleConnections[:0], p.idleConnections[1:]...)
 			p.active++
 			p.mu.Unlock()
-			pc := &PooledConnection{Pool: p, Client: conn.pc.Client}
+			pc := &pooledConnection{Pool: p, Client: conn.pc.Client}
 			return pc, nil
 
 		}
@@ -126,7 +126,7 @@ func (p *Pool) Get() (*PooledConnection, error) {
 				return nil, err
 			}
 
-			pc := &PooledConnection{Pool: p, Client: dc}
+			pc := &pooledConnection{Pool: p, Client: dc}
 			return pc, nil
 		}
 
@@ -139,9 +139,9 @@ func (p *Pool) Get() (*PooledConnection, error) {
 	}
 }
 
-// put pushes the supplied PooledConnection to the top of the idle slice to be reused.
+// put pushes the supplied pooledConnection to the top of the idle slice to be reused.
 // It is not threadsafe. The caller should manage locking the pool.
-func (p *Pool) put(pc *PooledConnection) {
+func (p *Pool) put(pc *pooledConnection) {
 	if p.closed {
 		pc.Client.Close()
 		return
@@ -283,7 +283,7 @@ func (p *Pool) ExecuteFileWithBindings(path string, bindings, rebindings map[str
 
 // Close signals that the caller is finished with the connection and should be
 // returned to the pool for future use.
-func (pc *PooledConnection) Close() {
+func (pc *pooledConnection) Close() {
 	pc.Pool.mu.Lock()
 	defer pc.Pool.mu.Unlock()
 

@@ -70,9 +70,9 @@ func TestPurge(t *testing.T) {
 
 	n := time.Now()
 	// invalid has timedout and should be cleaned up
-	invalid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &PooledConnection{Client: mockedQueryExecutorInvalid}}
+	invalid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorInvalid}}
 	// valid has not yet timed out and should remain in the idle pool
-	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &PooledConnection{Client: mockedQueryExecutorValid}}
+	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorValid}}
 
 	// Pool has a 30 second timeout and an idle connection slice containing both
 	// the invalid and valid idle connections
@@ -100,7 +100,7 @@ func TestNoPurge(t *testing.T) {
 
 	n := time.Now()
 	// valid has not yet timed out and should remain in the idle pool
-	valid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &PooledConnection{Client: mockedQueryExecutorValid}}
+	valid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorValid}}
 
 	// Pool has a 30 second timeout and an idle connection slice containing both
 	// the invalid and valid idle connections
@@ -123,8 +123,8 @@ func TestPurgeOnErroredConnection(t *testing.T) {
 
 	n := time.Now()
 	p := &Pool{idleTimeout: time.Second * 30}
-	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &PooledConnection{Client: mockedQueryExecutorValid}}
-	closed := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &PooledConnection{Pool: p, Client: mockedQueryExecutorWithError}}
+	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorValid}}
+	closed := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Pool: p, Client: mockedQueryExecutorWithError}}
 	idle := []*idleConnection{valid, closed}
 	p.idleConnections = idle
 
@@ -152,8 +152,8 @@ func TestPurgeOnClosedConnection(t *testing.T) {
 
 	n := time.Now()
 	p := &Pool{idleTimeout: time.Second * 30}
-	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &PooledConnection{Client: mockedQueryExecutorValid}}
-	closed := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &PooledConnection{Pool: p, Client: mockedQueryExecutorClosed}}
+	valid := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Client: mockedQueryExecutorValid}}
+	closed := &idleConnection{idleSince: n.Add(30 * time.Second), pc: &pooledConnection{Pool: p, Client: mockedQueryExecutorClosed}}
 	idle := []*idleConnection{valid, closed}
 	p.idleConnections = idle
 
@@ -175,7 +175,7 @@ func TestPurgeOnClosedConnection(t *testing.T) {
 func TestPooledConnectionClose(t *testing.T) {
 	// GIVEN
 	pool := &Pool{}
-	pc := &PooledConnection{Pool: pool}
+	pc := &pooledConnection{Pool: pool}
 	assert.Len(t, pool.idleConnections, 0, "Expected 0 idle connections")
 
 	// WHEN
@@ -197,9 +197,9 @@ func TestFirst(t *testing.T) {
 	n := time.Now()
 	pool := &Pool{maxActive: 1, idleTimeout: 30 * time.Second}
 	idled := []*idleConnection{
-		&idleConnection{idleSince: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
-		&idleConnection{idleSince: n.Add(-45 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
-		&idleConnection{pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor}},                                      // valid
+		&idleConnection{idleSince: n.Add(-45 * time.Second), pc: &pooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
+		&idleConnection{idleSince: n.Add(-45 * time.Second), pc: &pooledConnection{Pool: pool, Client: mockedQueryExecutor}}, // expired
+		&idleConnection{pc: &pooledConnection{Pool: pool, Client: mockedQueryExecutor}},                                      // valid
 	}
 	pool.idleConnections = idled
 	assert.Len(t, pool.idleConnections, 3, "Expected 3 idle connections")
@@ -225,7 +225,7 @@ func TestGetAndDial(t *testing.T) {
 
 	n := time.Now()
 	pool := &Pool{idleTimeout: time.Second * 30}
-	invalid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &PooledConnection{Pool: pool, Client: mockedQueryExecutor1}}
+	invalid := &idleConnection{idleSince: n.Add(-30 * time.Second), pc: &pooledConnection{Pool: pool, Client: mockedQueryExecutor1}}
 	idle := []*idleConnection{invalid}
 	pool.idleConnections = idle
 
