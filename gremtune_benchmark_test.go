@@ -7,7 +7,7 @@ import (
 	"github.com/schwartzmx/gremtune/interfaces"
 )
 
-var benchmarkClient interfaces.Client
+var benchmarkClient interfaces.QueryExecutor
 var benchmarkPool *Pool
 
 var once sync.Once

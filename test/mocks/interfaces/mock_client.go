@@ -10,31 +10,31 @@ import (
 	reflect "reflect"
 )
 
-// MockClient is a mock of Client interface
-type MockClient struct {
+// MockQueryExecutor is a mock of QueryExecutor interface
+type MockQueryExecutor struct {
 	ctrl     *gomock.Controller
-	recorder *MockClientMockRecorder
+	recorder *MockQueryExecutorMockRecorder
 }
 
-// MockClientMockRecorder is the mock recorder for MockClient
-type MockClientMockRecorder struct {
-	mock *MockClient
+// MockQueryExecutorMockRecorder is the mock recorder for MockQueryExecutor
+type MockQueryExecutorMockRecorder struct {
+	mock *MockQueryExecutor
 }
 
-// NewMockClient creates a new mock instance
-func NewMockClient(ctrl *gomock.Controller) *MockClient {
-	mock := &MockClient{ctrl: ctrl}
-	mock.recorder = &MockClientMockRecorder{mock}
+// NewMockQueryExecutor creates a new mock instance
+func NewMockQueryExecutor(ctrl *gomock.Controller) *MockQueryExecutor {
+	mock := &MockQueryExecutor{ctrl: ctrl}
+	mock.recorder = &MockQueryExecutorMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockClient) EXPECT() *MockClientMockRecorder {
+func (m *MockQueryExecutor) EXPECT() *MockQueryExecutorMockRecorder {
 	return m.recorder
 }
 
 // HadError mocks base method
-func (m *MockClient) HadError() bool {
+func (m *MockQueryExecutor) HadError() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HadError")
 	ret0, _ := ret[0].(bool)
@@ -42,13 +42,13 @@ func (m *MockClient) HadError() bool {
 }
 
 // HadError indicates an expected call of HadError
-func (mr *MockClientMockRecorder) HadError() *gomock.Call {
+func (mr *MockQueryExecutorMockRecorder) HadError() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HadError", reflect.TypeOf((*MockClient)(nil).HadError))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HadError", reflect.TypeOf((*MockQueryExecutor)(nil).HadError))
 }
 
 // Close mocks base method
-func (m *MockClient) Close() error {
+func (m *MockQueryExecutor) Close() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Close")
 	ret0, _ := ret[0].(error)
@@ -56,13 +56,13 @@ func (m *MockClient) Close() error {
 }
 
 // Close indicates an expected call of Close
-func (mr *MockClientMockRecorder) Close() *gomock.Call {
+func (mr *MockQueryExecutorMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockClient)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockQueryExecutor)(nil).Close))
 }
 
 // Execute mocks base method
-func (m *MockClient) Execute(query string) ([]interfaces.Response, error) {
+func (m *MockQueryExecutor) Execute(query string) ([]interfaces.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Execute", query)
 	ret0, _ := ret[0].([]interfaces.Response)
@@ -71,13 +71,13 @@ func (m *MockClient) Execute(query string) ([]interfaces.Response, error) {
 }
 
 // Execute indicates an expected call of Execute
-func (mr *MockClientMockRecorder) Execute(query interface{}) *gomock.Call {
+func (mr *MockQueryExecutorMockRecorder) Execute(query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockClient)(nil).Execute), query)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockQueryExecutor)(nil).Execute), query)
 }
 
 // IsConnected mocks base method
-func (m *MockClient) IsConnected() bool {
+func (m *MockQueryExecutor) IsConnected() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsConnected")
 	ret0, _ := ret[0].(bool)
@@ -85,13 +85,13 @@ func (m *MockClient) IsConnected() bool {
 }
 
 // IsConnected indicates an expected call of IsConnected
-func (mr *MockClientMockRecorder) IsConnected() *gomock.Call {
+func (mr *MockQueryExecutorMockRecorder) IsConnected() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConnected", reflect.TypeOf((*MockClient)(nil).IsConnected))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConnected", reflect.TypeOf((*MockQueryExecutor)(nil).IsConnected))
 }
 
 // ExecuteAsync mocks base method
-func (m *MockClient) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) error {
+func (m *MockQueryExecutor) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteAsync", query, responseChannel)
 	ret0, _ := ret[0].(error)
@@ -99,13 +99,13 @@ func (m *MockClient) ExecuteAsync(query string, responseChannel chan interfaces.
 }
 
 // ExecuteAsync indicates an expected call of ExecuteAsync
-func (mr *MockClientMockRecorder) ExecuteAsync(query, responseChannel interface{}) *gomock.Call {
+func (mr *MockQueryExecutorMockRecorder) ExecuteAsync(query, responseChannel interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteAsync", reflect.TypeOf((*MockClient)(nil).ExecuteAsync), query, responseChannel)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteAsync", reflect.TypeOf((*MockQueryExecutor)(nil).ExecuteAsync), query, responseChannel)
 }
 
 // ExecuteFileWithBindings mocks base method
-func (m *MockClient) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) ([]interfaces.Response, error) {
+func (m *MockQueryExecutor) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) ([]interfaces.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteFileWithBindings", path, bindings, rebindings)
 	ret0, _ := ret[0].([]interfaces.Response)
@@ -114,13 +114,13 @@ func (m *MockClient) ExecuteFileWithBindings(path string, bindings, rebindings m
 }
 
 // ExecuteFileWithBindings indicates an expected call of ExecuteFileWithBindings
-func (mr *MockClientMockRecorder) ExecuteFileWithBindings(path, bindings, rebindings interface{}) *gomock.Call {
+func (mr *MockQueryExecutorMockRecorder) ExecuteFileWithBindings(path, bindings, rebindings interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteFileWithBindings", reflect.TypeOf((*MockClient)(nil).ExecuteFileWithBindings), path, bindings, rebindings)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteFileWithBindings", reflect.TypeOf((*MockQueryExecutor)(nil).ExecuteFileWithBindings), path, bindings, rebindings)
 }
 
 // ExecuteFile mocks base method
-func (m *MockClient) ExecuteFile(path string) ([]interfaces.Response, error) {
+func (m *MockQueryExecutor) ExecuteFile(path string) ([]interfaces.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteFile", path)
 	ret0, _ := ret[0].([]interfaces.Response)
@@ -129,13 +129,13 @@ func (m *MockClient) ExecuteFile(path string) ([]interfaces.Response, error) {
 }
 
 // ExecuteFile indicates an expected call of ExecuteFile
-func (mr *MockClientMockRecorder) ExecuteFile(path interface{}) *gomock.Call {
+func (mr *MockQueryExecutorMockRecorder) ExecuteFile(path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteFile", reflect.TypeOf((*MockClient)(nil).ExecuteFile), path)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteFile", reflect.TypeOf((*MockQueryExecutor)(nil).ExecuteFile), path)
 }
 
 // ExecuteWithBindings mocks base method
-func (m *MockClient) ExecuteWithBindings(query string, bindings, rebindings map[string]string) ([]interfaces.Response, error) {
+func (m *MockQueryExecutor) ExecuteWithBindings(query string, bindings, rebindings map[string]string) ([]interfaces.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteWithBindings", query, bindings, rebindings)
 	ret0, _ := ret[0].([]interfaces.Response)
@@ -144,7 +144,7 @@ func (m *MockClient) ExecuteWithBindings(query string, bindings, rebindings map[
 }
 
 // ExecuteWithBindings indicates an expected call of ExecuteWithBindings
-func (mr *MockClientMockRecorder) ExecuteWithBindings(query, bindings, rebindings interface{}) *gomock.Call {
+func (mr *MockQueryExecutorMockRecorder) ExecuteWithBindings(query, bindings, rebindings interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteWithBindings", reflect.TypeOf((*MockClient)(nil).ExecuteWithBindings), query, bindings, rebindings)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteWithBindings", reflect.TypeOf((*MockQueryExecutor)(nil).ExecuteWithBindings), query, bindings, rebindings)
 }

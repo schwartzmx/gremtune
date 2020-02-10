@@ -8,11 +8,11 @@ import (
 	"github.com/schwartzmx/gremtune/interfaces"
 )
 
-type ClientFactoryFunc func() (interfaces.Client, error)
+type ClientFactoryFunc func() (interfaces.QueryExecutor, error)
 
 // Pool maintains a list of connections.
 type Pool struct {
-	Dial        func() (interfaces.Client, error)
+	Dial        func() (interfaces.QueryExecutor, error)
 	MaxActive   int
 	IdleTimeout time.Duration
 	mu          sync.Mutex
@@ -25,10 +25,10 @@ type Pool struct {
 // PooledConnection represents a shared and reusable connection.
 type PooledConnection struct {
 	Pool   *Pool
-	Client interfaces.Client
+	Client interfaces.QueryExecutor
 }
 
-func NewPooledClient(clientFactory ClientFactoryFunc) (interfaces.Client, error) {
+func NewPooledClient(clientFactory ClientFactoryFunc) (interfaces.QueryExecutor, error) {
 
 	if clientFactory == nil {
 		return nil, fmt.Errorf("Given clientfactory is nil")

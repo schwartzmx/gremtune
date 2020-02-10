@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type Client interface {
+type QueryExecutor interface {
 	HadError() bool
 	Close() error
 	Execute(query string) (resp []Response, err error)

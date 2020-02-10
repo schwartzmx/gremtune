@@ -39,7 +39,7 @@ type clientImpl struct {
 	errored bool
 
 	// auth auth information like username and password
-	auth Auth
+	auth auth
 
 	// pingInterval is the interval that is used to check if the connection
 	// is still alive. The interval to send the ping frame to the peer.
@@ -52,30 +52,30 @@ type clientImpl struct {
 	quitChannel chan struct{}
 }
 
-//Auth is the container for authentication data of Client
-type Auth struct {
-	Username string
-	Password string
+// auth is the container for authentication data of Client
+type auth struct {
+	username string
+	password string
 }
 
-// ClientOption is the struct for defining optional parameters for the Client
-type ClientOption func(*clientImpl)
+// clientOption is the struct for defining optional parameters for the Client
+type clientOption func(*clientImpl)
 
 // SetAuth sets credentials for an authenticated connection
-func SetAuth(username string, password string) ClientOption {
+func SetAuth(username string, password string) clientOption {
 	return func(c *clientImpl) {
-		c.auth = Auth{Username: username, Password: password}
+		c.auth = auth{username: username, password: password}
 	}
 }
 
 // PingInterval sets the ping interval, which is the interval to send the ping frame to the peer
-func PingInterval(interval time.Duration) ClientOption {
+func PingInterval(interval time.Duration) clientOption {
 	return func(c *clientImpl) {
 		c.pingInterval = interval
 	}
 }
 
-func newClient(dialer interfaces.Dialer, options ...ClientOption) *clientImpl {
+func newClient(dialer interfaces.Dialer, options ...clientOption) *clientImpl {
 	client := &clientImpl{
 		conn:                   dialer,
 		requests:               make(chan []byte, 3),
@@ -95,7 +95,7 @@ func newClient(dialer interfaces.Dialer, options ...ClientOption) *clientImpl {
 
 // Dial returns a client for interaction with the Gremlin Server specified in the host IP.
 // The client is already connected.
-func Dial(conn interfaces.Dialer, errorChannel chan error, options ...ClientOption) (interfaces.Client, error) {
+func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOption) (interfaces.QueryExecutor, error) {
 
 	if conn == nil {
 		return nil, fmt.Errorf("Dialer is nil")
@@ -198,12 +198,12 @@ func (c *clientImpl) executeAsync(query string, bindings, rebindings *map[string
 	return
 }
 
-func validateCredentials(auth Auth) error {
-	if len(auth.Username) == 0 {
+func validateCredentials(auth auth) error {
+	if len(auth.username) == 0 {
 		return fmt.Errorf("Username is missing")
 	}
 
-	if len(auth.Password) == 0 {
+	if len(auth.password) == 0 {
 		return fmt.Errorf("Password is missing")
 	}
 	return nil
@@ -214,7 +214,7 @@ func (c *clientImpl) authenticate(requestID string) error {
 		return err
 	}
 
-	req, err := prepareAuthRequest(requestID, c.auth.Username, c.auth.Password)
+	req, err := prepareAuthRequest(requestID, c.auth.username, c.auth.password)
 	if err != nil {
 		return err
 	}

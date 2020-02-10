@@ -16,7 +16,7 @@ var failingErrorChannelConsumerFunc = func(errChan chan error, t *testing.T) {
 	t.Fatalf("Lost connection to the database: %s", err.Error())
 }
 
-func newTestClient(t *testing.T, errChan chan error) interfaces.Client {
+func newTestClient(t *testing.T, errChan chan error) interfaces.QueryExecutor {
 	dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
 	require.NotNil(t, dialer, "Dialer is nil")
 	require.NoError(t, err)
@@ -26,7 +26,7 @@ func newTestClient(t *testing.T, errChan chan error) interfaces.Client {
 }
 
 func newTestPool(t *testing.T, errChan chan error) *Pool {
-	dialFn := func() (interfaces.Client, error) {
+	dialFn := func() (interfaces.QueryExecutor, error) {
 		dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
 		require.NoError(t, err)
 		c, err := Dial(dialer, errChan)
@@ -42,7 +42,7 @@ func newTestPool(t *testing.T, errChan chan error) *Pool {
 	}
 }
 
-func truncateData(t *testing.T, client interfaces.Client) {
+func truncateData(t *testing.T, client interfaces.QueryExecutor) {
 	t.Log("Removing all data from gremlin server started...")
 
 	_, err := client.Execute(`g.V('1234').drop()`)
@@ -53,7 +53,7 @@ func truncateData(t *testing.T, client interfaces.Client) {
 	t.Log("Removing all data from gremlin server completed...")
 }
 
-func seedData(t *testing.T, client interfaces.Client) {
+func seedData(t *testing.T, client interfaces.QueryExecutor) {
 	truncateData(t, client)
 
 	t.Log("Seeding data started...")
