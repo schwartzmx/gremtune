@@ -8,18 +8,18 @@ import (
 	"github.com/schwartzmx/gremtune/interfaces"
 )
 
-type ClientFactoryFunc func() (interfaces.QueryExecutor, error)
+type QueryExecutorFactoryFunc func() (interfaces.QueryExecutor, error)
 
-// Pool maintains a list of connections.
+// Pool maintains a pool of connections to the cosmos db.
 type Pool struct {
-	Dial        func() (interfaces.QueryExecutor, error)
-	MaxActive   int
-	IdleTimeout time.Duration
-	mu          sync.Mutex
-	idle        []*idleConnection
-	active      int
-	cond        *sync.Cond
-	closed      bool
+	createQueryExecutor QueryExecutorFactoryFunc
+	MaxActive           int
+	IdleTimeout         time.Duration
+	mu                  sync.Mutex
+	idle                []*idleConnection
+	active              int
+	cond                *sync.Cond
+	closed              bool
 }
 
 // PooledConnection represents a shared and reusable connection.
@@ -28,19 +28,19 @@ type PooledConnection struct {
 	Client interfaces.QueryExecutor
 }
 
-func NewPooledClient(clientFactory ClientFactoryFunc) (interfaces.QueryExecutor, error) {
+func NewPool(createQueryExecutor QueryExecutorFactoryFunc) (interfaces.QueryExecutor, error) {
 
-	if clientFactory == nil {
-		return nil, fmt.Errorf("Given clientfactory is nil")
+	if createQueryExecutor == nil {
+		return nil, fmt.Errorf("Given createQueryExecutor is nil")
 	}
 
 	return &Pool{
-		Dial:        clientFactory,
-		MaxActive:   10,
-		active:      0,
-		closed:      false,
-		IdleTimeout: time.Second * 30,
-		idle:        make([]*idleConnection, 0),
+		createQueryExecutor: createQueryExecutor,
+		MaxActive:           10,
+		active:              0,
+		closed:              false,
+		IdleTimeout:         time.Second * 30,
+		idle:                make([]*idleConnection, 0),
 	}, nil
 }
 
@@ -89,13 +89,13 @@ func (p *Pool) Get() (*PooledConnection, error) {
 		// No idle connections, try dialing a new one
 		if p.MaxActive == 0 || p.active < p.MaxActive {
 			p.active++
-			dial := p.Dial
+			createQueryExecutor := p.createQueryExecutor
 
 			// Unlock here so that any other connections that need to be
 			// dialed do not have to wait.
 			p.mu.Unlock()
 
-			dc, err := dial()
+			dc, err := createQueryExecutor()
 			if err != nil {
 				p.mu.Lock()
 				p.release()

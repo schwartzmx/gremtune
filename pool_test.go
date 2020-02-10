@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewPooledClient(t *testing.T) {
+func TestNewPool(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -20,13 +20,13 @@ func TestNewPooledClient(t *testing.T) {
 		return mockedQueryExecutor, nil
 	}
 	// WHEN
-	pool, err := NewPooledClient(clientFactory)
+	pool, err := NewPool(clientFactory)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 	poolImpl := pool.(*Pool)
-	assert.NotNil(t, poolImpl.Dial)
+	assert.NotNil(t, poolImpl.createQueryExecutor)
 	assert.NotNil(t, poolImpl.idle)
 }
 
@@ -143,7 +143,7 @@ func TestGetAndDial(t *testing.T) {
 	idle := []*idleConnection{invalid}
 	pool.idle = idle
 
-	pool.Dial = func() (interfaces.QueryExecutor, error) {
+	pool.createQueryExecutor = func() (interfaces.QueryExecutor, error) {
 		return mockedQueryExecutor2, nil
 	}
 
