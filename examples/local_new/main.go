@@ -19,7 +19,7 @@ func main() {
 	hostURL := fmt.Sprintf("ws://%s:%d/gremlin", host, port)
 	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat}).With().Timestamp().Logger()
 
-	cosmos, err := gremtune.New(hostURL, "", "", logger)
+	cosmos, err := gremtune.New(hostURL, gremtune.WithLogger(logger))
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to create the cosmos connector")
 	}
