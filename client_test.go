@@ -311,7 +311,7 @@ func TestReadWorker(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(1, packet, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().Return(nil).Times(2)
+	mockedDialer.EXPECT().Close().Return(nil).AnyTimes()
 
 	client.wg.Add(1)
 	go client.readWorker(errorChannel, client.quitChannel)
@@ -339,7 +339,7 @@ func TestReadWorkerFailOnInvalidResponse(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(1, packet, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().Return(nil).Times(2)
+	mockedDialer.EXPECT().Close().Return(nil).AnyTimes()
 
 	client.wg.Add(1)
 	go client.readWorker(errorChannel, client.quitChannel)
@@ -361,7 +361,7 @@ func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(-1, nil, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().Return(nil).Times(2)
+	mockedDialer.EXPECT().Close().Return(nil).AnyTimes()
 
 	client.wg.Add(1)
 	go client.readWorker(errorChannel, client.quitChannel)
