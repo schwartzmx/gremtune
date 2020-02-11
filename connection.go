@@ -51,7 +51,7 @@ type websocket struct {
 }
 
 // NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewDialer(host string, configs ...DialerConfig) (*websocket, error) {
+func NewDialer(host string, options ...optionWebsocket) (*websocket, error) {
 	createdWebsocket := &websocket{
 		timeout:         5 * time.Second,
 		writingWait:     15 * time.Second,
@@ -63,8 +63,8 @@ func NewDialer(host string, configs ...DialerConfig) (*websocket, error) {
 		wsDialerFactory: gorillaWebsocketDialerFactory, // use the gorilla websocket as default
 	}
 
-	for _, conf := range configs {
-		conf(createdWebsocket)
+	for _, opt := range options {
+		opt(createdWebsocket)
 	}
 
 	// verify setup and fail as early as possible
