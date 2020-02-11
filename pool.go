@@ -78,9 +78,9 @@ func (p *pool) IsConnected() bool {
 	return true
 }
 
-func (p *pool) HadError() bool {
+func (p *pool) LastError() error {
 	// TODO: Implement
-	return false
+	return nil
 }
 
 // Get will return an available pooled connection. Either an idle connection or
@@ -165,7 +165,9 @@ func (p *pool) purge() {
 	now := time.Now()
 	for _, idleConnection := range p.idleConnections {
 		// If the client has an error then exclude it from the pool
-		if idleConnection.pc.client.HadError() {
+		if err := idleConnection.pc.client.LastError(); err != nil {
+			// TODO: Print error to log
+
 			// Force underlying connection closed
 			idleConnection.pc.client.Close()
 			continue

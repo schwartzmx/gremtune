@@ -6,10 +6,10 @@ import (
 )
 
 type QueryExecutor interface {
-	HadError() bool
 	Close() error
-	Execute(query string) (resp []Response, err error)
 	IsConnected() bool
+	LastError() error
+	Execute(query string) (resp []Response, err error)
 	ExecuteAsync(query string, responseChannel chan AsyncResponse) (err error)
 	ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []Response, err error)
 	ExecuteFile(path string) (resp []Response, err error)

@@ -36,7 +36,8 @@ type client struct {
 	// <RequestID string,codeChannel chan int>
 	responseStatusNotifier *sync.Map
 
-	errored bool
+	// stores the most recent error
+	lastError error
 
 	// auth auth information like username and password
 	auth auth
@@ -84,6 +85,7 @@ func newClient(dialer interfaces.Dialer, options ...clientOption) *client {
 		responseStatusNotifier: &sync.Map{},
 		pingInterval:           60 * time.Second,
 		quitChannel:            make(chan struct{}),
+		lastError:              nil,
 	}
 
 	for _, opt := range options {
@@ -116,8 +118,8 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOpti
 	return client, nil
 }
 
-func (c *client) HadError() bool {
-	return c.errored
+func (c *client) LastError() error {
+	return c.lastError
 }
 
 func (c *client) IsConnected() bool {
@@ -311,7 +313,7 @@ func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
 			err := c.conn.Write(msg)
 			if err != nil {
 				errs <- err
-				c.errored = true
+				c.lastError = err
 				c.mux.Unlock()
 				break
 			}
@@ -329,8 +331,9 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 	for {
 		msgType, msg, err := c.conn.Read()
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
-			errs <- fmt.Errorf("Received msgType == -1 this is no frame --> close the readworker")
-			c.errored = true
+			err = fmt.Errorf("Received msgType == -1 this is no frame --> close the readworker")
+			errs <- err
+			c.lastError = err
 
 			// FIXME: This looks weird. In case a malformed package is sent here the readWorker
 			// is just closed. But what happens afterwards? No one is reading any more?!
@@ -352,7 +355,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 
 		if errorToPost != nil {
 			errs <- errorToPost
-			c.errored = true
+			c.lastError = errorToPost
 		}
 
 		select {

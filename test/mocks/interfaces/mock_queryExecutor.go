@@ -33,20 +33,6 @@ func (m *MockQueryExecutor) EXPECT() *MockQueryExecutorMockRecorder {
 	return m.recorder
 }
 
-// HadError mocks base method
-func (m *MockQueryExecutor) HadError() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HadError")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HadError indicates an expected call of HadError
-func (mr *MockQueryExecutorMockRecorder) HadError() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HadError", reflect.TypeOf((*MockQueryExecutor)(nil).HadError))
-}
-
 // Close mocks base method
 func (m *MockQueryExecutor) Close() error {
 	m.ctrl.T.Helper()
@@ -59,6 +45,34 @@ func (m *MockQueryExecutor) Close() error {
 func (mr *MockQueryExecutorMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockQueryExecutor)(nil).Close))
+}
+
+// IsConnected mocks base method
+func (m *MockQueryExecutor) IsConnected() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsConnected")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsConnected indicates an expected call of IsConnected
+func (mr *MockQueryExecutorMockRecorder) IsConnected() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConnected", reflect.TypeOf((*MockQueryExecutor)(nil).IsConnected))
+}
+
+// LastError mocks base method
+func (m *MockQueryExecutor) LastError() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LastError")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LastError indicates an expected call of LastError
+func (mr *MockQueryExecutorMockRecorder) LastError() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastError", reflect.TypeOf((*MockQueryExecutor)(nil).LastError))
 }
 
 // Execute mocks base method
@@ -74,20 +88,6 @@ func (m *MockQueryExecutor) Execute(query string) ([]interfaces.Response, error)
 func (mr *MockQueryExecutorMockRecorder) Execute(query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockQueryExecutor)(nil).Execute), query)
-}
-
-// IsConnected mocks base method
-func (m *MockQueryExecutor) IsConnected() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsConnected")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsConnected indicates an expected call of IsConnected
-func (mr *MockQueryExecutorMockRecorder) IsConnected() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConnected", reflect.TypeOf((*MockQueryExecutor)(nil).IsConnected))
 }
 
 // ExecuteAsync mocks base method

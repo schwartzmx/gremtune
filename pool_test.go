@@ -1,6 +1,7 @@
 package gremtune
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -24,7 +25,7 @@ func TestClose(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 
-	mockedQueryExecutor.EXPECT().HadError().Return(false).AnyTimes()
+	mockedQueryExecutor.EXPECT().LastError().Return(nil).AnyTimes()
 	mockedQueryExecutor.EXPECT().IsConnected().Return(true).AnyTimes()
 	var pooledConnections []*pooledConnection
 	// open n connections
@@ -136,9 +137,9 @@ func TestPurge(t *testing.T) {
 	assert.Len(t, p.idleConnections, 2, "Expected 2 idle connections")
 
 	// WHEN
-	mockedQueryExecutorValid.EXPECT().HadError().Return(false)
+	mockedQueryExecutorValid.EXPECT().LastError().Return(nil)
 	mockedQueryExecutorValid.EXPECT().IsConnected().Return(true)
-	mockedQueryExecutorInvalid.EXPECT().HadError().Return(false)
+	mockedQueryExecutorInvalid.EXPECT().LastError().Return(nil)
 	mockedQueryExecutorInvalid.EXPECT().IsConnected().Return(true)
 	mockedQueryExecutorInvalid.EXPECT().Close()
 	p.purge()
@@ -184,10 +185,10 @@ func TestPurgeOnErroredConnection(t *testing.T) {
 	idle := []*idleConnection{valid, closed}
 	p.idleConnections = idle
 
-	mockedQueryExecutorValid.EXPECT().HadError().Return(false)
+	mockedQueryExecutorValid.EXPECT().LastError().Return(nil)
 	mockedQueryExecutorValid.EXPECT().IsConnected().Return(true)
 	// Simulate error
-	mockedQueryExecutorWithError.EXPECT().HadError().Return(true)
+	mockedQueryExecutorWithError.EXPECT().LastError().Return(fmt.Errorf("ERROR"))
 	mockedQueryExecutorWithError.EXPECT().Close().Return(nil)
 	assert.Len(t, p.idleConnections, 2, "Expected 2 idle connections")
 
@@ -213,10 +214,10 @@ func TestPurgeOnClosedConnection(t *testing.T) {
 	idle := []*idleConnection{valid, closed}
 	p.idleConnections = idle
 
-	mockedQueryExecutorValid.EXPECT().HadError().Return(false)
+	mockedQueryExecutorValid.EXPECT().LastError().Return(nil)
 	mockedQueryExecutorValid.EXPECT().IsConnected().Return(true)
 	// Simulate error
-	mockedQueryExecutorClosed.EXPECT().HadError().Return(false)
+	mockedQueryExecutorClosed.EXPECT().LastError().Return(nil)
 	mockedQueryExecutorClosed.EXPECT().IsConnected().Return(false)
 	assert.Len(t, p.idleConnections, 2, "Expected 2 idle connections")
 
@@ -293,11 +294,11 @@ func TestGetAndDial(t *testing.T) {
 	assert.Equal(t, invalid, pool.idleConnections[0], "Expected invalid connection")
 
 	// WHEN
-	mockedQueryExecutor1.EXPECT().HadError().Return(false)
+	mockedQueryExecutor1.EXPECT().LastError().Return(nil)
 	mockedQueryExecutor1.EXPECT().IsConnected().Return(true)
 	mockedQueryExecutor1.EXPECT().Close()
 	mockedQueryExecutor2.EXPECT().IsConnected().Return(true)
-	mockedQueryExecutor2.EXPECT().HadError().Return(false)
+	mockedQueryExecutor2.EXPECT().LastError().Return(nil)
 	conn, err := pool.Get()
 	assert.NoError(t, err)
 	assert.Len(t, pool.idleConnections, 0, "Expected 0 idle connections")
