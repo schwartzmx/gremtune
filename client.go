@@ -278,6 +278,7 @@ func (c *client) ExecuteFile(path string) (resp []interfaces.Response, err error
 
 // Close closes the underlying connection and marks the client as closed.
 func (c *client) Close() error {
+	var err error
 
 	// ensure that the channels are only closed once
 	c.once.Do(func() {
@@ -296,17 +297,19 @@ func (c *client) Close() error {
 			close(channel)
 			return true
 		})
-	})
 
-	if c.conn == nil {
-		return fmt.Errorf("Connection is nil")
-	}
+		if c.conn == nil {
+			err = fmt.Errorf("Connection is nil")
+		} else {
+			err = c.conn.Close()
+		}
+	})
 
 	// wait for cleanup of all started go routines
 	defer func() {
 		c.wg.Wait()
 	}()
-	return c.conn.Close()
+	return err
 }
 
 // writeWorker works on a loop and dispatches messages as soon as it receives them
