@@ -82,7 +82,7 @@ func New(host string, options ...Option) (*Cosmos, error) {
 	}
 	cosmos.dialer = dialer
 
-	pool, err := NewPool(cosmos.dial, 10, time.Second*30, cosmos.logger)
+	pool, err := NewPool(cosmos.dial, cosmos.numMaxActiveConnections, cosmos.connectionIdleTimeout, cosmos.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +109,10 @@ func (c *Cosmos) dial() (interfaces.QueryExecutor, error) {
 
 func (c *Cosmos) Execute(query string) (resp []interfaces.Response, err error) {
 	return c.pool.Execute(query)
+}
+
+func (c *Cosmos) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
+	return c.pool.ExecuteAsync(query, responseChannel)
 }
 
 func (c *Cosmos) IsConnected() bool {
