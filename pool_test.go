@@ -20,10 +20,9 @@ func TestClose(t *testing.T) {
 		return mockedQueryExecutor, nil
 	}
 	numActiveConnections := 10
-	queryExecutor, err := NewPool(clientFactory, numActiveConnections, time.Second*30)
+	pool, err := NewPool(clientFactory, numActiveConnections, time.Second*30)
 	require.NoError(t, err)
-	require.NotNil(t, queryExecutor)
-	pool := queryExecutor.(*pool)
+	require.NotNil(t, pool)
 
 	mockedQueryExecutor.EXPECT().HadError().Return(false).AnyTimes()
 	mockedQueryExecutor.EXPECT().IsConnected().Return(true).AnyTimes()
@@ -57,17 +56,16 @@ func TestRelease(t *testing.T) {
 	clientFactory := func() (interfaces.QueryExecutor, error) {
 		return mockedQueryExecutor, nil
 	}
-	queryExecutor, err := NewPool(clientFactory, 10, time.Second*30)
+	pool, err := NewPool(clientFactory, 10, time.Second*30)
 	require.NoError(t, err)
-	poolImpl := queryExecutor.(*pool)
 
 	// WHEN
 	for i := 0; i < 10; i++ {
-		poolImpl.release()
+		pool.release()
 	}
 
 	// THEN
-	assert.GreaterOrEqual(t, poolImpl.active, 0)
+	assert.GreaterOrEqual(t, pool.active, 0)
 }
 
 func TestNewPool(t *testing.T) {
@@ -79,14 +77,13 @@ func TestNewPool(t *testing.T) {
 		return mockedQueryExecutor, nil
 	}
 	// WHEN
-	queryExecutor, err := NewPool(clientFactory, 10, time.Second*30)
+	pool, err := NewPool(clientFactory, 10, time.Second*30)
 
 	// THEN
 	require.NoError(t, err)
-	require.NotNil(t, queryExecutor)
-	poolImpl := queryExecutor.(*pool)
-	assert.NotNil(t, poolImpl.createQueryExecutor)
-	assert.NotNil(t, poolImpl.idleConnections)
+	require.NotNil(t, pool)
+	assert.NotNil(t, pool.createQueryExecutor)
+	assert.NotNil(t, pool.idleConnections)
 }
 
 func TestNewPoolFail(t *testing.T) {

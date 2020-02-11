@@ -95,7 +95,7 @@ func newClient(dialer interfaces.Dialer, options ...clientOption) *client {
 
 // Dial returns a client for interaction with the Gremlin Server specified in the host IP.
 // The client is already connected.
-func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOption) (interfaces.QueryExecutor, error) {
+func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOption) (*client, error) {
 
 	if conn == nil {
 		return nil, fmt.Errorf("Dialer is nil")

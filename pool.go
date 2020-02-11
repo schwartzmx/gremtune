@@ -42,7 +42,7 @@ type pooledConnection struct {
 }
 
 // NewPool creates a new pool which is a QueryExecutor
-func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections int, idleTimeout time.Duration) (interfaces.QueryExecutor, error) {
+func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections int, idleTimeout time.Duration) (*pool, error) {
 
 	if createQueryExecutor == nil {
 		return nil, fmt.Errorf("Given createQueryExecutor is nil")

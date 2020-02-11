@@ -107,7 +107,7 @@ func TestConnectReconnect(t *testing.T) {
 	assert.True(t, dialer.IsConnected())
 
 	// WHEN - second connect fails
-	dialer.(*websocket).wsDialerFactory = newMockedDialerFactory(mockedWebsocketConnection, true)
+	dialer.wsDialerFactory = newMockedDialerFactory(mockedWebsocketConnection, true)
 	err = dialer.Connect()
 
 	// THEN
