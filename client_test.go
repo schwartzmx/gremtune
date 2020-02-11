@@ -162,13 +162,17 @@ func TestDial(t *testing.T) {
 		}
 	}()
 	quitChannel := make(chan struct{})
+	once := sync.Once{}
 
 	// WHEN
 	mockedDialer.EXPECT().Connect().Return(nil)
 	mockedDialer.EXPECT().Read().Return(1, nil, fmt.Errorf("Read failed")).AnyTimes()
 	mockedDialer.EXPECT().Close().Do(func() {
-		close(quitChannel)
-	}).Return(nil)
+		once.Do(func() {
+			close(quitChannel)
+		})
+	}).Return(nil).AnyTimes()
+
 	client, err := Dial(mockedDialer, errorChannel)
 	require.NotNil(t, client)
 	require.NoError(t, err)
@@ -191,7 +195,7 @@ func TestPingWorker(t *testing.T) {
 	// WHEN
 	mockedDialer.EXPECT().Ping().Return(nil)
 	mockedDialer.EXPECT().Ping().Return(fmt.Errorf("Error")).AnyTimes()
-	mockedDialer.EXPECT().Close().Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil).AnyTimes()
 
 	client.wg.Add(1)
 	go client.pingWorker(errorChannel, client.quitChannel)
@@ -219,7 +223,7 @@ func TestWriteWorker(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Write(packet).Return(nil).Times(numPackets)
-	mockedDialer.EXPECT().Close().Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil).AnyTimes()
 
 	client.wg.Add(1)
 	go client.writeWorker(errorChannel, client.quitChannel)
@@ -268,7 +272,7 @@ func TestWriteWorkerFail(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Write(packet).Return(fmt.Errorf("Write failed")).Times(numPackets)
-	mockedDialer.EXPECT().Close().Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil).AnyTimes()
 
 	client.wg.Add(1)
 	go client.writeWorker(errorChannel, client.quitChannel)
@@ -307,7 +311,7 @@ func TestReadWorker(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(1, packet, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil).Times(2)
 
 	client.wg.Add(1)
 	go client.readWorker(errorChannel, client.quitChannel)
@@ -335,7 +339,7 @@ func TestReadWorkerFailOnInvalidResponse(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(1, packet, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil).Times(2)
 
 	client.wg.Add(1)
 	go client.readWorker(errorChannel, client.quitChannel)
@@ -357,7 +361,7 @@ func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
 
 	// WHEN
 	mockedDialer.EXPECT().Read().Return(-1, nil, nil).AnyTimes()
-	mockedDialer.EXPECT().Close().Return(nil)
+	mockedDialer.EXPECT().Close().Return(nil).Times(2)
 
 	client.wg.Add(1)
 	go client.readWorker(errorChannel, client.quitChannel)

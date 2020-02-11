@@ -13,6 +13,7 @@ import (
 
 // client is a container for the gremtune client.
 type client struct {
+
 	// conn is the entity that manages the websocket connection
 	conn interfaces.Dialer
 
@@ -51,6 +52,10 @@ type client struct {
 
 	// quitChannel channel to notify workers that they should stop
 	quitChannel chan struct{}
+
+	// token to ensure that the resources are closed only once
+	// even if client.Close() is called multiple times
+	once sync.Once
 }
 
 // auth is the container for authentication data of Client
@@ -274,15 +279,33 @@ func (c *client) ExecuteFile(path string) (resp []interfaces.Response, err error
 // Close closes the underlying connection and marks the client as closed.
 func (c *client) Close() error {
 
-	// notify the workers to stop working
-	close(c.quitChannel)
+	// ensure that the channels are only closed once
+	c.once.Do(func() {
+		// notify the workers to stop working
+		close(c.quitChannel)
+
+		// clean up all response channels in order to unblock pending responses
+		c.responseNotifier.Range(func(key, value interface{}) bool {
+			channel := value.(chan error)
+			close(channel)
+			return true
+		})
+
+		c.responseStatusNotifier.Range(func(key, value interface{}) bool {
+			channel := value.(chan int)
+			close(channel)
+			return true
+		})
+	})
 
 	if c.conn == nil {
 		return fmt.Errorf("Connection is nil")
 	}
-	// wait for cleanup of all started go routines
-	defer c.wg.Wait()
 
+	// wait for cleanup of all started go routines
+	defer func() {
+		c.wg.Wait()
+	}()
 	return c.conn.Close()
 }
 

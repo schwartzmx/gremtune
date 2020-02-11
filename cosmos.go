@@ -94,7 +94,7 @@ func New(host string, options ...Option) (*Cosmos, error) {
 	go func() {
 		defer cosmos.wg.Done()
 		for err := range cosmos.errorChannel {
-			cosmos.logger.Error().Err(err).Msg("Error received")
+			cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
 		}
 		cosmos.logger.Debug().Msg("Error channel consumer closed")
 	}()
