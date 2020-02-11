@@ -11,6 +11,8 @@ type Cosmos struct {
 	logger zerolog.Logger
 	dialer interfaces.Dialer
 	pool   interfaces.QueryExecutor
+
+	errorChannel chan error
 }
 
 func New(host string, logger zerolog.Logger) (*Cosmos, error) {
@@ -21,9 +23,15 @@ func New(host string, logger zerolog.Logger) (*Cosmos, error) {
 	}
 
 	cosmos := &Cosmos{
-		logger: logger,
-		dialer: dialer,
+		logger:       logger,
+		dialer:       dialer,
+		errorChannel: make(chan error),
 	}
+
+	go func() {
+		err := <-cosmos.errorChannel
+		cosmos.logger.Error().Err(err).Msg("Error received")
+	}()
 
 	pool, err := NewPool(cosmos.dial, 10, time.Second*30)
 	if err != nil {
@@ -35,7 +43,7 @@ func New(host string, logger zerolog.Logger) (*Cosmos, error) {
 }
 
 func (c *Cosmos) dial() (interfaces.QueryExecutor, error) {
-	return Dial(c.dialer, nil)
+	return Dial(c.dialer, c.errorChannel)
 }
 
 func (c *Cosmos) Execute(query string) (resp []interfaces.Response, err error) {

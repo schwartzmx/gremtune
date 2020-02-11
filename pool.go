@@ -235,7 +235,6 @@ func (p *pool) Close() error {
 func (p *pool) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
-		fmt.Printf("Error acquiring connection from pool: %s", err)
 		return nil, err
 	}
 	defer pc.Close()
@@ -246,7 +245,6 @@ func (p *pool) ExecuteWithBindings(query string, bindings, rebindings map[string
 func (p *pool) Execute(query string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
-		fmt.Printf("Error acquiring connection from pool: %s", err)
 		return nil, err
 	}
 	// put the connection back into the idle pool
@@ -258,7 +256,6 @@ func (p *pool) Execute(query string) (resp []interfaces.Response, err error) {
 func (p *pool) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
 	pc, err := p.Get()
 	if err != nil {
-		fmt.Printf("Error acquiring connection from pool: %s", err)
 		return err
 	}
 	// put the connection back into the idle pool
@@ -270,7 +267,6 @@ func (p *pool) ExecuteAsync(query string, responseChannel chan interfaces.AsyncR
 func (p *pool) ExecuteFile(path string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
-		fmt.Printf("Error acquiring connection from pool: %s", err)
 		return nil, err
 	}
 	// put the connection back into the idle pool
@@ -282,7 +278,6 @@ func (p *pool) ExecuteFile(path string) (resp []interfaces.Response, err error) 
 func (p *pool) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
-		fmt.Printf("Error acquiring connection from pool: %s", err)
 		return nil, err
 	}
 	// put the connection back into the idle pool
