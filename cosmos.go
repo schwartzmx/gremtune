@@ -112,8 +112,7 @@ func (c *Cosmos) Execute(query string) (resp []interfaces.Response, err error) {
 }
 
 func (c *Cosmos) IsConnected() bool {
-	// TODO: Implement
-	return true
+	return c.pool.IsConnected()
 }
 
 func (c *Cosmos) Stop() error {

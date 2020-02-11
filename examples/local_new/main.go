@@ -19,7 +19,7 @@ func main() {
 	hostURL := fmt.Sprintf("ws://%s:%d/gremlin", host, port)
 	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat}).With().Timestamp().Logger()
 
-	cosmos, err := gremtune.New(hostURL, gremtune.WithLogger(logger))
+	cosmos, err := gremtune.New(hostURL, gremtune.WithLogger(logger), gremtune.NumMaxActiveConnections(1))
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to create the cosmos connector")
 	}
@@ -30,7 +30,7 @@ func main() {
 	go func() {
 		for {
 
-			ticker := time.NewTicker(time.Second * 1)
+			ticker := time.NewTicker(time.Millisecond * 1000)
 			defer ticker.Stop()
 
 			select {
@@ -57,11 +57,13 @@ func queryCosmos(cosmos *gremtune.Cosmos, logger zerolog.Logger) {
 		return
 	}
 
-	jsonEncodedResponse, err := json.MarshalIndent(res[0].Result.Data, "", "    ")
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to encode the raw json into json")
-		return
-	}
+	for i, chunk := range res {
+		jsonEncodedResponse, err := json.Marshal(chunk.Result.Data)
 
-	logger.Info().Msgf("Received data: \n%s\n", jsonEncodedResponse)
+		if err != nil {
+			logger.Error().Err(err).Msg("Failed to encode the raw json into json")
+			continue
+		}
+		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
+	}
 }
