@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/schwartzmx/gremtune/interfaces"
 )
 
@@ -12,6 +13,8 @@ type QueryExecutorFactoryFunc func() (interfaces.QueryExecutor, error)
 
 // pool maintains a pool of connections to the cosmos db.
 type pool struct {
+	logger zerolog.Logger
+
 	// createQueryExecutor function that returns new connected QueryExecutors
 	createQueryExecutor QueryExecutorFactoryFunc
 
@@ -42,7 +45,7 @@ type pooledConnection struct {
 }
 
 // NewPool creates a new pool which is a QueryExecutor
-func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections int, idleTimeout time.Duration) (*pool, error) {
+func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections int, idleTimeout time.Duration, logger zerolog.Logger) (*pool, error) {
 
 	if createQueryExecutor == nil {
 		return nil, fmt.Errorf("Given createQueryExecutor is nil")
@@ -63,6 +66,7 @@ func NewPool(createQueryExecutor QueryExecutorFactoryFunc, maxActiveConnections 
 		closed:              false,
 		idleTimeout:         idleTimeout,
 		idleConnections:     make([]*idleConnection, 0),
+		logger:              logger,
 	}, nil
 }
 
@@ -95,6 +99,8 @@ func (p *pool) Get() (*pooledConnection, error) {
 
 	// Wait loop
 	for {
+		p.logger.Debug().Int("active", p.active).Int("maxActive", p.maxActive).Int("idle", len(p.idleConnections)).Msg("Pool-Get")
+
 		// TODO: Ensure to return only clients that are connected
 
 		// Try to grab first available idle connection
@@ -135,6 +141,7 @@ func (p *pool) Get() (*pooledConnection, error) {
 			p.cond = sync.NewCond(&p.mu)
 		}
 
+		p.logger.Info().Int("active", p.active).Int("maxActive", p.maxActive).Int("idle", len(p.idleConnections)).Msg("Wait for new connections")
 		p.cond.Wait()
 	}
 }
@@ -158,6 +165,7 @@ func (p *pool) purge() {
 	timeout := p.idleTimeout
 	// don't clean up in case there is no timeout specified
 	if timeout <= 0 {
+		p.logger.Info().Msg("Don't purge connections, no timeout specified")
 		return
 	}
 
@@ -166,7 +174,7 @@ func (p *pool) purge() {
 	for _, idleConnection := range p.idleConnections {
 		// If the client has an error then exclude it from the pool
 		if err := idleConnection.pc.client.LastError(); err != nil {
-			// TODO: Print error to log
+			p.logger.Error().Err(err).Msg("Dismiss connection due to an error")
 
 			// Force underlying connection closed
 			idleConnection.pc.client.Close()
@@ -175,13 +183,19 @@ func (p *pool) purge() {
 
 		// If the client is not connected any more then exclude it from the pool
 		if !idleConnection.pc.client.IsConnected() {
+			p.logger.Info().Msg("Dismiss connection which is not connected")
 			continue
 		}
 
-		if idleConnection.idleSince.Add(timeout).After(now) {
+		deadline := idleConnection.idleSince.Add(timeout)
+		if deadline.After(now) {
+			p.logger.Debug().Time("deadline", deadline).Msg("Keep connection which is not expired")
+
 			// not expired -> keep it in the idle connection list
 			idleConnectionsAfterPurge = append(idleConnectionsAfterPurge, idleConnection)
 		} else {
+			p.logger.Info().Time("deadline", deadline).Msg("Dismiss connection which is expired")
+
 			// expired -> don't add it to the idle connection list
 			// Force underlying connection closed
 			idleConnection.pc.client.Close()

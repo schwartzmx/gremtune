@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/rs/zerolog"
 	"github.com/schwartzmx/gremtune/interfaces"
 	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,7 @@ import (
 
 func TestClose(t *testing.T) {
 	// GIVEN
+	logger := zerolog.Nop()
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
@@ -21,7 +23,7 @@ func TestClose(t *testing.T) {
 		return mockedQueryExecutor, nil
 	}
 	numActiveConnections := 10
-	pool, err := NewPool(clientFactory, numActiveConnections, time.Second*30)
+	pool, err := NewPool(clientFactory, numActiveConnections, time.Second*30, logger)
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 
@@ -51,13 +53,15 @@ func TestClose(t *testing.T) {
 
 func TestRelease(t *testing.T) {
 	// GIVEN
+	logger := zerolog.Nop()
+
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 	clientFactory := func() (interfaces.QueryExecutor, error) {
 		return mockedQueryExecutor, nil
 	}
-	pool, err := NewPool(clientFactory, 10, time.Second*30)
+	pool, err := NewPool(clientFactory, 10, time.Second*30, logger)
 	require.NoError(t, err)
 
 	// WHEN
@@ -71,6 +75,7 @@ func TestRelease(t *testing.T) {
 
 func TestNewPool(t *testing.T) {
 	// GIVEN
+	logger := zerolog.Nop()
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
@@ -78,7 +83,7 @@ func TestNewPool(t *testing.T) {
 		return mockedQueryExecutor, nil
 	}
 	// WHEN
-	pool, err := NewPool(clientFactory, 10, time.Second*30)
+	pool, err := NewPool(clientFactory, 10, time.Second*30, logger)
 
 	// THEN
 	require.NoError(t, err)
@@ -89,6 +94,7 @@ func TestNewPool(t *testing.T) {
 
 func TestNewPoolFail(t *testing.T) {
 	// GIVEN
+	logger := zerolog.Nop()
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
@@ -97,21 +103,21 @@ func TestNewPoolFail(t *testing.T) {
 	}
 
 	// WHEN - create queryexecutor is nil
-	pool, err := NewPool(nil, 10, time.Second*30)
+	pool, err := NewPool(nil, 10, time.Second*30, logger)
 
 	// THEN
 	require.Error(t, err)
 	require.Nil(t, pool)
 
 	// WHEN - too few connections allowed
-	pool, err = NewPool(clientFactory, 0, time.Second*30)
+	pool, err = NewPool(clientFactory, 0, time.Second*30, logger)
 
 	// THEN
 	require.Error(t, err)
 	require.Nil(t, pool)
 
 	// WHEN - neg timeout
-	pool, err = NewPool(clientFactory, 10, time.Second*-1)
+	pool, err = NewPool(clientFactory, 10, time.Second*-1, logger)
 
 	// THEN
 	require.Error(t, err)

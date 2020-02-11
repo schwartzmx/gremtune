@@ -82,7 +82,7 @@ func New(host string, options ...Option) (*Cosmos, error) {
 	}
 	cosmos.dialer = dialer
 
-	pool, err := NewPool(cosmos.dial, 10, time.Second*30)
+	pool, err := NewPool(cosmos.dial, 10, time.Second*30, cosmos.logger)
 	if err != nil {
 		return nil, err
 	}
