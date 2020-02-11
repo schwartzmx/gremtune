@@ -17,19 +17,19 @@ var failingErrorChannelConsumerFunc = func(errChan chan error, t *testing.T) {
 }
 
 func newTestClient(t *testing.T, errChan chan error) interfaces.QueryExecutor {
-	dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
-	require.NotNil(t, dialer, "Dialer is nil")
+	websocket, err := NewWebsocket("ws://127.0.0.1:8182/gremlin")
+	require.NotNil(t, websocket, "Dialer is nil")
 	require.NoError(t, err)
-	client, err := Dial(dialer, errChan)
+	client, err := Dial(websocket, errChan)
 	require.NoError(t, err, "Failed to create client")
 	return client
 }
 
 func newTestPool(t *testing.T, errChan chan error) *pool {
 	createQueryExecutorFn := func() (interfaces.QueryExecutor, error) {
-		dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
+		websocket, err := NewWebsocket("ws://127.0.0.1:8182/gremlin")
 		require.NoError(t, err)
-		c, err := Dial(dialer, errChan)
+		c, err := Dial(websocket, errChan)
 		require.NoError(t, err)
 
 		return c, err

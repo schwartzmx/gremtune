@@ -24,7 +24,7 @@ type Cosmos struct {
 
 func New(host, username, password string, logger zerolog.Logger) (*Cosmos, error) {
 
-	dialer, err := NewDialer(host)
+	dialer, err := NewWebsocket(host)
 	if err != nil {
 		return nil, err
 	}
