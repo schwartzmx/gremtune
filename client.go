@@ -126,23 +126,6 @@ func (c *client) IsConnected() bool {
 	return c.conn.IsConnected()
 }
 
-func (c *client) pingWorker(errs chan error, quit <-chan struct{}) {
-	ticker := time.NewTicker(c.pingInterval)
-	defer ticker.Stop()
-	defer c.wg.Done()
-
-	for {
-		select {
-		case <-ticker.C:
-			if err := c.conn.Ping(); err != nil {
-				errs <- err
-			}
-		case <-quit:
-			return
-		}
-	}
-}
-
 func (c *client) executeRequest(query string, bindings, rebindings *map[string]string) ([]interfaces.Response, error) {
 	var req request
 	var id string
@@ -305,7 +288,8 @@ func (c *client) Close() error {
 
 // writeWorker works on a loop and dispatches messages as soon as it receives them
 func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
-	defer c.wg.Done()
+	defer c.workerSaveExit("writeWorker", errs)
+
 	for {
 		select {
 		case msg := <-c.requests:
@@ -327,7 +311,8 @@ func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
 
 // readWorker works on a loop and sorts messages as soon as it receives them
 func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
-	defer c.wg.Done()
+	defer c.workerSaveExit("readWorker", errs)
+
 	for {
 		msgType, msg, err := c.conn.Read()
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
@@ -335,11 +320,8 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 			errs <- err
 			c.lastError = err
 
-			// FIXME: This looks weird. In case a malformed package is sent here the readWorker
-			// is just closed. But what happens afterwards? No one is reading any more?!
-			// And the connection is not really closed. Hence no reconnect will happen.
-			// The only chance would be that the one who consumes the error messages
-			// of the error channel closes the connection immediately if an error arrives.
+			// to return at this point is save since we call workerSaveExit() to clean up everything
+			// when the function is left
 			return
 		}
 
@@ -364,5 +346,36 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 		default:
 			continue
 		}
+	}
+}
+
+func (c *client) pingWorker(errs chan error, quit <-chan struct{}) {
+	ticker := time.NewTicker(c.pingInterval)
+	defer func() {
+		ticker.Stop()
+		c.workerSaveExit("pingWorker", errs)
+	}()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := c.conn.Ping(); err != nil {
+				errs <- err
+			}
+		case <-quit:
+			return
+		}
+	}
+}
+
+// workerSaveExit can be used as defered call on leaving a worker routine.
+// It ensures that the client is closed and cleaned up appropriately.
+func (c *client) workerSaveExit(name string, errs chan<- error) {
+	c.wg.Done()
+
+	// call close to ensure that everything is cleaned up appropriately
+	if err := c.Close(); err != nil {
+		err = fmt.Errorf("Error closing client while leaving worker '%s'", name)
+		errs <- err
 	}
 }
