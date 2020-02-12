@@ -13,6 +13,58 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestIsConnected(t *testing.T) {
+	// GIVEN
+	logger := zerolog.Nop()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
+	clientFactory := func() (interfaces.QueryExecutor, error) {
+		return mockedQueryExecutor, nil
+	}
+	pool, err := NewPool(clientFactory, 2, time.Second*30, logger)
+	require.NoError(t, err)
+	require.NotNil(t, pool)
+
+	// GIVEN -- no connections
+	// WHEN calling IsConnected() - THEN not connected
+	assert.False(t, pool.IsConnected())
+
+	// GIVEN -- one active connection
+	// WHEN calling IsConnected() - THEN connected
+	// acquire one connection
+	pConn, err := pool.Get()
+	require.NoError(t, err)
+	require.NotNil(t, pConn)
+	assert.True(t, pool.IsConnected())
+
+	// GIVEN -- one idle connection
+	// WHEN calling IsConnected() - THEN connected
+	// put back the active connection to the idlepool
+	pConn.Close()
+	mockedQueryExecutor.EXPECT().IsConnected().Return(true)
+	assert.True(t, pool.IsConnected())
+
+	// GIVEN -- one idle (connected) and one idle (not connected) connection
+	// WHEN calling IsConnected() - THEN connected
+	// acquire one more connection
+	mockedQueryExecutor.EXPECT().LastError().Return(nil)
+	mockedQueryExecutor.EXPECT().IsConnected().Return(true)
+	pConn1, err := pool.Get()
+	require.NoError(t, err)
+	require.NotNil(t, pConn1)
+	pConn2, err := pool.Get()
+	require.NoError(t, err)
+	require.NotNil(t, pConn2)
+
+	// put back the active connections to the idlepool
+	pConn1.Close()
+	pConn2.Close()
+	mockedQueryExecutor.EXPECT().IsConnected().Return(false)
+	mockedQueryExecutor.EXPECT().IsConnected().Return(true)
+	assert.True(t, pool.IsConnected())
+}
+
 func TestClose(t *testing.T) {
 	// GIVEN
 	logger := zerolog.Nop()

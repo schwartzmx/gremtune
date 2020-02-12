@@ -84,6 +84,7 @@ func (p *pool) IsConnected() bool {
 	// in case we have at least one active connection
 	// --> we can return immediately with status connected
 	if p.active > 0 {
+		p.mu.RUnlock()
 		return true
 	}
 

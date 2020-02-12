@@ -66,9 +66,11 @@ func NumMaxActiveConnections(numMaxActiveConnections int) Option {
 // New creates a new instance of the Cosmos (-DB connector)
 func New(host string, options ...Option) (*Cosmos, error) {
 	cosmos := &Cosmos{
-		logger:       zerolog.Nop(),
-		errorChannel: make(chan error),
-		host:         host,
+		logger:                  zerolog.Nop(),
+		errorChannel:            make(chan error),
+		host:                    host,
+		numMaxActiveConnections: 10,
+		connectionIdleTimeout:   time.Second * 30,
 	}
 
 	for _, opt := range options {
