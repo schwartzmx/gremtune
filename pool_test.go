@@ -2,6 +2,8 @@ package gremtune
 
 import (
 	"fmt"
+	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,6 +14,53 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestIsConnectedRace(t *testing.T) {
+	// This test shall detect data races when
+	// checking the connection state of the pool
+	// and using the pool at the same time
+
+	// GIVEN
+	logger := zerolog.Nop()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
+	clientFactory := func() (interfaces.QueryExecutor, error) {
+		return mockedQueryExecutor, nil
+	}
+	pool, err := NewPool(clientFactory, 2, time.Second*30, logger)
+	require.NoError(t, err)
+	require.NotNil(t, pool)
+
+	mockedQueryExecutor.EXPECT().LastError().Return(nil).AnyTimes()
+	mockedQueryExecutor.EXPECT().IsConnected().Return(true).AnyTimes()
+	mockedQueryExecutor.EXPECT().Close().Return(nil).AnyTimes()
+
+	ticker := time.NewTicker(time.Millisecond * 100)
+	go func() {
+		for range ticker.C {
+			pool.IsConnected()
+		}
+	}()
+
+	numConnectionsToAcquire := 100
+	wg := sync.WaitGroup{}
+	wg.Add(numConnectionsToAcquire)
+	for i := 0; i < numConnectionsToAcquire; i++ {
+		go func() {
+			defer wg.Done()
+			pc, err := pool.Get()
+			require.NoError(t, err)
+			require.NotNil(t, pc)
+			pc.Close()
+			millies := rand.Intn(200)
+			time.Sleep(time.Millisecond * time.Duration(millies))
+		}()
+	}
+	wg.Wait()
+	ticker.Stop()
+	pool.Close()
+}
 
 func TestIsConnected(t *testing.T) {
 	// GIVEN
