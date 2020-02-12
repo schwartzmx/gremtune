@@ -80,8 +80,14 @@ type idleConnection struct {
 // IsConnected return true in case at least one (idle or active) connection
 // managed by the pool is connected.
 func (p *pool) IsConnected() bool {
-	// copy the idle connections to be able to unlock as soon as possible
 	p.mu.RLock()
+	// in case we have at least one active connection
+	// --> we can return immediately with status connected
+	if p.active > 0 {
+		return true
+	}
+
+	// copy the idle connections to be able to unlock as soon as possible
 	idleConnectionsCopy := make([]*idleConnection, len(p.idleConnections))
 	copy(idleConnectionsCopy, p.idleConnections)
 	p.mu.RUnlock()
