@@ -6,14 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/schwartzmx/gremtune/interfaces"
 	"github.com/stretchr/testify/suite"
 )
 
 type SuiteIntegrationTests struct {
 	suite.Suite
-	client             *Client
+	client             interfaces.QueryExecutor
 	clientErrorChannel chan error
-	pool               *Pool
+	pool               *pool
 	poolErrorChannel   chan error
 }
 
@@ -63,7 +64,7 @@ func (s *SuiteIntegrationTests) SetupSuite() {
 	// ensure preconditions
 	s.Require().NotNil(s.client)
 	s.Require().NotNil(s.pool)
-	s.Require().True(s.client.conn.IsConnected())
+	s.Require().True(s.client.IsConnected())
 }
 
 // In order for 'go test' to run this suite, we need to create
@@ -130,12 +131,12 @@ func (s *SuiteIntegrationTests) TestExecuteBulkDataAsync_IT() {
 
 	s.seedBulkData()
 	defer s.truncateBulkData()
-	responseChannel := make(chan AsyncResponse, 2)
+	responseChannel := make(chan interfaces.AsyncResponse, 2)
 	err := s.client.ExecuteAsync("g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)", responseChannel)
 	s.Require().NoError(err, "Unexpected error from server")
 
 	count := 0
-	asyncResponse := AsyncResponse{}
+	asyncResponse := interfaces.AsyncResponse{}
 	start := time.Now()
 	for asyncResponse = range responseChannel {
 		s.T().Logf("Time it took to get async response: %s response status: %v (206 means partial and 200 final response)", time.Since(start), asyncResponse.Response.Status.Code)

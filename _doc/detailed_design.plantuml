@@ -1,0 +1,20 @@
+@startuml
+interface Dialer
+Interface QueryExecutor
+Interface WebsocketConnection
+Interface Connector
+
+
+Dialer <|..websocket
+QueryExecutor <|..pool
+QueryExecutor <|..client
+pool "1" *--> "*" client : manages many >
+connectorImpl "1" *--> "1" Dialer: uses to open\nconnections >
+connectorImpl "1" *--> "1" pool: uses to manage\nQueryExectutors >
+websocket "1" *--> "1" WebsocketConnection
+Connector <|..connectorImpl
+pool "1" *--> "*" PooledConnection : manages many >
+PooledConnection -- client
+PooledConnection -- pool
+
+@enduml

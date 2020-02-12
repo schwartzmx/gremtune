@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/schwartzmx/gremtune/interfaces"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,32 +16,33 @@ var failingErrorChannelConsumerFunc = func(errChan chan error, t *testing.T) {
 	t.Fatalf("Lost connection to the database: %s", err.Error())
 }
 
-func newTestClient(t *testing.T, errChan chan error) *Client {
-	dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
-	require.NotNil(t, dialer, "Dialer is nil")
+func newTestClient(t *testing.T, errChan chan error) interfaces.QueryExecutor {
+	websocket, err := NewWebsocket("ws://127.0.0.1:8182/gremlin")
+	require.NotNil(t, websocket, "Dialer is nil")
 	require.NoError(t, err)
-	client, err := Dial(dialer, errChan)
+	client, err := Dial(websocket, errChan)
 	require.NoError(t, err, "Failed to create client")
 	return client
 }
 
-func newTestPool(t *testing.T, errChan chan error) *Pool {
-	dialFn := func() (*Client, error) {
-		dialer, err := NewDialer("ws://127.0.0.1:8182/gremlin")
+func newTestPool(t *testing.T, errChan chan error) *pool {
+	createQueryExecutorFn := func() (interfaces.QueryExecutor, error) {
+		websocket, err := NewWebsocket("ws://127.0.0.1:8182/gremlin")
 		require.NoError(t, err)
-		c, err := Dial(dialer, errChan)
+		c, err := Dial(websocket, errChan)
 		require.NoError(t, err)
+
 		return c, err
 	}
 
-	return &Pool{
-		Dial:        dialFn,
-		MaxActive:   10,
-		IdleTimeout: time.Duration(10 * time.Second),
+	return &pool{
+		createQueryExecutor: createQueryExecutorFn,
+		maxActive:           10,
+		idleTimeout:         time.Duration(10 * time.Second),
 	}
 }
 
-func truncateData(t *testing.T, client *Client) {
+func truncateData(t *testing.T, client interfaces.QueryExecutor) {
 	t.Log("Removing all data from gremlin server started...")
 
 	_, err := client.Execute(`g.V('1234').drop()`)
@@ -51,7 +53,7 @@ func truncateData(t *testing.T, client *Client) {
 	t.Log("Removing all data from gremlin server completed...")
 }
 
-func seedData(t *testing.T, client *Client) {
+func seedData(t *testing.T, client interfaces.QueryExecutor) {
 	truncateData(t, client)
 
 	t.Log("Seeding data started...")

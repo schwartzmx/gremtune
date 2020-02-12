@@ -24,13 +24,6 @@ type websocket struct {
 	// conn is the actual connection
 	conn interfaces.WebsocketConnection
 
-	// auth auth information like username and password
-	auth interfaces.Auth
-
-	// disposed flags the websocket as
-	// 'has been closed and can't be reused'
-	disposed bool
-
 	// connected flags the websocket as connected or not connected
 	connected bool
 
@@ -50,32 +43,28 @@ type websocket struct {
 	readBufSize  int
 	writeBufSize int
 
-	// quitChannel channel for quit notification
-	quitChannel chan struct{}
-	mux         sync.RWMutex
+	mux sync.RWMutex
 
 	// wsDialerFactory is a factory that creates
 	// dialers (functions that can establish a websocket connection)
 	wsDialerFactory websocketDialerFactory
 }
 
-// NewDialer returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) {
+// NewWebsocket returns a WebSocket dialer to use when connecting to Gremlin Server
+func NewWebsocket(host string, options ...optionWebsocket) (*websocket, error) {
 	createdWebsocket := &websocket{
 		timeout:         5 * time.Second,
 		writingWait:     15 * time.Second,
 		readingWait:     15 * time.Second,
 		connected:       false,
-		disposed:        false,
-		quitChannel:     make(chan struct{}),
 		readBufSize:     8192,
 		writeBufSize:    8192,
 		host:            host,
 		wsDialerFactory: gorillaWebsocketDialerFactory, // use the gorilla websocket as default
 	}
 
-	for _, conf := range configs {
-		conf(createdWebsocket)
+	for _, opt := range options {
+		opt(createdWebsocket)
 	}
 
 	// verify setup and fail as early as possible
@@ -98,103 +87,138 @@ func NewDialer(host string, configs ...DialerConfig) (interfaces.Dialer, error) 
 	return createdWebsocket, nil
 }
 
+// Connect connects to the peer and actually opens the connection.
+// This function has to be called before writing/ reading from/ to the socket.
 func (ws *websocket) Connect() error {
-	if ws.disposed {
-		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused connect() -> close() -> connect() is not permitted")
-	}
 
 	// create the function that shall be used for dialing
 	dial := ws.wsDialerFactory(ws.writeBufSize, ws.readBufSize, ws.timeout)
 
-	conn, _, err := dial(ws.host, http.Header{})
-	ws.conn = conn
+	conn, response, err := dial(ws.host, http.Header{})
 	if err != nil {
-		ws.connected = false
+		ws.setConnection(nil)
+
+		errMsg := fmt.Sprintf("Dial failed: %s. Probably '/gremlin' has to be added to the used hostname.", err)
+		// try to get some additional information out of the response
+		if response != nil {
+			errMsg = fmt.Sprintf("%s - Response from Server %d", errMsg, response.StatusCode)
+		}
+
 		// As of 3.2.2 the URL has changed.
 		// https://groups.google.com/forum/#!msg/gremlin-users/x4hiHsmTsHM/Xe4GcPtRCAAJ
 		// Probably '/gremlin' has to be added to the used hostname
-		return fmt.Errorf("Dial failed: %s. Probably '/gremlin' has to be added to the used hostname", err)
+		return fmt.Errorf("%s", errMsg)
 	}
 
-	ws.conn.SetPongHandler(func(appData string) error {
-		ws.connected = true
+	// Install the handler for pong messages from the peer.
+	// As stated in the documentation (see :https://github.com/gorilla/websocket/blob/master/conn.go#L1156)
+	// the handler has usually to do nothing except of reading the connection.
+	// This is one of two parts of the websockets heartbeet protocol.
+	conn.SetPongHandler(func(appData string) error {
 		return nil
 	})
 
-	ws.connected = true
-
+	ws.setConnection(conn)
 	return nil
 }
 
-func (ws *websocket) GetQuitChannel() <-chan struct{} {
-	return ws.quitChannel
+func (ws *websocket) setConnection(connection interfaces.WebsocketConnection) {
+	ws.mux.Lock()
+	defer ws.mux.Unlock()
+	ws.conn = connection
 }
 
-// IsConnected returns whether the underlying websocket is connected
+// IsConnected returns whether the underlying WebsocketConnection is connected or not
 func (ws *websocket) IsConnected() bool {
 	ws.mux.RLock()
 	defer ws.mux.RUnlock()
-	return ws.connected && ws.conn != nil
+	return ws.conn != nil
 }
 
-// IsDisposed returns whether the underlying websocket is disposed
-func (ws *websocket) IsDisposed() bool {
-	return ws.disposed
-}
-
+// Write writes the given data chunk on the socket
 func (ws *websocket) Write(msg []byte) error {
-	return ws.conn.WriteMessage(2, msg)
+	if !ws.IsConnected() {
+		return fmt.Errorf("Not connected")
+	}
+
+	// ensure that we have the connection during the whole read operation
+	ws.mux.RLock()
+	defer ws.mux.RUnlock()
+
+	// ensure to not block forever
+	if err := ws.conn.SetWriteDeadline(time.Now().Add(ws.writingWait)); err != nil {
+		return err
+	}
+
+	return ws.conn.WriteMessage(gorilla.BinaryMessage, msg)
 }
 
-func (ws *websocket) Read() (msgType int, msg []byte, err error) {
+// Read reads data from the websocket.
+// Supported message types, are:
+// - gorilla.TextMessage
+// - gorilla.BinaryMessage
+// - gorilla.CloseMessage
+// - gorilla.PingMessage
+// - gorilla.PongMessage
+func (ws *websocket) Read() (messageType int, msg []byte, err error) {
+	if !ws.IsConnected() {
+		return 0, nil, fmt.Errorf("Not connected")
+	}
+
+	// ensure that we have the connection during the whole read operation
+	ws.mux.RLock()
+	defer ws.mux.RUnlock()
+
+	// ensure to not block forever
+	if err := ws.conn.SetReadDeadline(time.Now().Add(ws.readingWait)); err != nil {
+		return 0, nil, err
+	}
+
 	return ws.conn.ReadMessage()
 }
 
-// close closes the websocket
-// Caution!: After calling this function the whole websocket is invalid
-// since the internal quit channel is also closed and won't be recreated.
-// Hence after closing a websocket one has to create a new one instead of
-// reusing the closed one and call connect on it.
-// Caution!: This method can only called once each second call will result in an error.
+// Close closes the underlying websocket
 func (ws *websocket) Close() error {
-	if ws.disposed {
-		return fmt.Errorf("This websocket is already disposed (closed). Websockets can't be reused close() -> close() is not permitted")
-	}
-
-	// clean up in any case
-	defer func() {
-		// close the channel to send the quit notification
-		// to all workers
-		close(ws.quitChannel)
-		if ws.conn != nil {
-			ws.conn.Close()
-		}
-		ws.disposed = true
-	}()
 
 	if !ws.IsConnected() {
 		return nil
 	}
-	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, "")) //Cleanly close the connection with the server
+
+	// clean up in any case
+	defer func() {
+		if ws.conn != nil {
+			ws.conn.Close()
+		}
+	}()
+
+	// ensure that we have the connection during the whole read operation
+	ws.mux.RLock()
+	defer ws.mux.RUnlock()
+
+	//Cleanly close the connection with the server
+	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, ""))
 }
 
-func (ws *websocket) GetAuth() interfaces.Auth {
-	return ws.auth
-}
-
+// Ping sends a websocket ping frame to the peer.
+// This is one of two parts of the websockets heartbeet protocol.
+// It has to be ensured that somebody calls this function continuously (e.g. each 60s).
+// Otherwise the socket will be closed by the peer.
 func (ws *websocket) Ping() error {
-	if ws.conn == nil {
+	if !ws.IsConnected() {
 		return fmt.Errorf("Not connected")
 	}
 
-	connected := true
+	// ensure that we have the connection during the whole read operation
+	disconnected := false
+	ws.mux.RLock()
 	err := ws.conn.WriteControl(gorilla.PingMessage, []byte{}, time.Now().Add(ws.writingWait))
 	if err != nil {
-		connected = false
+		disconnected = true
 	}
+	ws.mux.RUnlock()
 
-	ws.mux.Lock()
-	defer ws.mux.Unlock()
-	ws.connected = connected
+	if disconnected {
+		ws.setConnection(nil)
+	}
 	return err
 }
