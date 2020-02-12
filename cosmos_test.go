@@ -43,10 +43,12 @@ func TestStop(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cosmos)
 	cosmos.pool = mockedQueryExecutor
+	mockedQueryExecutor.EXPECT().Close().Return(nil)
 
 	// WHEN
-	mockedQueryExecutor.EXPECT().Close().Return(nil)
 	err = cosmos.Stop()
+
+	// THEN
 	assert.NoError(t, err)
 }
 
@@ -63,9 +65,13 @@ func TestIsHealthy(t *testing.T) {
 
 	// WHEN -- connected --> healthy
 	mockedQueryExecutor.EXPECT().IsConnected().Return(true)
-	assert.True(t, cosmos.IsHealthy())
+	healthyWhenConnected := cosmos.IsHealthy()
 
 	// WHEN -- not connected --> not healthy
 	mockedQueryExecutor.EXPECT().IsConnected().Return(false)
-	assert.False(t, cosmos.IsHealthy())
+	healthyWhenNotConnected := cosmos.IsHealthy()
+
+	// THEN
+	assert.True(t, healthyWhenConnected)
+	assert.False(t, healthyWhenNotConnected)
 }

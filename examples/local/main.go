@@ -30,7 +30,7 @@ func main() {
 
 	<-exitChannel
 	if err := cosmos.Stop(); err != nil {
-		logger.Error().Err(err).Msg("Failed to stop")
+		logger.Error().Err(err).Msg("Failed to stop cosmos connector")
 	}
 	logger.Info().Msg("Teared down")
 }
