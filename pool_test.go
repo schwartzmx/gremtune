@@ -21,14 +21,9 @@ func TestIsConnectedRace(t *testing.T) {
 	// and using the pool at the same time
 
 	// GIVEN
-	logger := zerolog.Nop()
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
-	clientFactory := func() (interfaces.QueryExecutor, error) {
-		return mockedQueryExecutor, nil
-	}
-	pool, err := NewPool(clientFactory, 2, time.Second*30, logger)
+	mockedQueryExecutor, pool, err := newMockedPool(mockCtrl)
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 
@@ -36,6 +31,8 @@ func TestIsConnectedRace(t *testing.T) {
 	mockedQueryExecutor.EXPECT().IsConnected().Return(true).AnyTimes()
 	mockedQueryExecutor.EXPECT().Close().Return(nil).AnyTimes()
 
+	// WHEN
+	// now start a goroutine that checks the connection state
 	ticker := time.NewTicker(time.Millisecond * 100)
 	go func() {
 		for range ticker.C {
@@ -46,6 +43,8 @@ func TestIsConnectedRace(t *testing.T) {
 	numConnectionsToAcquire := 100
 	wg := sync.WaitGroup{}
 	wg.Add(numConnectionsToAcquire)
+
+	// start n goroutines that use the pool in parallel
 	for i := 0; i < numConnectionsToAcquire; i++ {
 		go func() {
 			defer wg.Done()
@@ -60,45 +59,82 @@ func TestIsConnectedRace(t *testing.T) {
 	wg.Wait()
 	ticker.Stop()
 	pool.Close()
+
+	// THEN
+	// No 'THEN' here. The main use case is to find race conditions,
+	// which is done by the golang tooling. This means if there is any
+	// race condition the go test -race call will assert this test as failed.
 }
 
-func TestIsConnected(t *testing.T) {
-	// GIVEN
-	logger := zerolog.Nop()
+func TestIsConnectedNoConnection(t *testing.T) {
+	// GIVEN - no connections
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
-	clientFactory := func() (interfaces.QueryExecutor, error) {
-		return mockedQueryExecutor, nil
-	}
-	pool, err := NewPool(clientFactory, 2, time.Second*30, logger)
+	_, pool, err := newMockedPool(mockCtrl)
 	require.NoError(t, err)
 	require.NotNil(t, pool)
 
-	// GIVEN -- no connections
-	// WHEN calling IsConnected() - THEN not connected
-	assert.False(t, pool.IsConnected())
+	// WHEN
+	connected := pool.IsConnected()
 
-	// GIVEN -- one active connection
-	// WHEN calling IsConnected() - THEN connected
+	// THEN
+	assert.False(t, connected)
+}
+
+func TestIsConnectedActiveConnection(t *testing.T) {
+	// GIVEN - one active connection
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	_, pool, err := newMockedPool(mockCtrl)
+	require.NoError(t, err)
+	require.NotNil(t, pool)
+
 	// acquire one connection
 	pConn, err := pool.Get()
 	require.NoError(t, err)
 	require.NotNil(t, pConn)
-	assert.True(t, pool.IsConnected())
 
-	// GIVEN -- one idle connection
-	// WHEN calling IsConnected() - THEN connected
+	// WHEN
+	connected := pool.IsConnected()
+
+	// THEN
+	assert.True(t, connected)
+}
+
+func TestIsConnectedIdleConnection(t *testing.T) {
+	// GIVEN - one idle connection
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedQueryExecutor, pool, err := newMockedPool(mockCtrl)
+	require.NoError(t, err)
+	require.NotNil(t, pool)
+
+	// acquire one connection
+	pConn, err := pool.Get()
+	require.NoError(t, err)
+	require.NotNil(t, pConn)
 	// put back the active connection to the idlepool
 	pConn.Close()
 	mockedQueryExecutor.EXPECT().IsConnected().Return(true)
-	assert.True(t, pool.IsConnected())
 
-	// GIVEN -- one idle (connected) and one idle (not connected) connection
-	// WHEN calling IsConnected() - THEN connected
-	// acquire one more connection
-	mockedQueryExecutor.EXPECT().LastError().Return(nil)
-	mockedQueryExecutor.EXPECT().IsConnected().Return(true)
+	// WHEN
+	connected := pool.IsConnected()
+
+	// THEN
+	assert.True(t, connected)
+}
+
+func TestIsConnectedIdleAndFaulty(t *testing.T) {
+	// GIVEN - one idle (connected) and one idle (not connected) connection
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedQueryExecutor, pool, err := newMockedPool(mockCtrl)
+	require.NoError(t, err)
+	require.NotNil(t, pool)
+
+	// acquire two connections
+	//mockedQueryExecutor.EXPECT().LastError().Return(nil).Times(1)
+	//mockedQueryExecutor.EXPECT().IsConnected().Return(true).Times(2)
 	pConn1, err := pool.Get()
 	require.NoError(t, err)
 	require.NotNil(t, pConn1)
@@ -111,7 +147,12 @@ func TestIsConnected(t *testing.T) {
 	pConn2.Close()
 	mockedQueryExecutor.EXPECT().IsConnected().Return(false)
 	mockedQueryExecutor.EXPECT().IsConnected().Return(true)
-	assert.True(t, pool.IsConnected())
+
+	// WHEN
+	connected := pool.IsConnected()
+
+	// THEN
+	assert.True(t, connected)
 }
 
 func TestClose(t *testing.T) {
@@ -183,6 +224,7 @@ func TestNewPool(t *testing.T) {
 	clientFactory := func() (interfaces.QueryExecutor, error) {
 		return mockedQueryExecutor, nil
 	}
+
 	// WHEN
 	pool, err := NewPool(clientFactory, 10, time.Second*30, logger)
 
@@ -424,4 +466,14 @@ func TestGetAndDial(t *testing.T) {
 	require.NotNil(t, conn)
 	assert.Equal(t, mockedQueryExecutor1, conn.client, "Expected the same connection to be reused")
 	assert.Equal(t, 1, pool.active, "Expected 1 active connections")
+}
+
+func newMockedPool(mockCtrl *gomock.Controller) (*mock_interfaces.MockQueryExecutor, *pool, error) {
+	logger := zerolog.Nop()
+	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
+	clientFactory := func() (interfaces.QueryExecutor, error) {
+		return mockedQueryExecutor, nil
+	}
+	pool, err := NewPool(clientFactory, 2, time.Second*30, logger)
+	return mockedQueryExecutor, pool, err
 }

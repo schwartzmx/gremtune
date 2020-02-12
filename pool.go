@@ -77,7 +77,7 @@ type idleConnection struct {
 	idleSince time.Time
 }
 
-// IsConnected return true in case at least one (idle or active) connection
+// IsConnected returns true in case at least one (idle or active) connection
 // managed by the pool is connected.
 func (p *pool) IsConnected() bool {
 	p.mu.RLock()
