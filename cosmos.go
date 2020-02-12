@@ -66,9 +66,11 @@ func NumMaxActiveConnections(numMaxActiveConnections int) Option {
 // New creates a new instance of the Cosmos (-DB connector)
 func New(host string, options ...Option) (*Cosmos, error) {
 	cosmos := &Cosmos{
-		logger:       zerolog.Nop(),
-		errorChannel: make(chan error),
-		host:         host,
+		logger:                  zerolog.Nop(),
+		errorChannel:            make(chan error),
+		host:                    host,
+		numMaxActiveConnections: 10,
+		connectionIdleTimeout:   time.Second * 30,
 	}
 
 	for _, opt := range options {
@@ -131,4 +133,9 @@ func (c *Cosmos) Stop() error {
 
 func (c *Cosmos) String() string {
 	return fmt.Sprintf("CosmosDB (connected=%t, target=%s, user=%s)", c.IsConnected(), c.host, c.username)
+}
+
+// IsHealthy returns true if the Cosmos DB connection is alive.
+func (c *Cosmos) IsHealthy() bool {
+	return c.IsConnected()
 }

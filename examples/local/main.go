@@ -25,30 +25,46 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to create the cosmos connector")
 	}
 
-	signal_chan := make(chan os.Signal, 1)
-	signal.Notify(signal_chan, syscall.SIGINT, syscall.SIGTERM)
-	exit_chan := make(chan struct{})
-	go func() {
-		for {
+	exitChannel := make(chan struct{})
+	go processLoop(cosmos, logger, exitChannel)
 
-			ticker := time.NewTicker(time.Millisecond * 10)
-			defer ticker.Stop()
-
-			select {
-			case <-signal_chan:
-				close(exit_chan)
-				return
-			case <-ticker.C:
-				queryCosmos(cosmos, logger)
-			}
-		}
-	}()
-
-	<-exit_chan
+	<-exitChannel
 	if err := cosmos.Stop(); err != nil {
-		logger.Error().Err(err).Msg("Failed to stop")
+		logger.Error().Err(err).Msg("Failed to stop cosmos connector")
 	}
 	logger.Info().Msg("Teared down")
+}
+
+func processLoop(cosmos *gremtune.Cosmos, logger zerolog.Logger, exitChannel chan<- struct{}) {
+	// register for common exit signals (e.g. ctrl-c)
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
+
+	// create tickers for doing health check and queries
+	queryTicker := time.NewTicker(time.Second * 2)
+	healthCheckTicker := time.NewTicker(time.Second * 1)
+
+	// ensure to clean up as soon as the processLoop has been left
+	defer func() {
+		queryTicker.Stop()
+		healthCheckTicker.Stop()
+	}()
+
+	stopProcessing := false
+	logger.Info().Msg("Process loop entered")
+	for !stopProcessing {
+		select {
+		case <-signalChannel:
+			close(exitChannel)
+			stopProcessing = true
+		case <-queryTicker.C:
+			queryCosmos(cosmos, logger)
+		case <-healthCheckTicker.C:
+			logger.Debug().Bool("healthy", cosmos.IsHealthy()).Msg("Health Check")
+		}
+	}
+
+	logger.Info().Msg("Process loop left")
 }
 
 func queryCosmos(cosmos *gremtune.Cosmos, logger zerolog.Logger) {

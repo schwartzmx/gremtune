@@ -35,7 +35,7 @@ type pool struct {
 
 	closed bool
 	cond   *sync.Cond
-	mu     sync.Mutex
+	mu     sync.RWMutex
 }
 
 // pooledConnection represents a shared and reusable connection.
@@ -77,9 +77,35 @@ type idleConnection struct {
 	idleSince time.Time
 }
 
+// IsConnected returns true in case at least one (idle or active) connection
+// managed by the pool is connected.
 func (p *pool) IsConnected() bool {
-	// TODO: Implement
-	return true
+	p.mu.RLock()
+	// in case we have at least one active connection
+	// --> we can return immediately with status connected
+	if p.active > 0 {
+		p.mu.RUnlock()
+		return true
+	}
+
+	// copy the idle connections to be able to unlock as soon as possible
+	idleConnectionsCopy := make([]*idleConnection, len(p.idleConnections))
+	copy(idleConnectionsCopy, p.idleConnections)
+	p.mu.RUnlock()
+
+	for _, connection := range idleConnectionsCopy {
+		if !connection.pc.client.IsConnected() {
+			continue
+		}
+
+		// We assume to be healthy if at least one active connection
+		// could be found. Hence we can stop searching when the first
+		// healthy one was found.
+		return true
+	}
+
+	// did not found any working connection
+	return false
 }
 
 func (p *pool) LastError() error {
@@ -105,7 +131,6 @@ func (p *pool) Get() (*pooledConnection, error) {
 
 		// Try to grab first available idle connection
 		if conn := p.first(); conn != nil {
-
 			// Remove the connection from the idle slice
 			p.idleConnections = append(p.idleConnections[:0], p.idleConnections[1:]...)
 			p.active++
