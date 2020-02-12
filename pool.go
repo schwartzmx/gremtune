@@ -131,7 +131,6 @@ func (p *pool) Get() (*pooledConnection, error) {
 
 		// Try to grab first available idle connection
 		if conn := p.first(); conn != nil {
-			conn.pc.client.IsConnected()
 			// Remove the connection from the idle slice
 			p.idleConnections = append(p.idleConnections[:0], p.idleConnections[1:]...)
 			p.active++
