@@ -93,7 +93,6 @@ func (p *pool) IsConnected() bool {
 	copy(idleConnectionsCopy, p.idleConnections)
 	p.mu.RUnlock()
 
-	hasConnection := false
 	for _, connection := range idleConnectionsCopy {
 		if !connection.pc.client.IsConnected() {
 			continue
@@ -102,11 +101,11 @@ func (p *pool) IsConnected() bool {
 		// We assume to be healthy if at least one active connection
 		// could be found. Hence we can stop searching when the first
 		// healthy one was found.
-		hasConnection = true
-		break
+		return true
 	}
 
-	return hasConnection
+	// did not found any working connection
+	return false
 }
 
 func (p *pool) LastError() error {
