@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
-	"github.com/schwartzmx/gremtune"
-	"github.com/schwartzmx/gremtune/interfaces"
+	gremcos "github.com/supplyon/gremcos"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	hostURL := fmt.Sprintf("ws://%s:%d/gremlin", host, port)
 	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat}).With().Timestamp().Logger()
 
-	cosmos, err := gremtune.New(hostURL, gremtune.WithLogger(logger), gremtune.NumMaxActiveConnections(10), gremtune.ConnectionIdleTimeout(time.Second*1))
+	cosmos, err := gremcos.New(hostURL, gremcos.WithLogger(logger), gremcos.NumMaxActiveConnections(10), gremcos.ConnectionIdleTimeout(time.Second*1))
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to create the cosmos connector")
 	}
@@ -35,7 +35,7 @@ func main() {
 	logger.Info().Msg("Teared down")
 }
 
-func processLoop(cosmos *gremtune.Cosmos, logger zerolog.Logger, exitChannel chan<- struct{}) {
+func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan<- struct{}) {
 	// register for common exit signals (e.g. ctrl-c)
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
@@ -67,7 +67,7 @@ func processLoop(cosmos *gremtune.Cosmos, logger zerolog.Logger, exitChannel cha
 	logger.Info().Msg("Process loop left")
 }
 
-func queryCosmos(cosmos *gremtune.Cosmos, logger zerolog.Logger) {
+func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	res, err := cosmos.Execute("g.addV('Phil')")
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
@@ -85,7 +85,7 @@ func queryCosmos(cosmos *gremtune.Cosmos, logger zerolog.Logger) {
 	}
 }
 
-func queryCosmosAsync(cosmos *gremtune.Cosmos, logger zerolog.Logger) {
+func queryCosmosAsync(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	dataChannel := make(chan interfaces.AsyncResponse)
 
 	go func() {

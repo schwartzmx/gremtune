@@ -1,13 +1,13 @@
-package gremtune
+package gremcos
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	mock_interfaces "github.com/supplyon/gremcos/test/mocks/interfaces"
 )
 
 // TestRequestPreparation tests the ability to package a query and a set of bindings into a request struct for further manipulation
@@ -33,7 +33,7 @@ func TestRequestPreparation(t *testing.T) {
 	assert.Equal(t, req, expectedRequest)
 }
 
-// TestRequestPackaging tests the ability for gremtune to format a request using the established Gremlin Server WebSockets protocol for delivery to the server
+// TestRequestPackaging tests the ability for gremcos to format a request using the established Gremlin Server WebSockets protocol for delivery to the server
 func TestRequestPackaging(t *testing.T) {
 	testRequest := request{
 		RequestID: "1d6d02bd-8e56-421d-9438-3bd6d0079ff1",

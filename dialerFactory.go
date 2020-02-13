@@ -1,11 +1,11 @@
-package gremtune
+package gremcos
 
 import (
 	"net/http"
 	"time"
 
 	gorilla "github.com/gorilla/websocket"
-	"github.com/schwartzmx/gremtune/interfaces"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 // websocketDialer is a function type for dialing/ connecting to a websocket server and creating a WebsocketConnection

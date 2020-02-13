@@ -1,11 +1,11 @@
-package gremtune
+package gremcos
 
 import (
 	"testing"
 	"time"
 
-	"github.com/schwartzmx/gremtune/interfaces"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 var failingErrorChannelConsumerFunc = func(errChan chan error, t *testing.T) {

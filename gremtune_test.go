@@ -1,4 +1,4 @@
-package gremtune
+package gremcos
 
 import (
 	"encoding/json"
@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/schwartzmx/gremtune/interfaces"
 	"github.com/stretchr/testify/suite"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 type SuiteIntegrationTests struct {

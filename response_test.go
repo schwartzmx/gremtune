@@ -1,14 +1,14 @@
-package gremtune
+package gremcos
 
 import (
 	"reflect"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/schwartzmx/gremtune/interfaces"
-	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
+	mock_interfaces "github.com/supplyon/gremcos/test/mocks/interfaces"
 )
 
 // Dummy responses for mocking
@@ -50,7 +50,7 @@ var dummyPartialResponse2Marshalled = interfaces.Response{
 	Result:    interfaces.Result{Data: []byte("testPartialData2")},
 }
 
-// TestResponseHandling tests the overall response handling mechanism of gremtune
+// TestResponseHandling tests the overall response handling mechanism of gremcos
 func TestResponseHandling(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)

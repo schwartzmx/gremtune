@@ -1,4 +1,4 @@
-package gremtune
+package gremcos
 
 import (
 	"encoding/json"
@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/schwartzmx/gremtune/interfaces"
-	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
+	mock_interfaces "github.com/supplyon/gremcos/test/mocks/interfaces"
 )
 
 func packedRequest2Request(packedRequest []byte) (request, error) {

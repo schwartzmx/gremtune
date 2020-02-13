@@ -1,4 +1,4 @@
-package gremtune
+package gremcos
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
-	"github.com/schwartzmx/gremtune/interfaces"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 // Cosmos is a connector that can be used to connect to and interact with a CosmosDB
