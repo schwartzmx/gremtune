@@ -1,4 +1,4 @@
-# gremtune
+# gremcos
 
 [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/schwartzmx/gremtune) [![Build Status](https://travis-ci.org/schwartzmx/gremtune.svg?branch=master)](https://travis-ci.org/schwartzmx/gremtune) [![Go Report Card](https://goreportcard.com/badge/github.com/schwartzmx/gremtune)](https://goreportcard.com/report/github.com/schwartzmx/gremtune)
 
@@ -40,8 +40,8 @@ func main() {
         log.Fatal("Lost connection to the database: " + err.Error())
     }(errs) // Example of connection error handling logic
 
-    dialer := gremtune.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
-    g, err := gremtune.Dial(dialer, errs) // Returns a gremtune client to interact with
+    dialer := gremcos.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
+    g, err := gremcos.Dial(dialer, errs) // Returns a gremcos client to interact with
     if err != nil {
         fmt.Println(err)
         return
@@ -85,8 +85,8 @@ func main() {
         log.Fatal("Lost connection to the database: " + err.Error())
     }(errs) // Example of connection error handling logic
 
-    dialer := gremtune.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
-    g, err := gremtune.Dial(dialer, errs) // Returns a gremtune client to interact with
+    dialer := gremcos.NewDialer("ws://127.0.0.1:8182") // Returns a WebSocket dialer to connect to Gremlin Server
+    g, err := gremcos.Dial(dialer, errs) // Returns a gremcos client to interact with
     if err != nil {
         fmt.Println(err)
         return
@@ -145,8 +145,8 @@ func main() {
         log.Fatal("Lost connection to the database: " + err.Error())
     }(errs) // Example of connection error handling logic
 
-    dialer := gremtune.NewSecureDialer("127.0.0.1:8182", "username", "password") // Returns a WebSocket dialer to connect to Gremlin Server
-    g, err := gremtune.Dial(dialer, errs) // Returns a gremtune client to interact with
+    dialer := gremcos.NewSecureDialer("127.0.0.1:8182", "username", "password") // Returns a WebSocket dialer to connect to Gremlin Server
+    g, err := gremcos.Dial(dialer, errs) // Returns a gremcos client to interact with
     if err != nil {
         fmt.Println(err)
         return

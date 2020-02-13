@@ -1,4 +1,4 @@
-package gremtune
+package gremcos
 
 import (
 	"net/http"

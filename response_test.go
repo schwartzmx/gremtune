@@ -1,4 +1,4 @@
-package gremtune
+package gremcos
 
 import (
 	"reflect"
@@ -50,7 +50,7 @@ var dummyPartialResponse2Marshalled = interfaces.Response{
 	Result:    interfaces.Result{Data: []byte("testPartialData2")},
 }
 
-// TestResponseHandling tests the overall response handling mechanism of gremtune
+// TestResponseHandling tests the overall response handling mechanism of gremcos
 func TestResponseHandling(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)

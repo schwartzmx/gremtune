@@ -1,4 +1,4 @@
-package gremtune
+package gremcos
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/schwartzmx/gremtune/interfaces"
 )
 
-// client is a container for the gremtune client.
+// client is a container for the gremcos client.
 type client struct {
 
 	// conn is the entity that manages the websocket connection
