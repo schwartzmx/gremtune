@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/schwartzmx/gremtune/interfaces"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 // client is a container for the gremcos client.

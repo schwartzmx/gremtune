@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/schwartzmx/gremtune/interfaces"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 func (c *client) handleResponse(msg []byte) error {

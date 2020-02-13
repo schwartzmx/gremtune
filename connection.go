@@ -8,7 +8,7 @@ import (
 
 	"sync"
 
-	"github.com/schwartzmx/gremtune/interfaces"
+	"github.com/supplyon/gremcos/interfaces"
 
 	gorilla "github.com/gorilla/websocket"
 )

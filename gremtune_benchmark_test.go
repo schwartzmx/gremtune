@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/schwartzmx/gremtune/interfaces"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 var benchmarkClient interfaces.QueryExecutor

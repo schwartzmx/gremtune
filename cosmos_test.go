@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	mock_interfaces "github.com/supplyon/gremcos/test/mocks/interfaces"
 )
 
 func TestNew(t *testing.T) {

@@ -6,7 +6,7 @@ package mock_interfaces
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	interfaces "github.com/schwartzmx/gremtune/interfaces"
+	interfaces "github.com/supplyon/gremcos/interfaces"
 	reflect "reflect"
 )
 

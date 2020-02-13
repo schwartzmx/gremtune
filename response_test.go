@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/schwartzmx/gremtune/interfaces"
-	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
+	mock_interfaces "github.com/supplyon/gremcos/test/mocks/interfaces"
 )
 
 // Dummy responses for mocking

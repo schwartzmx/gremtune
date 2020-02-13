@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	mock_interfaces "github.com/supplyon/gremcos/test/mocks/interfaces"
 )
 
 // TestRequestPreparation tests the ability to package a query and a set of bindings into a request struct for further manipulation

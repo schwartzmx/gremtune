@@ -8,10 +8,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	gorilla "github.com/gorilla/websocket"
-	"github.com/schwartzmx/gremtune/interfaces"
-	mock_interfaces "github.com/schwartzmx/gremtune/test/mocks/interfaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
+	mock_interfaces "github.com/supplyon/gremcos/test/mocks/interfaces"
 )
 
 func TestNewWebsocket(t *testing.T) {
