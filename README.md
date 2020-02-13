@@ -20,7 +20,7 @@ go get github.com/supplyon/gremcos
 
 ### Response Format
 
-This implementation supports [Graphson 2.0](http://tinkerpop.apache.org/docs/3.4.4/dev/io/#graphson-2d0) (not 3) in order to be compatible to CosmosDB. This means all the responses from the CosmosDB server as well as the responses from the local gremlin-server have to comply with the 2.0 format.
+This implementation supports [Graphson 2.0](http://tinkerpop.apache.org/docs/3.4.0/dev/io/#graphson-2d0) (not 3) in order to be compatible to CosmosDB. This means all the responses from the CosmosDB server as well as the responses from the local gremlin-server have to comply with the 2.0 format.
 
 ### Azure Cosmos Gremlin Implementation Differences
 
