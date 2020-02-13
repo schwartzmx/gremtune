@@ -80,7 +80,11 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 	if err != nil {
 		return
 	}
+	resp, err = c.executeReq(req, id)
+	return
+}
 
+func (c *Client) executeReq(req request, id string) (resp []Response, err error) {
 	msg, err := packageRequest(req)
 	if err != nil {
 		log.Println(err)
@@ -91,11 +95,12 @@ func (c *Client) executeRequest(query string, bindings, rebindings *map[string]s
 	c.dispatchRequest(msg)
 	resp, err = c.retrieveResponse(id)
 	if err != nil {
-		err = errors.Wrapf(err, "query: %s", query)
+		err = errors.Wrapf(err, "request: %s", req)
 	}
 	return
 }
 
+// func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, sessionID *string, commitSession *bool, responseChannel chan AsyncResponse) (err error) {
 func (c *Client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan AsyncResponse) (err error) {
 	var req request
 	var id string
@@ -142,7 +147,34 @@ func (c *Client) ExecuteWithBindings(query string, bindings, rebindings map[stri
 	if c.conn.IsDisposed() {
 		return resp, errors.New("you cannot write on disposed connection")
 	}
+
 	resp, err = c.executeRequest(query, &bindings, &rebindings)
+	return
+}
+
+// ExecuteWithSession formats a raw Gremlin query as part of a session, sends it to Gremlin Server, and returns the result.
+func (c *Client) ExecuteWithSession(query string, sessionID string) (resp []Response, err error) {
+	if c.conn.IsDisposed() {
+		return resp, errors.New("you cannot write on disposed connection")
+	}
+	req, id, err := prepareRequestWithSession(query, sessionID)
+	if err != nil {
+		return
+	}
+	resp, err = c.executeReq(req, id)
+	return
+}
+
+// CommitSession formats a raw Gremlin query, closes the session, and then the transaction will be commited
+func (c *Client) CommitSession(sessionID string) (resp []Response, err error) {
+	if c.conn.IsDisposed() {
+		return resp, errors.New("you cannot write on disposed connection")
+	}
+	req, id, err := prepareCommitSessionRequest(sessionID)
+	if err != nil {
+		return
+	}
+	resp, err = c.executeReq(req, id)
 	return
 }
 
@@ -155,7 +187,7 @@ func (c *Client) Execute(query string) (resp []Response, err error) {
 	return
 }
 
-// Execute formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
+// ExecuteAsync formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
 func (c *Client) ExecuteAsync(query string, responseChannel chan AsyncResponse) (err error) {
 	if c.conn.IsDisposed() {
 		return errors.New("you cannot write on disposed connection")
