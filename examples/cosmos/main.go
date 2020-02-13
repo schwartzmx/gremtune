@@ -47,7 +47,7 @@ func main() {
 		log.Fatalf("Failed to create the websocket: %s", err)
 	}
 
-	gremlinClient, err := gremcos.Dial(websocket, errs, gremcos.SetAuth(username, password)) // Returns a gremtune client to interact with
+	gremlinClient, err := gremcos.Dial(websocket, errs, gremcos.SetAuth(username, password)) // Returns a gremcos client to interact with
 	if err != nil {
 		log.Fatalf("Failed to create the gremlin client: %s", err)
 	}
