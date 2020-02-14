@@ -1,6 +1,7 @@
 package gremcos
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -64,11 +65,11 @@ func TestIsHealthy(t *testing.T) {
 	cosmos.pool = mockedQueryExecutor
 
 	// WHEN -- connected --> healthy
-	mockedQueryExecutor.EXPECT().IsConnected().Return(true)
+	mockedQueryExecutor.EXPECT().Ping().Return(nil)
 	healthyWhenConnected := cosmos.IsHealthy()
 
 	// WHEN -- not connected --> not healthy
-	mockedQueryExecutor.EXPECT().IsConnected().Return(false)
+	mockedQueryExecutor.EXPECT().Ping().Return(fmt.Errorf("Not connected"))
 	healthyWhenNotConnected := cosmos.IsHealthy()
 
 	// THEN
