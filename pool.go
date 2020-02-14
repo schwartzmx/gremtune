@@ -334,3 +334,16 @@ func (pc *pooledConnection) Close() {
 	pc.pool.put(pc)
 	pc.pool.release()
 }
+
+// Ping obtains/ creates a connection from the pool and
+// sends the ping control message over the underlying websocket.
+func (p *pool) Ping() error {
+	pc, err := p.Get()
+	if err != nil {
+		return err
+	}
+
+	// put the connection back into the idle pool
+	defer pc.Close()
+	return pc.client.Ping()
+}

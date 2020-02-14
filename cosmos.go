@@ -137,8 +137,5 @@ func (c *Cosmos) String() string {
 
 // IsHealthy returns nil if the Cosmos DB connection is alive, otherwise an error is returned
 func (c *Cosmos) IsHealthy() error {
-	if !c.IsConnected() {
-		return fmt.Errorf("Not connected")
-	}
-	return nil
+	return c.pool.Ping()
 }

@@ -148,3 +148,17 @@ func (mr *MockQueryExecutorMockRecorder) ExecuteWithBindings(query, bindings, re
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteWithBindings", reflect.TypeOf((*MockQueryExecutor)(nil).ExecuteWithBindings), query, bindings, rebindings)
 }
+
+// Ping mocks base method
+func (m *MockQueryExecutor) Ping() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ping")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Ping indicates an expected call of Ping
+func (mr *MockQueryExecutorMockRecorder) Ping() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockQueryExecutor)(nil).Ping))
+}

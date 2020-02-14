@@ -405,3 +405,8 @@ func (c *client) workerSaveExit(name string, errs chan<- error) {
 		errs <- err
 	}
 }
+
+// Ping send a ping over the socket to the peer
+func (c *client) Ping() error {
+	return c.conn.Ping()
+}

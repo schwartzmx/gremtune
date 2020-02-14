@@ -14,6 +14,7 @@ type QueryExecutor interface {
 	ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []Response, err error)
 	ExecuteFile(path string) (resp []Response, err error)
 	ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []Response, err error)
+	Ping() error
 }
 
 const (
