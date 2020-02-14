@@ -72,6 +72,6 @@ func TestIsHealthy(t *testing.T) {
 	healthyWhenNotConnected := cosmos.IsHealthy()
 
 	// THEN
-	assert.True(t, healthyWhenConnected)
-	assert.False(t, healthyWhenNotConnected)
+	assert.NoError(t, healthyWhenConnected)
+	assert.Error(t, healthyWhenNotConnected)
 }

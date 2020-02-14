@@ -60,7 +60,12 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
 		case <-healthCheckTicker.C:
-			logger.Debug().Bool("healthy", cosmos.IsHealthy()).Msg("Health Check")
+			err := cosmos.IsHealthy()
+			logEvent := logger.Debug()
+			if err != nil {
+				logEvent = logger.Warn().Err(err)
+			}
+			logEvent.Bool("healthy", err == nil).Msg("Health Check")
 		}
 	}
 
