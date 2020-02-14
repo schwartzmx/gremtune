@@ -135,7 +135,10 @@ func (c *Cosmos) String() string {
 	return fmt.Sprintf("CosmosDB (connected=%t, target=%s, user=%s)", c.IsConnected(), c.host, c.username)
 }
 
-// IsHealthy returns true if the Cosmos DB connection is alive.
-func (c *Cosmos) IsHealthy() bool {
-	return c.IsConnected()
+// IsHealthy returns nil if the Cosmos DB connection is alive, otherwise an error is returned
+func (c *Cosmos) IsHealthy() error {
+	if !c.IsConnected() {
+		return fmt.Errorf("Not connected")
+	}
+	return nil
 }
