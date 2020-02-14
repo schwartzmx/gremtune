@@ -50,7 +50,7 @@ func newClient() (c Client) {
 }
 
 // Dial returns a gremtune client for interaction with the Gremlin Server specified in the host IP.
-func Dial(conn dialer, errs chan error) (c Client, err error) {
+func Dial(conn dialer, errsFromCaller chan error) (c Client, err error) {
 	c = newClient()
 	c.conn = conn
 
@@ -61,12 +61,24 @@ func Dial(conn dialer, errs chan error) (c Client, err error) {
 	}
 
 	quit := conn.(*Ws).quit
-
+	errs := make(chan error)
 	go c.writeWorker(errs, quit)
 	go c.readWorker(errs, quit)
 	go conn.ping(errs)
+	go c.notifyOnFailure(errs, errsFromCaller)
 
 	return
+}
+
+func (c *Client) notifyOnFailure(errs chan error, errsFromCaller chan error) {
+	err := <-errs
+	if err != nil {
+		errsFromCaller <- err
+		c.responseNotifier.Range(func(key, value interface{}) bool {
+			value.(chan error) <- err
+			return true
+		})
+	}
 }
 
 func (c *Client) executeRequest(query string, bindings, rebindings *map[string]string) (resp []Response, err error) {
