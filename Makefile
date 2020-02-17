@@ -13,7 +13,6 @@ build: sep ## Builds the library
 
 test: sep ## Runs all unittests and generates a coverage report.
 	@echo "--> Run the unit-tests and checks for race conditions."
-	#@go test -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic
 	@go test -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic
 
 test.report: sep ## Runs all unittests and generates a coverage- and a test-report.
