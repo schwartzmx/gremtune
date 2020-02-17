@@ -1,6 +1,7 @@
 # gremcos
 
 [![GoDoc](https://godoc.org/github.com/supplyon/gremcos?status.svg)](https://godoc.org/github.com/supplyon/gremcos) ![build](https://github.com/supplyon/gremcos/workflows/build/badge.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/supplyon/gremcos)](https://goreportcard.com/report/github.com/supplyon/gremcos)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=supplyon_gremcos&metric=alert_status)](https://sonarcloud.io/dashboard?id=supplyon_gremcos) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=supplyon_gremcos&metric=coverage)](https://sonarcloud.io/dashboard?id=supplyon_gremcos) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=supplyon_gremcos&metric=ncloc)](https://sonarcloud.io/dashboard?id=supplyon_gremcos) [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=supplyon_gremcos&metric=code_smells)](https://sonarcloud.io/dashboard?id=supplyon_gremcos)
 
 Gremcos is a fork of [schwartzmx/gremtune](https://github.com/schwartzmx/gremtune) with alterations to make it compatible with [Gremlin API of Azure Cosmos DB](https://docs.microsoft.com/en-us/azure/cosmos-db/graph-introduction) which is a Graph Database (Gremlin API) for Azure.
 
