@@ -126,21 +126,40 @@ func (c *client) retrieveResponseAsync(id string, responseChannel chan interface
 
 // retrieveResponse retrieves the response saved by saveResponse.
 func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
-	resp, ok := c.responseNotifier.Load(id)
+
+	var responseErrorChannel chan error
+	var responseStatusNotifier chan int
+
+	// ensure that the cleanup is done in any case
+	defer func() {
+		if responseErrorChannel != nil {
+			close(responseErrorChannel)
+		}
+		if responseStatusNotifier != nil {
+			close(responseStatusNotifier)
+		}
+		c.responseNotifier.Delete(id)
+		c.responseStatusNotifier.Delete(id)
+		c.deleteResponse(id)
+	}()
+
+	responseErrorChannelUntyped, ok := c.responseNotifier.Load(id)
 	if !ok {
 		return nil, fmt.Errorf("Response with id %s not found", id)
 	}
+	responseErrorChannel = responseErrorChannelUntyped.(chan error)
 
-	responseStatusNotifier, ok := c.responseStatusNotifier.Load(id)
+	responseStatusNotifierUntyped, ok := c.responseStatusNotifier.Load(id)
 	if !ok {
 		return nil, fmt.Errorf("Response with id %s not found", id)
 	}
+	responseStatusNotifier = responseStatusNotifierUntyped.(chan int)
 
-	responseErrorChannel := resp.(chan error)
 	err := <-responseErrorChannel
-	if err != nil {
-		return nil, err
-	}
+	// Hint: Don't return here immediately in case the obtained error is != nil.
+	// We don't want to loose the responses obtained so far, especially the
+	// data stored in the attribute map of each response is useful.
+	// For example the response contains the request charge for this request.
 
 	dataI, ok := c.results.Load(id)
 	if !ok {
@@ -154,14 +173,7 @@ func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 		data[i] = d[i].(interfaces.Response)
 	}
 
-	// cleanup
-	close(responseErrorChannel)
-	close(responseStatusNotifier.(chan int))
-	c.responseNotifier.Delete(id)
-	c.responseStatusNotifier.Delete(id)
-	c.deleteResponse(id)
-
-	return data, nil
+	return data, err
 }
 
 // deleteRespones deletes the response from the container. Used for cleanup purposes by requester.
