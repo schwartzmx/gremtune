@@ -19,14 +19,15 @@ func (c *client) handleResponse(msg []byte) error {
 }
 
 // marshalResponse creates a response struct for every incoming response for further manipulation
-func marshalResponse(msg []byte) (resp interfaces.Response, err error) {
-	err = json.Unmarshal(msg, &resp)
+func marshalResponse(msg []byte) (interfaces.Response, error) {
+	resp := interfaces.Response{}
+	err := json.Unmarshal(msg, &resp)
 	if err != nil {
-		return
+		return resp, err
 	}
 
-	err = resp.DetectError()
-	return
+	err = extractError(resp)
+	return resp, err
 }
 
 // saveResponse makes the response available for retrieval by the requester. Mutexes are used for thread safety.
@@ -166,4 +167,30 @@ func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 // deleteRespones deletes the response from the container. Used for cleanup purposes by requester.
 func (c *client) deleteResponse(id string) {
 	c.results.Delete(id)
+}
+
+// DetectError detects any possible errors in responses from Gremlin Server and generates an error for each code
+func extractError(r interfaces.Response) error {
+	switch r.Status.Code {
+	case interfaces.StatusSuccess, interfaces.StatusNoContent, interfaces.StatusPartialContent:
+		return nil
+	case interfaces.StatusUnauthorized:
+		return fmt.Errorf("UNAUTHORIZED - Response Message: %s", r.Status.Message)
+	case interfaces.StatusAuthenticate:
+		return fmt.Errorf("AUTHENTICATE - Response Message: %s", r.Status.Message)
+	case interfaces.StatusMalformedRequest:
+		return fmt.Errorf("MALFORMED REQUEST - Response Message: %s", r.Status.Message)
+	case interfaces.StatusInvalidRequestArguments:
+		return fmt.Errorf("INVALID REQUEST ARGUMENTS - Response Message: %s", r.Status.Message)
+	case interfaces.StatusServerError:
+		return fmt.Errorf("SERVER ERROR - Response Message: %s", r.Status.Message)
+	case interfaces.StatusScriptEvaluationError:
+		return fmt.Errorf("SCRIPT EVALUATION ERROR - Response Message: %s", r.Status.Message)
+	case interfaces.StatusServerTimeout:
+		return fmt.Errorf("SERVER TIMEOUT - Response Message: %s", r.Status.Message)
+	case interfaces.StatusServerSerializationError:
+		return fmt.Errorf("SERVER SERIALIZATION ERROR - Response Message: %s", r.Status.Message)
+	default:
+		return fmt.Errorf("UNKNOWN ERROR - Response Message: %s", r.Status.Message)
+	}
 }
