@@ -28,6 +28,8 @@ Modifications where made to `gremtune` in order to be compliant to Azure Cosmos 
 
 This implementation is only working/ compatible with [TinkerPop 3.4.0](http://tinkerpop.apache.org/downloads.html).
 
+Cosmos DB specific error handling is done and described at [ErrorHandling.md](ErrorHandling.md). For example error responses returned by Cosmos due to a usage rate limit violation are handled accordingly.
+
 ## License
 
 See [LICENSE](LICENSE.md)
