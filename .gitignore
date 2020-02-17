@@ -12,3 +12,5 @@ local
 coverage.out
 
 test-report.out
+
+lint.out
