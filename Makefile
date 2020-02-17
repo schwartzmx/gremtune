@@ -13,7 +13,12 @@ build: sep ## Builds the library
 
 test: sep ## Runs all unittests and generates a coverage report.
 	@echo "--> Run the unit-tests and checks for race conditions."
+	#@go test -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic
 	@go test -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic
+
+test.report: sep ## Runs all unittests and generates a coverage- and a test-report.
+	@echo "--> Run the unit-tests"	
+	@go test -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic -coverprofile=coverage.out -json | tee test-report.out
 
 test.integration: sep ## Runs all integration tests. As precondition a local gremlin-server has to run and listen on port 8182.
 	@echo "--> Run the integration-tests"
