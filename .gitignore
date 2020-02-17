@@ -8,3 +8,9 @@ debug.test
 cosmos
 
 local
+
+coverage.out
+
+test-report.out
+
+lint.out

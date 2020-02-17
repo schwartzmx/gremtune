@@ -173,7 +173,6 @@ func (ws *websocket) Read() (messageType int, msg []byte, err error) {
 	if err := ws.conn.SetReadDeadline(time.Now().Add(ws.readingWait)); err != nil {
 		return 0, nil, err
 	}
-
 	return ws.conn.ReadMessage()
 }
 

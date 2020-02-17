@@ -15,6 +15,7 @@ test: sep ## Runs all unittests and generates a coverage report.
 	@echo "--> Run the unit-tests and checks for race conditions."
 	@go test -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic
 
+
 test.integration: sep ## Runs all integration tests. As precondition a local gremlin-server has to run and listen on port 8182.
 	@echo "--> Run the integration-tests"
 	@go test -timeout 30s -run "Test_SuiteIT" -covermode=count
@@ -27,6 +28,15 @@ lint: ## Runs the linter to check for coding-style issues
 	@echo "--> Lint project"
 	@echo "!!!!golangci-lint has to be installed. See: https://github.com/golangci/golangci-lint#install"
 	@golangci-lint run --fast
+
+report.test: sep ## Runs all unittests and generates a coverage- and a test-report.
+	@echo "--> Run the unit-tests"	
+	@go test -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic -coverprofile=coverage.out -json | tee test-report.out
+
+report.lint: ## Runs the linter to check for coding-style issues and generates the report file used in the ci pipeline
+	@echo "--> Lint project + Reporting"
+	@echo "!!!!golangci-lint has to be installed. See: https://github.com/golangci/golangci-lint#install"
+	@golangci-lint run --fast --out-format checkstyle | tee lint.out
 
 gen-mocks: sep ## Generates test doubles (mocks).
 	@echo "--> generate mocks (github.com/golang/mock/gomock is required for this)"
