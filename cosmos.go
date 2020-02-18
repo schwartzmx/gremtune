@@ -178,18 +178,30 @@ func (c *Cosmos) IsHealthy() error {
 	return c.pool.Ping()
 }
 
+// updateRequestMetrics updates the request relevant metrics based on the given chunk of responses
 func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
+
+	// nothing to update
+	if len(respones) == 0 {
+		return
+	}
+
 	retryAfter := time.Second * 0
 	var requestChargePerQueryTotal float32
 	var serverTimePerQueryTotal time.Duration
+
 	for _, response := range respones {
 		statusCode := response.Status.Code
 		respInfo, err := parseAttributeMap(response.Status.Attributes)
 
-		// use the more specific status code
-		if err == nil && respInfo.statusCode != 0 {
-			statusCode = respInfo.statusCode
+		if err != nil {
+			// parsing the response failed -> we use the unspecific status code
+			metrics.statusCodeTotal.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
+			continue
 		}
+
+		// use the more specific status code
+		statusCode = respInfo.statusCode
 		metrics.statusCodeTotal.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
 
 		// only take the largest waittime of this chunk of responses
@@ -221,7 +233,6 @@ func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
 
 	metrics.serverTimePerQueryResponseAvgMS.Set(serverTimePerQueryResponseAvg)
 	metrics.serverTimePerQueryMS.Set(float64(serverTimePerQueryTotal.Milliseconds()))
-
 	metrics.requestChargePerQueryResponseAvg.Set(requestChargePerQueryResponseAvg)
 	metrics.requestChargePerQuery.Set(float64(requestChargePerQueryTotal))
 	metrics.requestChargeTotal.Add(float64(requestChargePerQueryTotal))
