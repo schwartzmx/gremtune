@@ -116,14 +116,15 @@ func (c *Cosmos) dial() (interfaces.QueryExecutor, error) {
 
 func (c *Cosmos) Execute(query string) ([]interfaces.Response, error) {
 
-	resp, err := c.pool.Execute(query)
+	responses, err := c.pool.Execute(query)
 
 	// try to investigate the responses and to find out if we can find more specific error information
-	if respErr := extractFirstError(resp); respErr != nil {
+	if respErr := extractFirstError(responses); respErr != nil {
 		err = respErr
 	}
 
-	return resp, err
+	updateRequestMetrics(responses, &c.metrics)
+	return responses, err
 }
 
 func (c *Cosmos) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
@@ -151,4 +152,54 @@ func (c *Cosmos) String() string {
 // IsHealthy returns nil if the Cosmos DB connection is alive, otherwise an error is returned
 func (c *Cosmos) IsHealthy() error {
 	return c.pool.Ping()
+}
+
+func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
+	retryAfter := time.Second * 0
+	var requestChargePerQueryTotal float32
+	var serverTimePerQueryTotal time.Duration
+	for _, response := range respones {
+		statusCode := response.Status.Code
+		respInfo, err := parseAttributeMap(response.Status.Attributes)
+
+		// use the more specific status code
+		if err == nil && respInfo.statusCode != 0 {
+			statusCode = respInfo.statusCode
+		}
+		metrics.statusCodeTotal.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
+
+		// only take the largest waittime of this chunk of responses
+		if retryAfter < respInfo.retryAfter {
+			retryAfter = respInfo.retryAfter
+		}
+
+		// only take the largest value since cosmos already accumulates this value
+		if requestChargePerQueryTotal < respInfo.requestChargeTotal {
+			requestChargePerQueryTotal = respInfo.requestChargeTotal
+		}
+
+		// only take the largest value since cosmos already accumulates this value
+		if serverTimePerQueryTotal < respInfo.serverTimeTotal {
+			serverTimePerQueryTotal = respInfo.serverTimeTotal
+		}
+	}
+
+	numResponses := len(respones)
+	var requestChargePerQueryResponseAvg float64
+	if numResponses > 0 {
+		requestChargePerQueryResponseAvg = float64(requestChargePerQueryTotal) / float64(numResponses)
+	}
+
+	var serverTimePerQueryResponseAvg float64
+	if numResponses > 0 {
+		serverTimePerQueryResponseAvg = float64(serverTimePerQueryTotal.Milliseconds()) / float64(numResponses)
+	}
+
+	metrics.serverTimePerQueryResponseAvgMS.Set(serverTimePerQueryResponseAvg)
+	metrics.serverTimePerQueryMS.Set(float64(serverTimePerQueryTotal.Milliseconds()))
+
+	metrics.requestChargePerQueryResponseAvg.Set(requestChargePerQueryResponseAvg)
+	metrics.requestChargePerQuery.Set(float64(requestChargePerQueryTotal))
+	metrics.requestChargeTotal.Add(float64(requestChargePerQueryTotal))
+	metrics.retryAfterMS.Set(float64(retryAfter.Milliseconds()))
 }
