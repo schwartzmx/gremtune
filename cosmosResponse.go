@@ -42,7 +42,6 @@ const (
 )
 
 // extractFirstError runs through the given responses and returns the first error it finds.
-// All information (e.g.)
 func extractFirstError(responses []interfaces.Response) error {
 
 	for _, response := range responses {
@@ -53,29 +52,29 @@ func extractFirstError(responses []interfaces.Response) error {
 			continue
 		}
 
-		// since all success codes are already skipped
-		// here we have an error
+		// since all success codes are already skipped, now we have an error
 
-		// Do specific a interpretation on the 500 errors if possible.
-		// Usually from CosmosDB we can use additional headers to extract more detail
-		if statusCode == interfaces.StatusServerError {
-			responseInfo, err := parseAttributeMap(response.Status.Attributes)
-			if err != nil {
-				// if we can't parse/ interpret the attribute map then we return the full/ unparsed error information
-				return fmt.Errorf("Failed parsing attributes of response: '%s'. Unparsed error: %d - %s", err.Error(), response.Status.Code, response.Status.Message)
-			}
-			return fmt.Errorf("%d (%d) - %s", responseInfo.statusCode, responseInfo.subStatusCode, responseInfo.statusDescription)
+		// For the non 500 error status codes, do the usual error detection mechanism based on the main status code.
+		if statusCode != interfaces.StatusServerError {
+			return extractError(response)
 		}
 
-		// for the remaining error status codes do the usual error detection mechanism based on the main status code
-		return extractError(response)
+		// Try to provide a more specific error message for the 500 errors if possible.
+		// Usually from CosmosDB we can use additional headers to extract more details.
+		responseInfo, err := parseAttributeMap(response.Status.Attributes)
+		if err != nil {
+			// if we can't parse/ interpret the attribute map then we return the full/ unparsed error information
+			return fmt.Errorf("Failed parsing attributes of response: '%s'. Unparsed error: %d - %s", err.Error(), response.Status.Code, response.Status.Message)
+		}
+		return fmt.Errorf("%d (%d) - %s", responseInfo.statusCode, responseInfo.subStatusCode, responseInfo.statusDescription)
+
 	}
 
+	// no error was found
 	return nil
 }
 
-// parseAttributeMap parses the given attribute map assuming that it contains
-// CosmosDB specific headers.
+// parseAttributeMap parses the given attribute map assuming that it contains CosmosDB specific headers.
 func parseAttributeMap(attributes map[string]interface{}) (responseInformation, error) {
 	responseInfo := responseInformation{}
 

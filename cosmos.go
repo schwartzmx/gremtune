@@ -222,12 +222,9 @@ func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
 
 	numResponses := len(respones)
 	var requestChargePerQueryResponseAvg float64
-	if numResponses > 0 {
-		requestChargePerQueryResponseAvg = float64(requestChargePerQueryTotal) / float64(numResponses)
-	}
-
 	var serverTimePerQueryResponseAvg float64
 	if numResponses > 0 {
+		requestChargePerQueryResponseAvg = float64(requestChargePerQueryTotal) / float64(numResponses)
 		serverTimePerQueryResponseAvg = float64(serverTimePerQueryTotal.Milliseconds()) / float64(numResponses)
 	}
 
