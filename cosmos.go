@@ -27,7 +27,8 @@ type Cosmos struct {
 	numMaxActiveConnections int
 	connectionIdleTimeout   time.Duration
 
-	metrics Metrics
+	// metrics for cosmos
+	metrics *Metrics
 
 	wg sync.WaitGroup
 }
@@ -65,6 +66,23 @@ func NumMaxActiveConnections(numMaxActiveConnections int) Option {
 	}
 }
 
+// MetricsPrefix can be used to customize the metrics prefix
+// as needed for a specific service. Per default 'gremcos' is used
+// as prefix.
+func MetricsPrefix(prefix string) Option {
+	return func(c *Cosmos) {
+		c.metrics = NewMetrics(prefix)
+	}
+}
+
+// withMetrics can be used to set metrics from the outside.
+// This is needed in order to be able to inject mocks for unit-tests.
+func withMetrics(metrics *Metrics) Option {
+	return func(c *Cosmos) {
+		c.metrics = metrics
+	}
+}
+
 // New creates a new instance of the Cosmos (-DB connector)
 func New(host string, options ...Option) (*Cosmos, error) {
 	cosmos := &Cosmos{
@@ -73,11 +91,17 @@ func New(host string, options ...Option) (*Cosmos, error) {
 		host:                    host,
 		numMaxActiveConnections: 10,
 		connectionIdleTimeout:   time.Second * 30,
-		metrics:                 NewMetrics("gremcos"),
+		metrics:                 nil,
 	}
 
 	for _, opt := range options {
 		opt(cosmos)
+	}
+
+	// if metrics not set via MetricsPrefix instantiate the metrics
+	// using the default prefix
+	if cosmos.metrics == nil {
+		cosmos.metrics = NewMetrics("gremcos")
 	}
 
 	// use default settings (timeout, buffersizes etc.) for the websocket
@@ -123,7 +147,7 @@ func (c *Cosmos) Execute(query string) ([]interfaces.Response, error) {
 		err = respErr
 	}
 
-	updateRequestMetrics(responses, &c.metrics)
+	updateRequestMetrics(responses, c.metrics)
 	return responses, err
 }
 

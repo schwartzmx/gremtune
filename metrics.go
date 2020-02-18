@@ -18,7 +18,7 @@ type Metrics struct {
 }
 
 // NewMetrics returns the metrics collection
-func NewMetrics(namespace string) Metrics {
+func NewMetrics(namespace string) *Metrics {
 	statusCode := []string{"code"}
 	statusCodeTotal := m.NewWrappedCounterVec(prometheus.CounterOpts{
 		Namespace: namespace,
@@ -69,7 +69,7 @@ func NewMetrics(namespace string) Metrics {
 		Help:      "The average time spent in ms for one query per response.",
 	})
 
-	return Metrics{
+	return &Metrics{
 		statusCodeTotal:                  statusCodeTotal,
 		retryAfterMS:                     retryAfterMS,
 		requestChargeTotal:               requestChargeTotal,

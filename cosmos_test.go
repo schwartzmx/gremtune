@@ -13,6 +13,9 @@ import (
 
 func TestNew(t *testing.T) {
 	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics, _ := NewMockedMetrics(mockCtrl)
 	idleTimeout := time.Second * 12
 	maxActiveConnections := 10
 	username := "abcd"
@@ -23,6 +26,7 @@ func TestNew(t *testing.T) {
 		ConnectionIdleTimeout(idleTimeout),
 		NumMaxActiveConnections(maxActiveConnections),
 		WithAuth(username, password),
+		withMetrics(metrics),
 	)
 
 	// THEN
@@ -38,9 +42,10 @@ func TestStop(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
+	metrics, _ := NewMockedMetrics(mockCtrl)
 	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
-	cosmos, err := New("ws://host")
+	cosmos, err := New("ws://host", withMetrics(metrics))
 	require.NoError(t, err)
 	require.NotNil(t, cosmos)
 	cosmos.pool = mockedQueryExecutor
@@ -57,9 +62,10 @@ func TestIsHealthy(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
+	metrics, _ := NewMockedMetrics(mockCtrl)
 	mockedQueryExecutor := mock_interfaces.NewMockQueryExecutor(mockCtrl)
 
-	cosmos, err := New("ws://host")
+	cosmos, err := New("ws://host", withMetrics(metrics))
 	require.NoError(t, err)
 	require.NotNil(t, cosmos)
 	cosmos.pool = mockedQueryExecutor
@@ -75,4 +81,18 @@ func TestIsHealthy(t *testing.T) {
 	// THEN
 	assert.NoError(t, healthyWhenConnected)
 	assert.Error(t, healthyWhenNotConnected)
+}
+
+func TestNewWithMetrics(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	// WHEN
+	cosmos, err := New("ws://host", MetricsPrefix("prefix"))
+
+	// THEN
+	require.NoError(t, err)
+	require.NotNil(t, cosmos)
+	assert.NotNil(t, cosmos.metrics)
 }
