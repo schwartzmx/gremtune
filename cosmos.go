@@ -27,6 +27,8 @@ type Cosmos struct {
 	numMaxActiveConnections int
 	connectionIdleTimeout   time.Duration
 
+	metrics Metrics
+
 	wg sync.WaitGroup
 }
 
@@ -71,6 +73,7 @@ func New(host string, options ...Option) (*Cosmos, error) {
 		host:                    host,
 		numMaxActiveConnections: 10,
 		connectionIdleTimeout:   time.Second * 30,
+		metrics:                 NewMetrics("gremcos"),
 	}
 
 	for _, opt := range options {
