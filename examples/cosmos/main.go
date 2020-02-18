@@ -12,14 +12,6 @@ import (
 	gremcos "github.com/supplyon/gremcos"
 )
 
-var panicOnErrorOnChannel = func(errs chan error) {
-	err := <-errs
-	if err == nil {
-		return // ignore if the channel was closed
-	}
-	log.Fatalf("Lost connection to the database: %s", err)
-}
-
 func main() {
 
 	host := os.Getenv("CDB_HOST")
