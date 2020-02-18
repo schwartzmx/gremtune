@@ -40,7 +40,7 @@ func main() {
 		gremcos.WithAuth(username, password),
 		gremcos.WithLogger(logger),
 		gremcos.NumMaxActiveConnections(10),
-		gremcos.ConnectionIdleTimeout(time.Second*1),
+		gremcos.ConnectionIdleTimeout(time.Second*30),
 	)
 
 	if err != nil {
@@ -63,8 +63,8 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	// create tickers for doing health check and queries
-	queryTicker := time.NewTicker(time.Second * 5)
-	healthCheckTicker := time.NewTicker(time.Second * 1)
+	queryTicker := time.NewTicker(time.Second * 2)
+	healthCheckTicker := time.NewTicker(time.Second * 30)
 
 	// ensure to clean up as soon as the processLoop has been left
 	defer func() {

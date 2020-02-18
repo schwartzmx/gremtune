@@ -5,7 +5,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"github.com/spf13/cast"
 	"github.com/supplyon/gremcos/interfaces"
 )
 
@@ -95,8 +97,12 @@ func New(host string, options ...Option) (*Cosmos, error) {
 	cosmos.wg.Add(1)
 	go func() {
 		defer cosmos.wg.Done()
-		for err := range cosmos.errorChannel {
-			cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
+		for range cosmos.errorChannel {
+			// consume the errors from the channel
+			// at the moment it is not needed to post them to the log since they are
+			// anyway handed over to the caller
+			// For debugging the following line can be uncommented
+			// cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
 		}
 		cosmos.logger.Debug().Msg("Error channel consumer closed")
 	}()
@@ -109,8 +115,16 @@ func (c *Cosmos) dial() (interfaces.QueryExecutor, error) {
 	return Dial(c.dialer, c.errorChannel, SetAuth(c.username, c.password), PingInterval(time.Second*30))
 }
 
-func (c *Cosmos) Execute(query string) (resp []interfaces.Response, err error) {
-	return c.pool.Execute(query)
+func (c *Cosmos) Execute(query string) ([]interfaces.Response, error) {
+
+	resp, err := c.pool.Execute(query)
+
+	// try to investigate the responses and to find out if we can find more specific error information
+	if respErr := extractFirstError(resp); respErr != nil {
+		err = respErr
+	}
+
+	return resp, err
 }
 
 func (c *Cosmos) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
@@ -138,6 +152,39 @@ func (c *Cosmos) String() string {
 // IsHealthy returns nil if the Cosmos DB connection is alive, otherwise an error is returned
 func (c *Cosmos) IsHealthy() error {
 	return c.pool.Ping()
+}
+
+// extractFirstError runs through the given responses and returns the first error it finds.
+// All information (e.g.)
+func extractFirstError(responses []interfaces.Response) error {
+
+	for _, response := range responses {
+		statusCode := response.Status.Code
+
+		// everything ok --> skip this response
+		if statusCode == interfaces.StatusSuccess || statusCode == interfaces.StatusNoContent || statusCode == interfaces.StatusPartialContent {
+			continue
+		}
+
+		// since all success codes are already skipped
+		// here we have an error
+
+		// Do specific a interpretation on the 500 errors if possible.
+		// Usually from CosmosDB we can use additional headers to extract more detail
+		if statusCode == interfaces.StatusServerError {
+			responseInfo, err := parseAttributeMap(response.Status.Attributes)
+			if err != nil {
+				// if we can't parse/ interpret the attribute map then we return the full/ unparsed error information
+				return fmt.Errorf("Failed parsing attributes of response: '%s'. Unparsed error: %d - %s", err.Error(), response.Status.Code, response.Status.Message)
+			}
+			return fmt.Errorf("%d (%d) - %s", responseInfo.statusCode, responseInfo.subStatusCode, responseInfo.statusDescription)
+		}
+
+		// for the remaining error status codes do the usual error detection mechanism based on the main status code
+		return extractError(response)
+	}
+
+	return nil
 }
 
 func parseAttributeMap(attributes map[string]interface{}) (responseInformation, error) {
