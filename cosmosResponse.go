@@ -77,18 +77,21 @@ func extractFirstError(responses []interfaces.Response) error {
 // parseAttributeMap parses the given attribute map assuming that it contains
 // CosmosDB specific headers.
 func parseAttributeMap(attributes map[string]interface{}) (responseInformation, error) {
-
 	responseInfo := responseInformation{}
-	if valueStr, ok := attributes[string(headerStatusCode)]; ok {
 
-		value, err := cast.ToInt16E(valueStr)
-		if err != nil {
-			return responseInfo, errors.Wrapf(err, "Failed parsing '%s'", headerStatusCode)
-		}
-		statusCode := int(value)
-		responseInfo.statusCode = statusCode
-		responseInfo.statusDescription = statusCodeToDescription(statusCode)
+	// immediately return in case the header status code is missing
+	if _, ok := attributes[string(headerStatusCode)]; !ok {
+		return responseInfo, fmt.Errorf("'%s' is missing", headerStatusCode)
 	}
+
+	valueStr := attributes[string(headerStatusCode)]
+	value, err := cast.ToInt16E(valueStr)
+	if err != nil {
+		return responseInfo, errors.Wrapf(err, "Failed parsing '%s'", headerStatusCode)
+	}
+	statusCode := int(value)
+	responseInfo.statusCode = statusCode
+	responseInfo.statusDescription = statusCodeToDescription(statusCode)
 
 	if valueStr, ok := attributes[string(headerSubStatusCode)]; ok {
 		responseInfo.subStatusCode = int(cast.ToInt16(valueStr))

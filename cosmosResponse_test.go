@@ -6,32 +6,107 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
-//func TestDetectTooManyRequestsError(t *testing.T) {
-//	tooManyRequests := interfaces.Response{
-//		RequestID: "cfe23609-abcd-efgh-ijkl-326cd091aa37",
-//		Status: interfaces.Status{
-//			Code:    interfaces.StatusServerError,
-//			Message: "\r\n\nActivityId : 00000000-0000-0000-0000-000000000000\nExceptionType : DocumentClientException\nExceptionMessage ....",
-//			Attributes: map[string]interface{}{
-//				"x-ms-retry-after-ms":       "00:00:09.0530000",
-//				"x-ms-substatus-code":       3200,
-//				"x-ms-source":               "Microsoft.Azure.Documents.Client",
-//				"x-ms-status-code":          429,
-//				"x-ms-request-charge":       3779.34,
-//				"x-ms-total-request-charge": 3779.34,
-//				"x-ms-server-time-ms":       1056.2705,
-//				"x-ms-total-server-time-ms": 1056.2705,
-//				"x-ms-activity-id":          "fdd08592-abcd-efgh-ijkl-97d35c2dda52",
-//			},
-//		},
-//		Result: interfaces.Result{},
-//	}
-//
-//	err := extractError(tooManyRequests)
-//	assert.NoError(t, err)
-//}
+func TestExtractFirstError(t *testing.T) {
+	// GIVEN
+	noError := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusSuccess,
+		},
+	}
+	tooManyRequests := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusServerError,
+			Attributes: map[string]interface{}{
+				"x-ms-status-code":    429,
+				"x-ms-substatus-code": 3200,
+			},
+		},
+	}
+	responses := []interfaces.Response{noError, tooManyRequests}
+
+	// WHEN
+	err := extractFirstError(responses)
+
+	// THEN
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "429")
+}
+
+func TestExtractFirstErrorNoError(t *testing.T) {
+	// GIVEN
+	noError := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusSuccess,
+		},
+	}
+	responses := []interfaces.Response{noError}
+
+	// WHEN
+	err := extractFirstError(responses)
+
+	// THEN
+	assert.NoError(t, err)
+}
+
+func TestExtractFirstErrorNoServerError(t *testing.T) {
+	// GIVEN
+	tooManyRequests := interfaces.Response{
+		Status: interfaces.Status{
+			Code:    interfaces.StatusScriptEvaluationError,
+			Message: "ABCD",
+		},
+	}
+	responses := []interfaces.Response{tooManyRequests}
+
+	// WHEN
+	err := extractFirstError(responses)
+
+	// THEN
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "ABCD")
+}
+
+func TestExtractFirstErrorNoAttributeMap(t *testing.T) {
+	// GIVEN
+	tooManyRequests := interfaces.Response{
+		Status: interfaces.Status{
+			Code:    interfaces.StatusServerError,
+			Message: "ABCD",
+		},
+	}
+	responses := []interfaces.Response{tooManyRequests}
+
+	// WHEN
+	err := extractFirstError(responses)
+
+	// THEN
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "ABCD")
+}
+
+func TestExtractFirstErrorFaultyAttributeMap(t *testing.T) {
+	// GIVEN
+	tooManyRequests := interfaces.Response{
+		Status: interfaces.Status{
+			Code:    interfaces.StatusServerError,
+			Message: "ABCD",
+			Attributes: map[string]interface{}{
+				"x-ms-status-code": "invalid",
+			},
+		},
+	}
+	responses := []interfaces.Response{tooManyRequests}
+
+	// WHEN
+	err := extractFirstError(responses)
+
+	// THEN
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "ABCD")
+}
 
 func TestParseAttributeMap(t *testing.T) {
 	// GIVEN
