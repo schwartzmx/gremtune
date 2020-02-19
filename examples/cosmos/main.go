@@ -4,34 +4,31 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/rs/zerolog"
 	gremcos "github.com/supplyon/gremcos"
 )
-
-var panicOnErrorOnChannel = func(errs chan error) {
-	err := <-errs
-	if err == nil {
-		return // ignore if the channel was closed
-	}
-	log.Fatalf("Lost connection to the database: %s", err)
-}
 
 func main() {
 
 	host := os.Getenv("CDB_HOST")
 	username := os.Getenv("CDB_USERNAME")
 	password := os.Getenv("CDB_KEY")
+	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat}).With().Timestamp().Logger()
 
 	if len(host) == 0 {
-		log.Fatal("Host not set. Use export CDB_HOST=<CosmosDB Gremlin Endpoint> to specify it")
+		logger.Fatal().Msg("Host not set. Use export CDB_HOST=<CosmosDB Gremlin Endpoint> to specify it")
 	}
 
 	if len(username) == 0 {
-		log.Fatal("Username not set. Use export CDB_USERNAME=/dbs/<cosmosdb name>/colls/<graph name> to specify it")
+		logger.Fatal().Msg("Username not set. Use export CDB_USERNAME=/dbs/<cosmosdb name>/colls/<graph name> to specify it")
 	}
 
 	if len(password) == 0 {
-		log.Fatal("Key not set. Use export CDB_KEY=<key> to specify it")
+		logger.Fatal().Msg("Key not set. Use export CDB_KEY=<key> to specify it")
 	}
 
 	log.Println("Connecting using:")
@@ -39,29 +36,79 @@ func main() {
 	log.Printf("\tusername: %s\n", username)
 	log.Printf("\tpassword is set %v\n", len(password) > 0)
 
-	errs := make(chan error)
-	go panicOnErrorOnChannel(errs)
+	cosmos, err := gremcos.New(host,
+		gremcos.WithAuth(username, password),
+		gremcos.WithLogger(logger),
+		gremcos.NumMaxActiveConnections(10),
+		gremcos.ConnectionIdleTimeout(time.Second*30),
+		gremcos.MetricsPrefix("myservice"),
+	)
 
-	websocket, err := gremcos.NewWebsocket(host)
 	if err != nil {
-		log.Fatalf("Failed to create the websocket: %s", err)
+		logger.Fatal().Err(err).Msg("Failed to create the cosmos connector")
 	}
 
-	gremlinClient, err := gremcos.Dial(websocket, errs, gremcos.SetAuth(username, password)) // Returns a gremcos client to interact with
-	if err != nil {
-		log.Fatalf("Failed to create the gremlin client: %s", err)
+	exitChannel := make(chan struct{})
+	go processLoop(cosmos, logger, exitChannel)
+
+	<-exitChannel
+	if err := cosmos.Stop(); err != nil {
+		logger.Error().Err(err).Msg("Failed to stop cosmos connector")
+	}
+	logger.Info().Msg("Teared down")
+}
+
+func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan<- struct{}) {
+	// register for common exit signals (e.g. ctrl-c)
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
+
+	// create tickers for doing health check and queries
+	queryTicker := time.NewTicker(time.Second * 2)
+	healthCheckTicker := time.NewTicker(time.Second * 30)
+
+	// ensure to clean up as soon as the processLoop has been left
+	defer func() {
+		queryTicker.Stop()
+		healthCheckTicker.Stop()
+	}()
+
+	stopProcessing := false
+	logger.Info().Msg("Process loop entered")
+	for !stopProcessing {
+		select {
+		case <-signalChannel:
+			close(exitChannel)
+			stopProcessing = true
+		case <-queryTicker.C:
+			queryCosmos(cosmos, logger)
+		case <-healthCheckTicker.C:
+			err := cosmos.IsHealthy()
+			logEvent := logger.Debug()
+			if err != nil {
+				logEvent = logger.Warn().Err(err)
+			}
+			logEvent.Bool("healthy", err == nil).Msg("Health Check")
+		}
 	}
 
-	// Sends a query to Gremlin Server
-	res, err := gremlinClient.Execute("g.V()")
+	logger.Info().Msg("Process loop left")
+}
+
+func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
+	res, err := cosmos.Execute("g.V().executionProfile()")
 	if err != nil {
-		log.Fatalf("Failed to execute a gremlin command: %s", err)
+		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
+		return
 	}
 
-	jsonEncodedResponse, err := json.MarshalIndent(res[0].Result.Data, "", "    ")
-	if err != nil {
-		log.Fatalf("Failed to encode the raw json into json: %s", err)
-	}
+	for i, chunk := range res {
+		jsonEncodedResponse, err := json.Marshal(chunk.Result.Data)
 
-	log.Printf("Received data: \n%s\n", jsonEncodedResponse)
+		if err != nil {
+			logger.Error().Err(err).Msg("Failed to encode the raw json into json")
+			continue
+		}
+		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
+	}
 }

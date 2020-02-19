@@ -280,7 +280,7 @@ func TestResponseErrorDetection(t *testing.T) {
 			Status:    interfaces.Status{Code: co.code},
 			Result:    interfaces.Result{},
 		}
-		err := dummyResponse.DetectError()
+		err := extractError(dummyResponse)
 		switch {
 		case co.code == 200:
 			if err != nil {

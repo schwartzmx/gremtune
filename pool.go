@@ -199,7 +199,7 @@ func (p *pool) purge() {
 	for _, idleConnection := range p.idleConnections {
 		// If the client has an error then exclude it from the pool
 		if err := idleConnection.pc.client.LastError(); err != nil {
-			p.logger.Error().Err(err).Msg("Dismiss connection due to an error")
+			p.logger.Info().Msg("Remove connection from pool due to an error")
 
 			// Force underlying connection closed
 			idleConnection.pc.client.Close()
@@ -208,7 +208,7 @@ func (p *pool) purge() {
 
 		// If the client is not connected any more then exclude it from the pool
 		if !idleConnection.pc.client.IsConnected() {
-			p.logger.Info().Msg("Dismiss connection which is not connected")
+			p.logger.Info().Msg("Remove connection from pool which is not connected")
 			continue
 		}
 
@@ -219,7 +219,7 @@ func (p *pool) purge() {
 			// not expired -> keep it in the idle connection list
 			idleConnectionsAfterPurge = append(idleConnectionsAfterPurge, idleConnection)
 		} else {
-			p.logger.Info().Time("deadline", deadline).Msg("Dismiss connection which is expired")
+			p.logger.Info().Time("deadline", deadline).Msg("Remove connection from pool which is expired")
 
 			// expired -> don't add it to the idle connection list
 			// Force underlying connection closed

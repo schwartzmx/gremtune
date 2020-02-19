@@ -27,6 +27,9 @@ type Cosmos struct {
 	numMaxActiveConnections int
 	connectionIdleTimeout   time.Duration
 
+	// metrics for cosmos
+	metrics *Metrics
+
 	wg sync.WaitGroup
 }
 
@@ -63,6 +66,23 @@ func NumMaxActiveConnections(numMaxActiveConnections int) Option {
 	}
 }
 
+// MetricsPrefix can be used to customize the metrics prefix
+// as needed for a specific service. Per default 'gremcos' is used
+// as prefix.
+func MetricsPrefix(prefix string) Option {
+	return func(c *Cosmos) {
+		c.metrics = NewMetrics(prefix)
+	}
+}
+
+// withMetrics can be used to set metrics from the outside.
+// This is needed in order to be able to inject mocks for unit-tests.
+func withMetrics(metrics *Metrics) Option {
+	return func(c *Cosmos) {
+		c.metrics = metrics
+	}
+}
+
 // New creates a new instance of the Cosmos (-DB connector)
 func New(host string, options ...Option) (*Cosmos, error) {
 	cosmos := &Cosmos{
@@ -71,10 +91,17 @@ func New(host string, options ...Option) (*Cosmos, error) {
 		host:                    host,
 		numMaxActiveConnections: 10,
 		connectionIdleTimeout:   time.Second * 30,
+		metrics:                 nil,
 	}
 
 	for _, opt := range options {
 		opt(cosmos)
+	}
+
+	// if metrics not set via MetricsPrefix instantiate the metrics
+	// using the default prefix
+	if cosmos.metrics == nil {
+		cosmos.metrics = NewMetrics("gremcos")
 	}
 
 	// use default settings (timeout, buffersizes etc.) for the websocket
@@ -95,8 +122,10 @@ func New(host string, options ...Option) (*Cosmos, error) {
 	cosmos.wg.Add(1)
 	go func() {
 		defer cosmos.wg.Done()
-		for err := range cosmos.errorChannel {
-			cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
+		for range cosmos.errorChannel {
+			// consume the errors from the channel at the moment it is not needed to post them to the log since they are
+			// anyway handed over to the caller. For debugging the following line can be uncommented
+			// cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
 		}
 		cosmos.logger.Debug().Msg("Error channel consumer closed")
 	}()
@@ -109,8 +138,17 @@ func (c *Cosmos) dial() (interfaces.QueryExecutor, error) {
 	return Dial(c.dialer, c.errorChannel, SetAuth(c.username, c.password), PingInterval(time.Second*30))
 }
 
-func (c *Cosmos) Execute(query string) (resp []interfaces.Response, err error) {
-	return c.pool.Execute(query)
+func (c *Cosmos) Execute(query string) ([]interfaces.Response, error) {
+
+	responses, err := c.pool.Execute(query)
+
+	// try to investigate the responses and to find out if we can find more specific error information
+	if respErr := extractFirstError(responses); respErr != nil {
+		err = respErr
+	}
+
+	updateRequestMetrics(responses, c.metrics)
+	return responses, err
 }
 
 func (c *Cosmos) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
@@ -138,4 +176,62 @@ func (c *Cosmos) String() string {
 // IsHealthy returns nil if the Cosmos DB connection is alive, otherwise an error is returned
 func (c *Cosmos) IsHealthy() error {
 	return c.pool.Ping()
+}
+
+// updateRequestMetrics updates the request relevant metrics based on the given chunk of responses
+func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
+
+	// nothing to update
+	if len(respones) == 0 {
+		return
+	}
+
+	retryAfter := time.Second * 0
+	var requestChargePerQueryTotal float32
+	var serverTimePerQueryTotal time.Duration
+
+	for _, response := range respones {
+		statusCode := response.Status.Code
+		respInfo, err := parseAttributeMap(response.Status.Attributes)
+
+		if err != nil {
+			// parsing the response failed -> we use the unspecific status code
+			metrics.statusCodeTotal.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
+			continue
+		}
+
+		// use the more specific status code
+		statusCode = respInfo.statusCode
+		metrics.statusCodeTotal.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
+
+		// only take the largest waittime of this chunk of responses
+		if retryAfter < respInfo.retryAfter {
+			retryAfter = respInfo.retryAfter
+		}
+
+		// only take the largest value since cosmos already accumulates this value
+		if requestChargePerQueryTotal < respInfo.requestChargeTotal {
+			requestChargePerQueryTotal = respInfo.requestChargeTotal
+		}
+
+		// only take the largest value since cosmos already accumulates this value
+		if serverTimePerQueryTotal < respInfo.serverTimeTotal {
+			serverTimePerQueryTotal = respInfo.serverTimeTotal
+		}
+	}
+
+	numResponses := len(respones)
+	var requestChargePerQueryResponseAvg float64
+	var serverTimePerQueryResponseAvg float64
+	if numResponses > 0 {
+		requestChargePerQueryResponseAvg = float64(requestChargePerQueryTotal) / float64(numResponses)
+		serverTimePerQueryResponseAvg = float64(serverTimePerQueryTotal.Milliseconds()) / float64(numResponses)
+	}
+
+	metrics.serverTimePerQueryResponseAvgMS.Set(serverTimePerQueryResponseAvg)
+	metrics.serverTimePerQueryMS.Set(float64(serverTimePerQueryTotal.Milliseconds()))
+	metrics.requestChargePerQueryResponseAvg.Set(requestChargePerQueryResponseAvg)
+	metrics.requestChargePerQuery.Set(float64(requestChargePerQueryTotal))
+	metrics.requestChargeTotal.Add(float64(requestChargePerQueryTotal))
+	metrics.retryAfterMS.Set(float64(retryAfter.Milliseconds()))
 }
