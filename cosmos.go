@@ -125,7 +125,9 @@ func New(host string, options ...Option) (*Cosmos, error) {
 		for range cosmos.errorChannel {
 			// consume the errors from the channel at the moment it is not needed to post them to the log since they are
 			// anyway handed over to the caller. For debugging the following line can be uncommented
-			// cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
+			if err != nil {
+				cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
+			}
 		}
 		cosmos.logger.Debug().Msg("Error channel consumer closed")
 	}()
