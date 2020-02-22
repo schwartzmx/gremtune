@@ -39,7 +39,7 @@ func prepareRequest(query string) (req request, id string, err error) {
 }
 
 // prepareRequest packages a query and binding into the format that Gremlin Server accepts
-func prepareRequestWithBindings(query string, bindings, rebindings map[string]string) (req request, id string, err error) {
+func prepareRequestWithBindings(query string, bindings, rebindings map[string]string, timeout int) (req request, id string, err error) {
 	var uuID uuid.UUID
 	uuID, _ = uuid.NewV4()
 	id = uuID.String()
@@ -53,12 +53,13 @@ func prepareRequestWithBindings(query string, bindings, rebindings map[string]st
 	req.Args["gremlin"] = query
 	req.Args["bindings"] = bindings
 	req.Args["rebindings"] = rebindings
+	req.Arg["scriptEvaluationTimeout"] = timeout
 
 	return
 }
 
 // prepareRequestWithSession packages a query and sessionID into the format that Gremlin Server accepts
-func prepareRequestWithSession(query string, sessionID string) (req request, id string, err error) {
+func prepareRequestWithSession(query string, sessionID string, timeout int) (req request, id string, err error) {
 
 	if len(sessionID) > 0 {
 		var uuID uuid.UUID
@@ -74,6 +75,7 @@ func prepareRequestWithSession(query string, sessionID string) (req request, id 
 		req.Args["manageTransaction"] = false
 		req.Args["session"] = sessionID
 		req.Args["batchSize"] = 64
+		req.Arg["scriptEvaluationTimeout"] = timeout
 	} else {
 		req, id, err = prepareRequest(query)
 	}
