@@ -179,6 +179,20 @@ func (c *Client) ExecuteWithSession(query string, sessionID string) (resp []Resp
 	return
 }
 
+// ExecuteWithSession formats a raw Gremlin query as part of a session, sends it to Gremlin Server, and returns the result.
+func (c *Client) ExecuteWithSessionAndTimeout(query string, sessionID string, timeout int) (resp []Response, err error) {
+	if c.conn.IsDisposed() {
+		return resp, errors.New("you cannot write on disposed connection")
+	}
+	req, id, err := prepareRequestWithSessionAndTimeout(query, sessionID, timeout)
+	if err != nil {
+		return
+	}
+	resp, err = c.executeReq(req, id)
+	return
+}
+
+
 // CommitSession formats a raw Gremlin query, closes the session, and then the transaction will be commited
 func (c *Client) CommitSession(sessionID string) (resp []Response, err error) {
 	if c.conn.IsDisposed() {
