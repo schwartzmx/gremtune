@@ -37,7 +37,7 @@ func TestRequestPreparation(t *testing.T) {
 func TestRequestPreparationWithSessionAndTimeout(t *testing.T) {
 	query := "g.V(x)"
 	sessionID := "testSessionIDAndTimeout"
-	timeout := 300000
+	timeout := 85000
 	req, id, err := prepareRequestWithSessionAndTimeout(query, sessionID, timeout)
 	if err != nil {
 		t.Error(err)
