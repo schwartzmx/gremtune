@@ -199,7 +199,7 @@ func (p *pool) purge() {
 	for _, idleConnection := range p.idleConnections {
 		// If the client has an error then exclude it from the pool
 		if err := idleConnection.pc.client.LastError(); err != nil {
-			p.logger.Info().Msg("Remove connection from pool due to an error")
+			p.logger.Info().Err(err).Msg("Remove connection from pool due to an error")
 
 			// Force underlying connection closed
 			idleConnection.pc.client.Close()
