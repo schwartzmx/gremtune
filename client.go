@@ -377,7 +377,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 
 		if errorToPost != nil {
 			errs <- errorToPost
-			c.setLastErr(err)
+			c.setLastErr(errorToPost)
 		}
 
 		select {
