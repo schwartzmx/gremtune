@@ -94,7 +94,8 @@ func TestConnectReconnect(t *testing.T) {
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
 
-	websocket, err := NewWebsocket("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	dialer, err := NewWebsocket("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	websocket := dialer.(*websocket)
 	require.NoError(t, err)
 	require.NotNil(t, websocket)
 

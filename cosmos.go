@@ -24,11 +24,17 @@ type Cosmos struct {
 	numMaxActiveConnections int
 	connectionIdleTimeout   time.Duration
 
+	// websocketGenerator is a function that is responsible to spawn new websocket
+	// connections if needed.
+	websocketGenerator websocketGeneratorFun
+
 	// metrics for cosmos
 	metrics *Metrics
 
 	wg sync.WaitGroup
 }
+
+type websocketGeneratorFun func(host string, options ...optionWebsocket) (interfaces.Dialer, error)
 
 // Option is the struct for defining optional parameters for Cosmos
 type Option func(*Cosmos)
@@ -80,6 +86,14 @@ func withMetrics(metrics *Metrics) Option {
 	}
 }
 
+// wsGenerator can be used to set the generator to create websockets for the outside.
+// This is needed in order to be able to inject mocks for unit-tests.
+func wsGenerator(wsGenerator websocketGeneratorFun) Option {
+	return func(c *Cosmos) {
+		c.websocketGenerator = wsGenerator
+	}
+}
+
 // New creates a new instance of the Cosmos (-DB connector)
 func New(host string, options ...Option) (*Cosmos, error) {
 	cosmos := &Cosmos{
@@ -89,6 +103,7 @@ func New(host string, options ...Option) (*Cosmos, error) {
 		numMaxActiveConnections: 10,
 		connectionIdleTimeout:   time.Second * 30,
 		metrics:                 nil,
+		websocketGenerator:      NewWebsocket,
 	}
 
 	for _, opt := range options {
@@ -131,7 +146,7 @@ func (c *Cosmos) dial() (interfaces.QueryExecutor, error) {
 	// create a new websocket dialer to avoid using the same websocket connection for
 	// multiple queries at the same time
 	// use default settings (timeout, buffersizes etc.) for the websocket
-	dialer, err := NewWebsocket(c.host)
+	dialer, err := c.websocketGenerator(c.host)
 	if err != nil {
 		return nil, err
 	}

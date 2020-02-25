@@ -13,6 +13,68 @@ import (
 	mock_metrics "github.com/supplyon/gremcos/test/mocks/metrics"
 )
 
+type dialerMock struct {
+}
+
+func (d *dialerMock) Connect() error {
+	return nil
+}
+func (d *dialerMock) IsConnected() bool {
+	return true
+}
+func (d *dialerMock) Write([]byte) error {
+	return nil
+}
+func (d *dialerMock) Read() (int, []byte, error) {
+	return 1, nil, nil
+}
+func (d *dialerMock) Close() error {
+	return nil
+}
+func (d *dialerMock) Ping() error {
+	return nil
+}
+
+var websocketGenerator = func(host string, options ...optionWebsocket) (interfaces.Dialer, error) {
+	mock := &dialerMock{}
+	return mock, nil
+}
+
+func TestDialUsingDifferentWebsockets(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics, _ := NewMockedMetrics(mockCtrl)
+	idleTimeout := time.Second * 12
+	maxActiveConnections := 10
+	username := "abcd"
+	password := "xyz"
+
+	cosmos, err := New("ws://host",
+		ConnectionIdleTimeout(idleTimeout),
+		NumMaxActiveConnections(maxActiveConnections),
+		WithAuth(username, password),
+		withMetrics(metrics),
+		wsGenerator(websocketGenerator),
+	)
+	require.NoError(t, err)
+	require.NotNil(t, cosmos)
+
+	// WHEN
+	queryExecutor1, err1 := cosmos.dial()
+	queryExecutor2, err2 := cosmos.dial()
+
+	// THEN
+	require.NoError(t, err1)
+	require.NotNil(t, queryExecutor1)
+	require.NoError(t, err2)
+	require.NotNil(t, queryExecutor2)
+
+	client1 := queryExecutor1.(*client)
+	client2 := queryExecutor2.(*client)
+	assert.False(t, &client1.conn == &client2.conn)
+}
+
 func TestNew(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
