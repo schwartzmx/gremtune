@@ -82,7 +82,7 @@ func prepareRequestWithSession(query string, sessionID string) (req request, id 
 // prepareRequestWithSessionAndTimeout packages a query and sessionID into the format that Gremlin Server accepts
 func prepareRequestWithSessionAndTimeout(query string, sessionID string, timeout int) (req request, id string, err error) {
 
-	if len(sessionID) > 0 {
+	if len(sessionID) > 0 && timeout > 0 {
 		var uuID uuid.UUID
 		uuID, _ = uuid.NewV4()
 		id = uuID.String()
@@ -97,6 +97,8 @@ func prepareRequestWithSessionAndTimeout(query string, sessionID string, timeout
 		req.Args["session"] = sessionID
 		req.Args["batchSize"] = 64
 		req.Args["scriptEvaluationTimeout"] = timeout
+	} else if len(sessionID) > 0 {
+		req, id, err = prepareRequestWithSession(query, sessionID)
 	} else {
 		req, id, err = prepareRequest(query)
 	}
