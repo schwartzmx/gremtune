@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -38,7 +39,7 @@ type client struct {
 	responseStatusNotifier *sync.Map
 
 	// stores the most recent error
-	lastError error
+	lastError atomic.Value
 
 	// auth auth information like username and password
 	auth auth
@@ -90,7 +91,6 @@ func newClient(dialer interfaces.Dialer, options ...clientOption) *client {
 		responseStatusNotifier: &sync.Map{},
 		pingInterval:           60 * time.Second,
 		quitChannel:            make(chan struct{}),
-		lastError:              nil,
 	}
 
 	for _, opt := range options {
@@ -123,8 +123,22 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOpti
 	return client, nil
 }
 
+func (c *client) setLastErr(err error) {
+	if err == nil {
+		return
+	}
+
+	// ensure that the same concrete type is stored
+	err = errors.New(err.Error())
+	c.lastError.Store(err)
+}
+
 func (c *client) LastError() error {
-	return c.lastError
+	err := c.lastError.Load()
+	if err == nil {
+		return nil
+	}
+	return err.(error)
 }
 
 func (c *client) IsConnected() bool {
@@ -323,7 +337,7 @@ func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
 			err := c.conn.Write(msg)
 			if err != nil {
 				errs <- err
-				c.lastError = err
+				c.setLastErr(err)
 				c.mux.Unlock()
 				break
 			}
@@ -344,7 +358,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
 			err = fmt.Errorf("Received msgType == -1 this is no frame --> close the readworker")
 			errs <- err
-			c.lastError = err
+			c.setLastErr(err)
 
 			// to return at this point is save since we call workerSaveExit() to clean up everything
 			// when the function is left
@@ -363,7 +377,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 
 		if errorToPost != nil {
 			errs <- errorToPost
-			c.lastError = errorToPost
+			c.setLastErr(errorToPost)
 		}
 
 		select {

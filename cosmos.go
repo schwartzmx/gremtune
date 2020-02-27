@@ -19,19 +19,22 @@ type Cosmos struct {
 	username string
 	password string
 
-	// dialer is used to create/ dial new connections if needed
-	dialer interfaces.Dialer
-
 	// pool the connection pool
 	pool                    interfaces.QueryExecutor
 	numMaxActiveConnections int
 	connectionIdleTimeout   time.Duration
+
+	// websocketGenerator is a function that is responsible to spawn new websocket
+	// connections if needed.
+	websocketGenerator websocketGeneratorFun
 
 	// metrics for cosmos
 	metrics *Metrics
 
 	wg sync.WaitGroup
 }
+
+type websocketGeneratorFun func(host string, options ...optionWebsocket) (interfaces.Dialer, error)
 
 // Option is the struct for defining optional parameters for Cosmos
 type Option func(*Cosmos)
@@ -83,6 +86,14 @@ func withMetrics(metrics *Metrics) Option {
 	}
 }
 
+// wsGenerator can be used to set the generator to create websockets for the outside.
+// This is needed in order to be able to inject mocks for unit-tests.
+func wsGenerator(wsGenerator websocketGeneratorFun) Option {
+	return func(c *Cosmos) {
+		c.websocketGenerator = wsGenerator
+	}
+}
+
 // New creates a new instance of the Cosmos (-DB connector)
 func New(host string, options ...Option) (*Cosmos, error) {
 	cosmos := &Cosmos{
@@ -92,6 +103,7 @@ func New(host string, options ...Option) (*Cosmos, error) {
 		numMaxActiveConnections: 10,
 		connectionIdleTimeout:   time.Second * 30,
 		metrics:                 nil,
+		websocketGenerator:      NewWebsocket,
 	}
 
 	for _, opt := range options {
@@ -103,13 +115,6 @@ func New(host string, options ...Option) (*Cosmos, error) {
 	if cosmos.metrics == nil {
 		cosmos.metrics = NewMetrics("gremcos")
 	}
-
-	// use default settings (timeout, buffersizes etc.) for the websocket
-	dialer, err := NewWebsocket(host)
-	if err != nil {
-		return nil, err
-	}
-	cosmos.dialer = dialer
 
 	pool, err := NewPool(cosmos.dial, cosmos.numMaxActiveConnections, cosmos.connectionIdleTimeout, cosmos.logger)
 	if err != nil {
@@ -125,7 +130,9 @@ func New(host string, options ...Option) (*Cosmos, error) {
 		for range cosmos.errorChannel {
 			// consume the errors from the channel at the moment it is not needed to post them to the log since they are
 			// anyway handed over to the caller. For debugging the following line can be uncommented
-			// cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
+			if err != nil {
+				cosmos.logger.Error().Err(err).Msg("Error from connection pool received")
+			}
 		}
 		cosmos.logger.Debug().Msg("Error channel consumer closed")
 	}()
@@ -135,7 +142,16 @@ func New(host string, options ...Option) (*Cosmos, error) {
 
 // dial creates new connections. It is called by the pool in case a new connection is demanded.
 func (c *Cosmos) dial() (interfaces.QueryExecutor, error) {
-	return Dial(c.dialer, c.errorChannel, SetAuth(c.username, c.password), PingInterval(time.Second*30))
+
+	// create a new websocket dialer to avoid using the same websocket connection for
+	// multiple queries at the same time
+	// use default settings (timeout, buffersizes etc.) for the websocket
+	dialer, err := c.websocketGenerator(c.host)
+	if err != nil {
+		return nil, err
+	}
+
+	return Dial(dialer, c.errorChannel, SetAuth(c.username, c.password), PingInterval(time.Second*30))
 }
 
 func (c *Cosmos) Execute(query string) ([]interfaces.Response, error) {

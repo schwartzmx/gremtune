@@ -51,7 +51,7 @@ type websocket struct {
 }
 
 // NewWebsocket returns a WebSocket dialer to use when connecting to Gremlin Server
-func NewWebsocket(host string, options ...optionWebsocket) (*websocket, error) {
+func NewWebsocket(host string, options ...optionWebsocket) (interfaces.Dialer, error) {
 	createdWebsocket := &websocket{
 		timeout:         5 * time.Second,
 		writingWait:     15 * time.Second,
