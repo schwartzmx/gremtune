@@ -78,10 +78,17 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	g := api.NewGraph("g")
-	query := fmt.Sprintf("%s", g.VBy(3).HasLabel("Company"))
-	//.has("spinid", "12345").property("name", "Company4").property("name-type", "CompanyName").valueMap())
+	//query := fmt.Sprintf("%s",
+	//	g.V().
+	//		HasLabel("Company").
+	//		Has("spinid", "12345").
+	//		Property("name", "Company4").
+	//		Property("name-type", "CompanyName").
+	//		ValueMap(),
+	//)
+	query := g.AddV("Company")
 	logger.Info().Msgf("Query: %s", query)
-	res, err := cosmos.Execute(query)
+	res, err := cosmos.Execute(query.String())
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
 		return

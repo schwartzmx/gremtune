@@ -20,37 +20,44 @@ func (v *vertex) String() string {
 	return queryString
 }
 
-func (v *vertex) has(key, value string) *vertex {
-	v.builders = append(v.builders, NewSimpleQB(".has('%s','%s')", key, value))
+func NewVertex(g interfaces.Graph) interfaces.Vertex {
+	queryBuilders := make([]interfaces.QueryBuilder, 0)
+	queryBuilders = append(queryBuilders, g)
+
+	return &vertex{
+		builders: queryBuilders,
+	}
+}
+
+func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {
+	v.builders = append(v.builders, builder)
 	return v
+}
+
+func (v *vertex) Has(key, value string) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".has('%s','%s')", key, value))
 }
 
 func (v *vertex) HasLabel(vertexLabel string) interfaces.Vertex {
-	v.builders = append(v.builders, NewSimpleQB(".hasLabel('%s')", vertexLabel))
-	return v
+	return v.Add(NewSimpleQB(".hasLabel('%s')", vertexLabel))
 }
 
-func (v *vertex) valuesBy(label string) *vertex {
-	v.builders = append(v.builders, NewSimpleQB(".values('%s')", label))
-	return v
+func (v *vertex) ValuesBy(label string) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".values('%s')", label))
 }
 
-func (v *vertex) values() *vertex {
-	v.builders = append(v.builders, NewSimpleQB(".values()"))
-	return v
+func (v *vertex) Values() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".values()"))
 }
 
-func (v *vertex) valueMap() *vertex {
-	v.builders = append(v.builders, NewSimpleQB(".valueMap()"))
-	return v
+func (v *vertex) ValueMap() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".valueMap()"))
 }
 
-func (v *vertex) properties() *vertex {
-	v.builders = append(v.builders, NewSimpleQB(".properties()"))
-	return v
+func (v *vertex) Properties() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".properties()"))
 }
 
-func (v *vertex) property(key, value string) *vertex {
-	v.builders = append(v.builders, NewSimpleQB(".property('%s','%s')", key, value))
-	return v
+func (v *vertex) Property(key, value string) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".property('%s','%s')", key, value))
 }

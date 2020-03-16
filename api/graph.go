@@ -13,25 +13,21 @@ type graph struct {
 }
 
 func (g *graph) V() interfaces.Vertex {
-
-	queryBuilders := make([]interfaces.QueryBuilder, 0)
-	queryBuilders = append(queryBuilders, g)
-	queryBuilders = append(queryBuilders, NewSimpleQB(".V()"))
-
-	return &vertex{
-		builders: queryBuilders,
-	}
+	vertex := NewVertex(g)
+	vertex.Add(NewSimpleQB(".V()"))
+	return vertex
 }
 
 func (g *graph) VBy(id int) interfaces.Vertex {
+	vertex := NewVertex(g)
+	vertex.Add(NewSimpleQB(".V('%d')", id))
+	return vertex
+}
 
-	queryBuilders := make([]interfaces.QueryBuilder, 0)
-	queryBuilders = append(queryBuilders, g)
-	queryBuilders = append(queryBuilders, NewSimpleQB(".V('%d')", id))
-
-	return &vertex{
-		builders: queryBuilders,
-	}
+func (g *graph) AddV(label string) interfaces.Vertex {
+	vertex := NewVertex(g)
+	vertex.Add(NewSimpleQB(".addV('%s')", label))
+	return vertex
 }
 
 func (g *graph) String() string {
