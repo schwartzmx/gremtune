@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-
 	"github.com/supplyon/gremcos/interfaces"
 )
 
@@ -14,7 +12,7 @@ func (v *vertex) String() string {
 
 	queryString := ""
 	for _, queryBuilder := range v.builders {
-		queryString += fmt.Sprintf("%s", queryBuilder)
+		queryString += queryBuilder.String()
 	}
 
 	return queryString
