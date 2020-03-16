@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/supplyon/gremcos/api"
+
 	"github.com/rs/zerolog"
 	gremcos "github.com/supplyon/gremcos"
 	"github.com/supplyon/gremcos/interfaces"
@@ -73,7 +75,11 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 }
 
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
-	res, err := cosmos.Execute("g.addV('Phil')")
+
+	g := api.NewGraph("g")
+	query := g.AddV("User").Property("userid", "12345").Property("email", "max.mustermann@example.com").Id()
+	logger.Info().Msgf("Query: %s", query)
+	res, err := cosmos.ExecuteQuery(query)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
 		return
