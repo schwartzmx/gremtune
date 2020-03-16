@@ -4,7 +4,7 @@
 
 ### Installation
 
-Since CosmosDB supports only [Tinkerpop 3.4.0](https://tinkerpop.apache.org/docs/3.4.0) one have to download the [gremlin console in Version 3.4.0](https://archive.apache.org/dist/tinkerpop/3.4.0/apache-tinkerpop-gremlin-console-3.4.0-bin.zip).
+Since CosmosDB supports only [Tinkerpop 3.4.0](https://tinkerpop.apache.org/docs/3.4.0) one has to download the [gremlin console in Version 3.4.0](https://archive.apache.org/dist/tinkerpop/3.4.0/apache-tinkerpop-gremlin-console-3.4.0-bin.zip).
 
 ```bash
 wget https://archive.apache.org/dist/tinkerpop/3.4.0/apache-tinkerpop-gremlin-console-3.4.0-bin.zip
@@ -23,7 +23,9 @@ gremlin --version
 ```bash
 :remote connect tinkerpop.server conf/remote.yaml
 
-# issue one command using the remote connection
+# issue a command using the remote connection
+# :> is the prompt when one wants to execute a command
+# on the remote connection instead of locally
 :>
 
 # e.g.

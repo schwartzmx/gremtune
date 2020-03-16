@@ -154,6 +154,13 @@ func (c *Cosmos) dial() (interfaces.QueryExecutor, error) {
 	return Dial(dialer, c.errorChannel, SetAuth(c.username, c.password), PingInterval(time.Second*30))
 }
 
+func (c *Cosmos) ExecuteQuery(query interfaces.QueryBuilder) ([]interfaces.Response, error) {
+	if query == nil {
+		return nil, fmt.Errorf("Query is nil")
+	}
+	return c.Execute(query.String())
+}
+
 func (c *Cosmos) Execute(query string) ([]interfaces.Response, error) {
 
 	responses, err := c.pool.Execute(query)

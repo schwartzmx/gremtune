@@ -79,7 +79,7 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	g := api.NewGraph("g")
 	query := g.AddV("User").Property("userid", "12345").Property("email", "max.mustermann@example.com").Id()
 	logger.Info().Msgf("Query: %s", query)
-	res, err := cosmos.Execute(query.String())
+	res, err := cosmos.ExecuteQuery(query)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
 		return

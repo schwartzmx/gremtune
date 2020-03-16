@@ -3,7 +3,7 @@ package api
 import "github.com/supplyon/gremcos/interfaces"
 
 // NewGraph creates a new graph query with the given name
-// Hint: The actual graph has to be existent on the server in order to execute the
+// Hint: The actual graph has to exist on the server in order to execute the
 // query that will be generated with this query builder
 func NewGraph(name string) interfaces.Graph {
 	return &graph{
