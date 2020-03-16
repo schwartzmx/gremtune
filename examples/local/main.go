@@ -43,7 +43,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	// create tickers for doing health check and queries
-	queryTicker := time.NewTicker(time.Millisecond * 100)
+	queryTicker := time.NewTicker(time.Millisecond * 2000)
 	healthCheckTicker := time.NewTicker(time.Second * 20)
 
 	// ensure to clean up as soon as the processLoop has been left
@@ -61,7 +61,6 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 			stopProcessing = true
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
-			os.Exit(1)
 		case <-healthCheckTicker.C:
 			err := cosmos.IsHealthy()
 			logEvent := logger.Debug()
@@ -86,15 +85,14 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 		return
 	}
 
-	for _, chunk := range res {
+	for i, chunk := range res {
 		jsonEncodedResponse, err := json.Marshal(chunk.Result.Data)
 
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to encode the raw json into json")
 			continue
 		}
-		//logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
-		fmt.Printf("%s", jsonEncodedResponse)
+		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
 	}
 }
 
