@@ -41,7 +41,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	// create tickers for doing health check and queries
-	queryTicker := time.NewTicker(time.Millisecond * 2000)
+	queryTicker := time.NewTicker(time.Millisecond * 100)
 	healthCheckTicker := time.NewTicker(time.Second * 20)
 
 	// ensure to clean up as soon as the processLoop has been left
@@ -59,6 +59,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 			stopProcessing = true
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
+			os.Exit(1)
 		case <-healthCheckTicker.C:
 			err := cosmos.IsHealthy()
 			logEvent := logger.Debug()
@@ -73,20 +74,25 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 }
 
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
-	res, err := cosmos.Execute("g.addV('Phil')")
+
+	g := graph{}
+	query := fmt.Sprintf("%s", g.VBy(3).hasLabel("Company").has("spinid", "12345").property("name", "Company4").property("name-type", "CompanyName").valueMap())
+	logger.Info().Msgf("Query: %s", query)
+	res, err := cosmos.Execute(query)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
 		return
 	}
 
-	for i, chunk := range res {
+	for _, chunk := range res {
 		jsonEncodedResponse, err := json.Marshal(chunk.Result.Data)
 
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to encode the raw json into json")
 			continue
 		}
-		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
+		//logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
+		fmt.Printf("%s", jsonEncodedResponse)
 	}
 }
 
