@@ -1,7 +1,9 @@
-package main
+package api
 
 import (
 	"fmt"
+
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 type queryBuilder interface {
@@ -22,37 +24,8 @@ func (sqb *simpleQB) String() string {
 	return sqb.value
 }
 
-type graph struct {
-}
-
 type vertex struct {
 	builders []queryBuilder
-}
-
-func (g *graph) V() *vertex {
-
-	queryBuilders := make([]queryBuilder, 0)
-	queryBuilders = append(queryBuilders, g)
-	queryBuilders = append(queryBuilders, newSimpleQB(".V()"))
-
-	return &vertex{
-		builders: queryBuilders,
-	}
-}
-
-func (g *graph) VBy(id int) *vertex {
-
-	queryBuilders := make([]queryBuilder, 0)
-	queryBuilders = append(queryBuilders, g)
-	queryBuilders = append(queryBuilders, newSimpleQB(".V('%d')", id))
-
-	return &vertex{
-		builders: queryBuilders,
-	}
-}
-
-func (g *graph) String() string {
-	return "g"
 }
 
 func (v *vertex) String() string {
@@ -70,7 +43,7 @@ func (v *vertex) has(key, value string) *vertex {
 	return v
 }
 
-func (v *vertex) hasLabel(vertexLabel string) *vertex {
+func (v *vertex) HasLabel(vertexLabel string) interfaces.Vertex {
 	v.builders = append(v.builders, newSimpleQB(".hasLabel('%s')", vertexLabel))
 	return v
 }

@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/supplyon/gremcos/api"
+
 	"github.com/rs/zerolog"
 	gremcos "github.com/supplyon/gremcos"
 	"github.com/supplyon/gremcos/interfaces"
@@ -75,8 +77,9 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
-	g := graph{}
-	query := fmt.Sprintf("%s", g.VBy(3).hasLabel("Company").has("spinid", "12345").property("name", "Company4").property("name-type", "CompanyName").valueMap())
+	g := api.NewGraph("g")
+	query := fmt.Sprintf("%s", g.VBy(3).HasLabel("Company"))
+	//.has("spinid", "12345").property("name", "Company4").property("name-type", "CompanyName").valueMap())
 	logger.Info().Msgf("Query: %s", query)
 	res, err := cosmos.Execute(query)
 	if err != nil {
