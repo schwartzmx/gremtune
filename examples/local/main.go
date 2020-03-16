@@ -78,15 +78,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	g := api.NewGraph("g")
-	//query := fmt.Sprintf("%s",
-	//	g.V().
-	//		HasLabel("Company").
-	//		Has("spinid", "12345").
-	//		Property("name", "Company4").
-	//		Property("name-type", "CompanyName").
-	//		ValueMap(),
-	//)
-	query := g.AddV("Company")
+	query := g.AddV("User").Property("userid", "12345").Property("email", "max.mustermann@example.com").Id()
 	logger.Info().Msgf("Query: %s", query)
 	res, err := cosmos.Execute(query.String())
 	if err != nil {

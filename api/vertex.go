@@ -42,22 +42,26 @@ func (v *vertex) HasLabel(vertexLabel string) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".hasLabel('%s')", vertexLabel))
 }
 
-func (v *vertex) ValuesBy(label string) interfaces.Vertex {
+func (v *vertex) ValuesBy(label string) interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".values('%s')", label))
 }
 
-func (v *vertex) Values() interfaces.Vertex {
+func (v *vertex) Values() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".values()"))
 }
 
-func (v *vertex) ValueMap() interfaces.Vertex {
+func (v *vertex) ValueMap() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".valueMap()"))
 }
 
-func (v *vertex) Properties() interfaces.Vertex {
+func (v *vertex) Properties() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".properties()"))
 }
 
 func (v *vertex) Property(key, value string) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".property('%s','%s')", key, value))
+}
+
+func (v *vertex) Id() interfaces.QueryBuilder {
+	return v.Add(NewSimpleQB(".id()"))
 }
