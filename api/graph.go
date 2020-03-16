@@ -14,9 +14,9 @@ type graph struct {
 
 func (g *graph) V() interfaces.Vertex {
 
-	queryBuilders := make([]queryBuilder, 0)
+	queryBuilders := make([]interfaces.QueryBuilder, 0)
 	queryBuilders = append(queryBuilders, g)
-	queryBuilders = append(queryBuilders, newSimpleQB(".V()"))
+	queryBuilders = append(queryBuilders, NewSimpleQB(".V()"))
 
 	return &vertex{
 		builders: queryBuilders,
@@ -25,9 +25,9 @@ func (g *graph) V() interfaces.Vertex {
 
 func (g *graph) VBy(id int) interfaces.Vertex {
 
-	queryBuilders := make([]queryBuilder, 0)
+	queryBuilders := make([]interfaces.QueryBuilder, 0)
 	queryBuilders = append(queryBuilders, g)
-	queryBuilders = append(queryBuilders, newSimpleQB(".V('%d')", id))
+	queryBuilders = append(queryBuilders, NewSimpleQB(".V('%d')", id))
 
 	return &vertex{
 		builders: queryBuilders,
