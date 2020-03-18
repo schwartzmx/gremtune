@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/rs/zerolog"
 	gremcos "github.com/supplyon/gremcos"
 	"github.com/supplyon/gremcos/api"
@@ -80,87 +79,103 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	// values
 	// []TypedValue
 	data := `["bla",true,{"@type":"g:Int32","@value":1287}]`
-	result, err := api.ToValues(json.RawMessage(data))
+	values, err := api.ToValues(json.RawMessage(data))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("\n###### VALUES ##########################################")
+	fmt.Printf("IN: %s\n", data)
+	fmt.Printf("OUT: %s\n", values)
+
+	// properties
+	// type, {id, label, value}
+	data = `[{
+	"@type":"g:VertexProperty",
+	"@value":{
+	"id":{
+		"@type":"g:Int64",
+		"@value":30
+	},
+	"value":"prop value",
+	"label":"prop key"
+	}
+}]`
+
+	properties, err := api.ToPropertiesNew(json.RawMessage(data))
 	if err != nil {
 		panic(err)
 	}
 
-	// properties
-	// type, {id, label, value}
-	//data := `[{
-	//			"@type":"g:VertexProperty",
-	//			"@value":{
-	//			"id":{
-	//				"@type":"g:Int64",
-	//				"@value":30
-	//			},
-	//			"value":"the property value",
-	//			"label":"the property key"
-	//			}
-	//		}]`
-	//
-	//result, err := api.ToPropertiesNew(json.RawMessage(data))
-	//if err != nil {
-	//	panic(err)
-	//}
+	fmt.Println("\n###### PROPERTIES ##########################################")
+	fmt.Printf("IN: %s\n", data)
+	fmt.Printf("OUT: %s\n", properties)
 
 	// valueMap
 	// map[string]TypedValue
-	//data := `[{
-	//			"string":["bla"],
-	//			"bool":[true],
-	//			"int":[{"@type":"g:Int32","@value":1287}]
-	//		}]`
-	//result, err := api.ToPropertiesNew(json.RawMessage(data))
-	//if err != nil {
-	//	panic(err)
-	//}
+	data = `[{
+	"string":["bla"],
+	"bool":[true],
+	"int":[{"@type":"g:Int32","@value":1287}]
+}]`
+	valueMap, err := api.ToValueMap(json.RawMessage(data))
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("\n###### VALUEMAP ##########################################")
+	fmt.Printf("IN: %s\n", data)
+	fmt.Printf("OUT: %s\n", valueMap)
 
 	// vertex
 	// type, {id, label}
-	//data := `[{
-	//	"@type":"g:Vertex",
-	//	"@value":{
-	//		"id":{
-	//			"@type":"g:Int64",
-	//			"@value":29
-	//		},
-	//		"label":"user"
-	//		}
-	//	}]`
-	//result, err := api.ToPropertiesNew(json.RawMessage(data))
-	//if err != nil {
-	//	panic(err)
-	//}
+	data = `[{
+	"@type":"g:Vertex",
+	"@value":{
+	"id":{
+		"@type":"g:Int64",
+		"@value":29
+	},
+	"label":"user"
+	}
+}]`
+	vertex, err := api.ToVertex(json.RawMessage(data))
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("\n###### VERTEX ##########################################")
+	fmt.Printf("IN: %s\n", data)
+	fmt.Printf("OUT: %s\n", vertex)
 
 	// Edge
 	// type, {id, label, inVLabel,outVLabel,{id,id}}
-	//data := `[{
-	//	"@type":"g:Edge",
-	//	"@value":{
-	//		"id":{
-	//			"@type":"g:Int64",
-	//			"@value":38
-	//		},
-	//		"label":"knows",
-	//		"inVLabel":"user",
-	//		"outVLabel":"user",
-	//		"inV":{
-	//			"@type":"g:Int64",
-	//			"@value":29
-	//		},
-	//		"outV":{
-	//			"@type":"g:Int64",
-	//			"@value":33
-	//		}
-	//	}
-	//	}]`
-	//result, err := api.ToPropertiesNew(json.RawMessage(data))
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	fmt.Printf("RESULT: %s", result)
+	data = `[{
+	"@type":"g:Edge",
+	"@value":{
+		"id":{
+			"@type":"g:Int64",
+			"@value":38
+		},
+		"label":"knows",
+		"inVLabel":"user",
+		"outVLabel":"user",
+		"inV":{
+			"@type":"g:Int64",
+			"@value":29
+		},
+		"outV":{
+			"@type":"g:Int64",
+			"@value":33
+		}
+	}
+}]`
+	edge, err := api.ToEdge(json.RawMessage(data))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("\n###### Edge ##########################################")
+	fmt.Printf("IN: %s\n", data)
+	fmt.Printf("OUT: %s\n", edge)
 
 	if true {
 		return
@@ -192,13 +207,13 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
 	}
 
-	vert, err := api.ToProperties(res)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to map the response to a vertex")
-	}
-
-	logger.Info().Msgf("Vertex: %v", vert)
-	spew.Dump(vert)
+	//vert, err := api.ToProperties(res)
+	//if err != nil {
+	//	logger.Error().Err(err).Msg("Failed to map the response to a vertex")
+	//}
+	//
+	//logger.Info().Msgf("Vertex: %v", vert)
+	//spew.Dump(vert)
 }
 
 func queryCosmosAsync(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
