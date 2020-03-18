@@ -14,3 +14,7 @@ coverage.out
 test-report.out
 
 lint.out
+
+air.conf
+
+tmp/
