@@ -10,13 +10,14 @@ import (
 type Type string
 
 const (
-	TypeVertex         Type = "g:Vertex"
 	TypeInt64          Type = "g:Int64"
 	TypeInt32          Type = "g:Int32"
 	TypeFloat64        Type = "g:Float64"
 	TypeString         Type = "g:string"
 	TypeBool           Type = "g:bool"
+	TypeVertex         Type = "g:Vertex"
 	TypeVertexProperty Type = "g:VertexProperty"
+	TypeEdge           Type = "g:Edge"
 )
 
 // TypedValue is a value with a cosmos db type
