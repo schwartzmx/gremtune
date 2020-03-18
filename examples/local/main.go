@@ -101,7 +101,7 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	}
 }]`
 
-	properties, err := api.ToPropertiesNew(json.RawMessage(data))
+	properties, err := api.ToProperties(json.RawMessage(data))
 	if err != nil {
 		panic(err)
 	}

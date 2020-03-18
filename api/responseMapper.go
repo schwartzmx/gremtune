@@ -7,6 +7,26 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+func mapStructToType(s map[string]interface{}, target interface{}) error {
+
+	config := &mapstructure.DecoderConfig{
+		Result:           target,
+		WeaklyTypedInput: true,
+		ErrorUnused:      true,
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	if err := decoder.Decode(s); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func mapStructToValue(s map[string]interface{}) (TypedValue, error) {
 	var result TypedValue
 
@@ -22,25 +42,6 @@ func mapStructToValue(s map[string]interface{}) (TypedValue, error) {
 
 	if err := decoder.Decode(s); err != nil {
 		return TypedValue{}, err
-	}
-	return result, nil
-}
-
-func mapStructToProperty(s map[string]interface{}) (Property, error) {
-	var result Property
-
-	config := &mapstructure.DecoderConfig{
-		Result:           &result,
-		WeaklyTypedInput: true,
-	}
-
-	decoder, err := mapstructure.NewDecoder(config)
-	if err != nil {
-		return Property{}, err
-	}
-
-	if err := decoder.Decode(s); err != nil {
-		return Property{}, err
 	}
 	return result, nil
 }
@@ -96,26 +97,9 @@ func ToValues(input []byte) ([]TypedValue, error) {
 	return toValues(parsedInput)
 }
 
-func toValues(input []interface{}) ([]TypedValue, error) {
+func ToProperties(input []byte) ([]Property, error) {
 	if input == nil {
-		return nil, fmt.Errorf("Data is nil")
-	}
-
-	result := make([]TypedValue, 0, len(input))
-	for _, element := range input {
-		value, err := toValue(element)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, value)
-	}
-
-	return result, nil
-}
-
-func ToPropertiesNew(input []byte) ([]Property, error) {
-	if input == nil {
-		return nil, fmt.Errorf("Data is nil")
+		return nil, fmt.Errorf("Input is nil")
 	}
 
 	parsedInput := make([]interface{}, 0)
@@ -130,9 +114,16 @@ func ToPropertiesNew(input []byte) ([]Property, error) {
 			return nil, err
 		}
 
+		if value.Type != TypeVertexProperty {
+			return nil, fmt.Errorf("Expected type %s but got %s", TypeVertexProperty, value.Type)
+		}
+
 		prop := value.Value.(map[string]interface{})
-		prop2, _ := mapStructToProperty(prop)
-		result = append(result, prop2)
+		var property Property
+		if err := mapStructToType(prop, &property); err != nil {
+			return nil, err
+		}
+		result = append(result, property)
 	}
 
 	return result, nil
@@ -219,24 +210,4 @@ func ToValueMap(input []byte) (map[string]TypedValue, error) {
 	}
 
 	return result, nil
-}
-
-// toValue converts the given type to a TypedValue
-func toValue(input interface{}) (TypedValue, error) {
-	switch v := input.(type) {
-	case string:
-		return TypedValue{
-			Type:  TypeString,
-			Value: v,
-		}, nil
-	case bool:
-		return TypedValue{
-			Type:  TypeBool,
-			Value: v,
-		}, nil
-	case map[string]interface{}:
-		return mapStructToValue(v)
-	default:
-		return TypedValue{}, fmt.Errorf("Unknown type %T, can't process element: %v", v, v)
-	}
 }

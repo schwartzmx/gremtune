@@ -6,26 +6,89 @@ import (
 	"github.com/spf13/cast"
 )
 
+// Type defines the cosmos db types
 type Type string
 
 const (
 	TypeVertex         Type = "g:Vertex"
 	TypeInt64          Type = "g:Int64"
 	TypeInt32          Type = "g:Int32"
+	TypeFloat64        Type = "g:Float64"
 	TypeString         Type = "g:string"
 	TypeBool           Type = "g:bool"
 	TypeVertexProperty Type = "g:VertexProperty"
 )
 
+// TypedValue is a value with a cosmos db type
 type TypedValue struct {
 	Value interface{} `mapstructure:"@value"`
 	Type  Type        `mapstructure:"@type"`
 }
 
-type LabelledValue struct {
-	ID    interface{} `mapstructure:"id"`
-	Value interface{} `mapstructure:"value"`
-	Label string      `mapstructure:"label"`
+// toValue converts the given input to a TypedValue
+// Supported values are:
+//
+// * string: toValue("hello")
+//
+// * bool: toValue(true)
+//
+// * int32: toValue(map[string]interface{}{
+//			"@type":  TypeInt32,
+//			"@value": int32(11),
+//		})
+//
+// * float64: toValue(map[string]interface{}{
+//			"@type":  TypeFloat64,
+//			"@value": float64(11),
+//		})
+func toValue(input interface{}) (TypedValue, error) {
+	switch v := input.(type) {
+	case string:
+		return TypedValue{
+			Type:  TypeString,
+			Value: v,
+		}, nil
+	case bool:
+		return TypedValue{
+			Type:  TypeBool,
+			Value: v,
+		}, nil
+	case map[string]interface{}:
+		var value TypedValue
+		if err := mapStructToType(v, &value); err != nil {
+			return TypedValue{}, err
+		}
+
+		if len(value.Type) == 0 {
+			return TypedValue{}, fmt.Errorf("Failed to decode type, expected field @type is missing")
+		}
+
+		if value.Value == nil {
+			return TypedValue{}, fmt.Errorf("Failed to decode type, expected field @value is missing")
+		}
+
+		return value, nil
+	default:
+		return TypedValue{}, fmt.Errorf("Unknown type %T, can't process element: %v", v, v)
+	}
+}
+
+// converts a list of values to TypedValue
+func toValues(input []interface{}) ([]TypedValue, error) {
+	if input == nil {
+		return nil, fmt.Errorf("Data is nil")
+	}
+
+	result := make([]TypedValue, 0, len(input))
+	for _, element := range input {
+		value, err := toValue(element)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, value)
+	}
+
+	return result, nil
 }
 
 func (tv TypedValue) AsFloat64E() (float64, error) {
