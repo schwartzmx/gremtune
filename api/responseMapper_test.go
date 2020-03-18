@@ -27,8 +27,8 @@ func TestUntypedToComplexType(t *testing.T) {
 	var tValue1 TypedValue
 
 	// WHEN
-	errVertex := untypedToComplexType(inputVertex, &vertex, TypeVertex)
-	errTValue1 := untypedToComplexType(inputTValue1, &tValue1, TypeString)
+	errVertex := untypedToType(inputVertex, &vertex)
+	errTValue1 := untypedToType(inputTValue1, &tValue1)
 
 	// THEN
 	assert.NoError(t, errVertex)
@@ -77,11 +77,11 @@ func TestUntypedToComplexTypeFail(t *testing.T) {
 	var vertex Vertex
 
 	// WHEN
-	errInputInvalid1 := untypedToComplexType(inputInvalid1, &vertex, TypeVertex)
-	errInputInvalid2 := untypedToComplexType(inputInvalid2, &vertex, TypeVertex)
-	errInputInvalid3 := untypedToComplexType(inputInvalid3, &vertex, TypeVertex)
-	errInputWrongType := untypedToComplexType(inputWrongType, &vertex, TypeVertex)
-	errInputWrongTarget := untypedToComplexType(inputWrongTarget, &vertex, TypeString)
+	errInputInvalid1 := untypedToType(inputInvalid1, &vertex)
+	errInputInvalid2 := untypedToType(inputInvalid2, &vertex)
+	errInputInvalid3 := untypedToType(inputInvalid3, &vertex)
+	errInputWrongType := untypedToType(inputWrongType, &vertex)
+	errInputWrongTarget := untypedToType(inputWrongTarget, &vertex)
 
 	// THEN
 	assert.Error(t, errInputInvalid1)

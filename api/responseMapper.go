@@ -35,9 +35,8 @@ func mapStructToType(source map[string]interface{}, target interface{}) error {
 	return nil
 }
 
-// untypedToComplexType converts the given untyped value into a complex type
-// supported target types are TypeVertex,TypeVertexProperty and TypeEdge
-func untypedToComplexType(source interface{}, target interface{}, expectedType Type) error {
+// untypedToType converts the given untyped value into a known type
+func untypedToType(source interface{}, target interface{}) error {
 
 	// extract the type information
 	typedValue, err := toValue(source)
@@ -46,12 +45,12 @@ func untypedToComplexType(source interface{}, target interface{}, expectedType T
 	}
 
 	// verify the type
-	if typedValue.Type != expectedType {
-		return fmt.Errorf("Expected type %s but got %s", expectedType, typedValue.Type)
+	if !isTypeMatching(target, typedValue.Type) {
+		return fmt.Errorf("Expected type %T but got %s", target, typedValue.Type)
 	}
 
 	// if it is not a complex type we can stop here and return the TypedValue
-	if !IsComplexType(typedValue.Type) {
+	if !isComplexType(typedValue.Type) {
 		targetAsTypedValue, ok := target.(*TypedValue)
 		if !ok {
 			return fmt.Errorf("%T is not %T", target, typedValue)
@@ -87,7 +86,7 @@ func ToValues(input []byte) ([]TypedValue, error) {
 	return toValues(parsedInput)
 }
 
-func ToProperties(input []byte) ([]Property, error) {
+func ToProperties(input []byte) ([]VertexProperty, error) {
 	if input == nil {
 		return nil, fmt.Errorf("Input is nil")
 	}
@@ -97,10 +96,10 @@ func ToProperties(input []byte) ([]Property, error) {
 		return nil, err
 	}
 
-	result := make([]Property, 0, len(parsedInput))
+	result := make([]VertexProperty, 0, len(parsedInput))
 	for _, element := range parsedInput {
-		var property Property
-		if err := untypedToComplexType(element, &property, TypeVertexProperty); err != nil {
+		var property VertexProperty
+		if err := untypedToType(element, &property); err != nil {
 			return nil, err
 		}
 		result = append(result, property)
@@ -123,7 +122,7 @@ func ToVertex(input []byte) ([]Vertex, error) {
 	for _, element := range parsedInput {
 		var vertex Vertex
 
-		if err := untypedToComplexType(element, &vertex, TypeVertex); err != nil {
+		if err := untypedToType(element, &vertex); err != nil {
 			return nil, err
 		}
 
@@ -146,7 +145,7 @@ func ToEdge(input []byte) ([]Edge, error) {
 	result := make([]Edge, 0, len(parsedInput))
 	for _, element := range parsedInput {
 		var edge Edge
-		if err := untypedToComplexType(element, &edge, TypeEdge); err != nil {
+		if err := untypedToType(element, &edge); err != nil {
 			return nil, err
 		}
 		result = append(result, edge)

@@ -2,7 +2,7 @@ package api
 
 import "fmt"
 
-type Property struct {
+type VertexProperty struct {
 	ID    ID     `mapstructure:"id"`
 	Value string `mapstructure:"value"`
 	Label string `mapstructure:"label"`
@@ -27,7 +27,7 @@ type ID struct {
 	Type  Type `mapstructure:"@type"`
 }
 
-func (p Property) String() string {
+func (p VertexProperty) String() string {
 	return fmt.Sprintf("[%s] '%s':'%s'", p.ID, p.Label, p.Value)
 }
 

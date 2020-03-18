@@ -6,6 +6,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIsTypeMatching(t *testing.T) {
+	t.Parallel()
+	assert.True(t, isTypeMatching(&TypedValue{}, TypeString))
+	assert.True(t, isTypeMatching(&TypedValue{}, TypeBool))
+	assert.True(t, isTypeMatching(&TypedValue{}, TypeFloat64))
+	assert.True(t, isTypeMatching(&TypedValue{}, TypeInt32))
+	assert.True(t, isTypeMatching(&TypedValue{}, TypeInt64))
+	assert.False(t, isTypeMatching(&TypedValue{}, TypeVertex))
+	assert.False(t, isTypeMatching(&TypedValue{}, TypeVertexProperty))
+	assert.False(t, isTypeMatching(&TypedValue{}, TypeEdge))
+	assert.True(t, isTypeMatching(&Vertex{}, TypeVertex))
+	assert.True(t, isTypeMatching(&VertexProperty{}, TypeVertexProperty))
+	assert.True(t, isTypeMatching(&Edge{}, TypeEdge))
+	assert.False(t, isTypeMatching(&Edge{}, ""))
+}
+
 func TestToValues(t *testing.T) {
 	t.Parallel()
 

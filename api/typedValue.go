@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/spf13/cast"
 )
@@ -26,9 +27,36 @@ var complexTypes = map[Type]struct{}{
 	TypeEdge:           {},
 }
 
-func IsComplexType(t Type) bool {
+func isComplexType(t Type) bool {
 	_, ok := complexTypes[t]
 	return ok
+}
+
+func isTypeMatching(source interface{}, expectedType Type) bool {
+	switch expectedType {
+	case TypeBool, TypeString, TypeFloat64, TypeInt32, TypeInt64:
+		return reflect.TypeOf(source) == reflect.TypeOf(&TypedValue{})
+	case TypeVertex:
+		_, ok := source.(*Vertex)
+		if !ok {
+			return false
+		}
+		return true
+	case TypeVertexProperty:
+		_, ok := source.(*VertexProperty)
+		if !ok {
+			return false
+		}
+		return true
+	case TypeEdge:
+		_, ok := source.(*Edge)
+		if !ok {
+			return false
+		}
+		return true
+	default:
+		return false
+	}
 }
 
 // TypedValue is a value with a cosmos db type
