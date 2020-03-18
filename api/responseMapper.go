@@ -7,7 +7,15 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func mapStructToType(s map[string]interface{}, target interface{}) error {
+// mapStructToType converts the given map struct into the desired target type
+// The target type has to be annotated with 'mapstructure' tags
+// Example:
+//
+// type MyTargetType struct {
+//  Field1 int `mapstructure:"field1"`
+//  Field2 string `mapstructure:"another_field"`
+// }
+func mapStructToType(source map[string]interface{}, target interface{}) error {
 
 	config := &mapstructure.DecoderConfig{
 		Result:           target,
@@ -20,10 +28,38 @@ func mapStructToType(s map[string]interface{}, target interface{}) error {
 		return err
 	}
 
-	if err := decoder.Decode(s); err != nil {
+	if err := decoder.Decode(source); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// untypedToComplexType converts the given untyped value into a complex type
+// supported target types are TypeVertex,TypeVertexProperty and TypeEdge
+func untypedToComplexType(source interface{}, target interface{}, expectedType Type) error {
+
+	// extract the type information
+	typedValue, err := toValue(source)
+	if err != nil {
+		return err
+	}
+
+	// verify the type
+	if typedValue.Type != expectedType {
+		return fmt.Errorf("Expected type %s but got %s", expectedType, typedValue.Type)
+	}
+
+	// cast the extracted typed value into a mapstruct
+	mapStrct, ok := typedValue.Value.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", typedValue.Value, typedValue.Value)
+	}
+
+	// convert the mapstruct into the target type
+	if err := mapStructToType(mapStrct, &target); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -52,18 +88,8 @@ func ToProperties(input []byte) ([]Property, error) {
 
 	result := make([]Property, 0, len(parsedInput))
 	for _, element := range parsedInput {
-		value, err := toValue(element)
-		if err != nil {
-			return nil, err
-		}
-
-		if value.Type != TypeVertexProperty {
-			return nil, fmt.Errorf("Expected type %s but got %s", TypeVertexProperty, value.Type)
-		}
-
-		prop := value.Value.(map[string]interface{})
 		var property Property
-		if err := mapStructToType(prop, &property); err != nil {
+		if err := untypedToComplexType(element, &property, TypeVertexProperty); err != nil {
 			return nil, err
 		}
 		result = append(result, property)
@@ -84,20 +110,12 @@ func ToVertex(input []byte) ([]Vertex, error) {
 
 	result := make([]Vertex, 0, len(parsedInput))
 	for _, element := range parsedInput {
-		value, err := toValue(element)
-		if err != nil {
-			return nil, err
-		}
-
-		if value.Type != TypeVertex {
-			return nil, fmt.Errorf("Expected type %s but got %s", TypeVertex, value.Type)
-		}
-
-		vert := value.Value.(map[string]interface{})
 		var vertex Vertex
-		if err := mapStructToType(vert, &vertex); err != nil {
+
+		if err := untypedToComplexType(element, &vertex, TypeVertex); err != nil {
 			return nil, err
 		}
+
 		result = append(result, vertex)
 	}
 
@@ -116,18 +134,8 @@ func ToEdge(input []byte) ([]Edge, error) {
 
 	result := make([]Edge, 0, len(parsedInput))
 	for _, element := range parsedInput {
-		value, err := toValue(element)
-		if err != nil {
-			return nil, err
-		}
-
-		if value.Type != TypeEdge {
-			return nil, fmt.Errorf("Expected type %s but got %s", TypeEdge, value.Type)
-		}
-
-		ed := value.Value.(map[string]interface{})
 		var edge Edge
-		if err := mapStructToType(ed, &edge); err != nil {
+		if err := untypedToComplexType(element, &edge, TypeEdge); err != nil {
 			return nil, err
 		}
 		result = append(result, edge)
