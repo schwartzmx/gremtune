@@ -40,10 +40,12 @@ func parseValue(s map[string]interface{}) (TypedValue, error) {
 	if err := decoder.Decode(s); err != nil {
 		return TypedValue{}, err
 	}
+
+	fmt.Printf("VV %s %T\n", result.Type, result.Value)
 	return result, nil
 }
 
-func ParseResponse(input []byte) ([]TypedValue, error) {
+func ToValues(input []byte) ([]TypedValue, error) {
 	if input == nil {
 		return nil, fmt.Errorf("Data is nil")
 	}
@@ -59,6 +61,29 @@ func ParseResponse(input []byte) ([]TypedValue, error) {
 		if err != nil {
 			return nil, err
 		}
+		result = append(result, value)
+	}
+
+	return result, nil
+}
+
+func ToPropertiesNew(input []byte) ([]TypedValue, error) {
+	if input == nil {
+		return nil, fmt.Errorf("Data is nil")
+	}
+
+	parsedInput := make([]interface{}, 0)
+	if err := json.Unmarshal(input, &parsedInput); err != nil {
+		return nil, err
+	}
+
+	result := make([]TypedValue, 0, len(parsedInput))
+	for _, element := range parsedInput {
+		value, err := parseElement(element)
+		if err != nil {
+			return nil, err
+		}
+
 		result = append(result, value)
 	}
 

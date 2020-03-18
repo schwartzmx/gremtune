@@ -9,16 +9,23 @@ import (
 type Type string
 
 const (
-	TypeVertex Type = "g:Vertex"
-	TypeInt64  Type = "g:Int64"
-	TypeInt32  Type = "g:Int32"
-	TypeString Type = "g:string"
-	TypeBool   Type = "g:bool"
+	TypeVertex         Type = "g:Vertex"
+	TypeInt64          Type = "g:Int64"
+	TypeInt32          Type = "g:Int32"
+	TypeString         Type = "g:string"
+	TypeBool           Type = "g:bool"
+	TypeVertexProperty Type = "g:VertexProperty"
 )
 
 type TypedValue struct {
 	Value interface{} `mapstructure:"@value"`
 	Type  Type        `mapstructure:"@type"`
+}
+
+type LabelledValue struct {
+	ID    interface{} `mapstructure:"id"`
+	Value interface{} `mapstructure:"value"`
+	Label string      `mapstructure:"label"`
 }
 
 func (tv TypedValue) AsFloat64E() (float64, error) {
@@ -62,6 +69,6 @@ func (tv TypedValue) String() string {
 	case TypeString:
 		return tv.AsString()
 	default:
-		return fmt.Sprintf("Unknown type=%T, value=%v", tv.Value, tv.Value)
+		return fmt.Sprintf("Unknown type=%T/%s, value=%v", tv.Value, tv.Type, tv.Value)
 	}
 }
