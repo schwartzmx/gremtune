@@ -50,6 +50,17 @@ func untypedToComplexType(source interface{}, target interface{}, expectedType T
 		return fmt.Errorf("Expected type %s but got %s", expectedType, typedValue.Type)
 	}
 
+	// if it is not a complex type we can stop here and return the TypedValue
+	if !IsComplexType(typedValue.Type) {
+		targetAsTypedValue, ok := target.(*TypedValue)
+		if !ok {
+			return fmt.Errorf("%T is not %T", target, typedValue)
+		}
+		targetAsTypedValue.Value = typedValue.Value
+		targetAsTypedValue.Type = typedValue.Type
+		return nil
+	}
+
 	// cast the extracted typed value into a mapstruct
 	mapStrct, ok := typedValue.Value.(map[string]interface{})
 	if !ok {
