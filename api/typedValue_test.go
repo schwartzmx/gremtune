@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestToValues(t *testing.T) {
+func Test_toValues(t *testing.T) {
 	t.Parallel()
 
 	// GIVEN

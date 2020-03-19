@@ -19,11 +19,6 @@ var complexTypes = map[Type]struct{}{
 	TypeEdge:   {},
 }
 
-func isComplexType(t Type) bool {
-	_, ok := complexTypes[t]
-	return ok
-}
-
 // TypedValue is a value with a cosmos db type
 type TypedValue struct {
 	Value interface{}

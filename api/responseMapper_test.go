@@ -6,6 +6,118 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestToValueMap(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := `[{
+		"email":["max.mustermann@example.com"],
+		"a number":[1234],
+		"bool value":[true]
+	}]`
+
+	// WHEN
+	valueMap, err := ToValueMap([]byte(data))
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, valueMap, 3)
+	assert.True(t, valueMap["bool value"].AsBool())
+}
+
+func TestToValues(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := `["max.mustermann@example.com",1234,true]`
+
+	// WHEN
+	values, err := ToValues([]byte(data))
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, values, 3)
+	assert.Equal(t, "max.mustermann@example.com", values[0].AsString())
+	assert.True(t, values[2].AsBool())
+}
+
+func TestToProperties(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := `[{
+		"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk",
+		"value":"prop value",
+		"label":"prop key"
+	}]`
+
+	// WHEN
+	properties, err := ToProperties([]byte(data))
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, properties, 1)
+	assert.Equal(t, "8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk", properties[0].ID)
+	assert.Equal(t, "prop value", properties[0].Value)
+	assert.Equal(t, "prop key", properties[0].Label)
+}
+
+func TestToVertices(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := `[{
+		"type":"vertex",
+		"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44",
+		"label":"vert label",
+		"properties":{
+			"pk":[{
+				"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk",
+				"value":"test"
+			}]
+			,"email":[{
+				"id":"80c0dfb2-b422-4005-829e-9c79acf4f642",
+				"value":"max.mustermann@example.com"
+			}]
+			,"abcd":[{
+				"id":"4f5a5962-c6a2-4eab-81cf-5b530393b54e",
+				"value":true
+			}]
+		}}]`
+
+	// WHEN
+	vertices, err := ToVertices([]byte(data))
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, vertices, 1)
+	assert.Equal(t, "8fff9259-09e6-4ea5-aaf8-250b31cc7f44", vertices[0].ID)
+	assert.Equal(t, "vert label", vertices[0].Label)
+	assert.Len(t, vertices[0].Properties, 3)
+}
+
+func TestToEdges(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := `[{
+		"id":"623709d5-fe22-4377-bc5b-9cb150fff124",
+		"label":"edge label",
+		"type":"edge",
+		"inVLabel":"user1",
+		"outVLabel":"user2",
+		"inV":"7404ba4e-be30-486e-88e1-b2f5937a9001",
+		"outV":"1111ba4e-be30-486e-88e1-b2f5937a9001"
+	}]`
+
+	// WHEN
+	edges, err := ToEdges([]byte(data))
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, edges, 1)
+	assert.Equal(t, "623709d5-fe22-4377-bc5b-9cb150fff124", edges[0].ID)
+	assert.Equal(t, "edge label", edges[0].Label)
+	assert.Equal(t, "user1", edges[0].InVLabel)
+	assert.Equal(t, "user2", edges[0].OutVLabel)
+	assert.Equal(t, "7404ba4e-be30-486e-88e1-b2f5937a9001", edges[0].InV)
+	assert.Equal(t, "1111ba4e-be30-486e-88e1-b2f5937a9001", edges[0].OutV)
+}
 func TestToTypeArrayTypedValues(t *testing.T) {
 	t.Parallel()
 	// GIVEN
