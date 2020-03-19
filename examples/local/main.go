@@ -76,113 +76,10 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
-	// values
-	// []TypedValue
-	data := `["max.mustermann@example.com",1234,true]`
-	values, err := api.ToValues(json.RawMessage(data))
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("\n###### VALUES ##########################################")
-	fmt.Printf("IN: %s\n", data)
-	fmt.Printf("OUT: %s\n", values)
-	//
-	// properties
-	// type, {id, label, value}
-	data = `[{
-			"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk",
-			"value":"test",
-			"label":"pk"
-		}]`
-
-	properties, err := api.ToProperties(json.RawMessage(data))
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("\n###### PROPERTIES ##########################################")
-	fmt.Printf("IN: %s\n", data)
-	fmt.Printf("OUT: %s\n", properties)
-
-	// valueMap
-	// map[string]TypedValue
-	data = `[{
-			"pk":["test"],
-			"email":["max.mustermann@example.com"],
-			"number":[1234],
-			"bool":[true]
-		}]`
-	valueMap, err := api.ToValueMap(json.RawMessage(data))
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("\n###### VALUEMAP ##########################################")
-	fmt.Printf("IN: %s\n", data)
-	fmt.Printf("OUT: %s\n", valueMap)
-
-	// vertex
-	// type, {id, label}
-
-	data = `[{
-		"type":"vertex",
-		"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44",
-		"label":"User",
-		"properties":{
-			"pk":[{
-				"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk",
-				"value":"test"
-			}]
-			,"email":[{
-				"id":"80c0dfb2-b422-4005-829e-9c79acf4f642",
-				"value":"max.mustermann@example.com"
-			}]
-			,"abcd":[{
-				"id":"4f5a5962-c6a2-4eab-81cf-5b530393b54e",
-				"value":true
-			}]
-		}}]`
-
-	vertex, err := api.ToVertices(json.RawMessage(data))
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("\n###### VERTEX ##########################################")
-	fmt.Printf("IN: %s\n", data)
-	fmt.Printf("OUT: %s\n", vertex)
-
-	// Edge
-	// type, {id, label, inVLabel,outVLabel,{id,id}}
-	data = `[{
-		"id":"623709d5-fe22-4377-bc5b-9cb150fff124",
-		"label":"knows",
-		"type":"edge",
-		"inVLabel":"user",
-		"outVLabel":"user",
-		"inV":"7404ba4e-be30-486e-88e1-b2f5937a9001",
-		"outV":"7404ba4e-be30-486e-88e1-b2f5937a9001"
-	}]`
-	edge, err := api.ToEdges(json.RawMessage(data))
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("\n###### Edge ##########################################")
-	fmt.Printf("IN: %s\n", data)
-	fmt.Printf("OUT: %s\n", edge)
-
-	if true {
-		return
-	}
-
 	g := api.NewGraph("g")
 	query := g.AddV("User").Property("userid", "12345").Property("email", "max.mustermann@example.com").Id()
-	query = g.VBy(33)
-	query = g.VBy(29)
 	logger.Info().Msgf("Query: %s", query)
 	res, err := cosmos.ExecuteQuery(query)
-	queryStr := "g.addE('knows').from(g.V(33)).to(g.V(29))"
-	res, err = cosmos.Execute(queryStr)
 
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
@@ -190,7 +87,6 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	}
 
 	for i, chunk := range res {
-
 		jsonEncodedResponse, err := json.Marshal(chunk.Result.Data)
 
 		if err != nil {
@@ -200,14 +96,6 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
 	}
-
-	//vert, err := api.ToProperties(res)
-	//if err != nil {
-	//	logger.Error().Err(err).Msg("Failed to map the response to a vertex")
-	//}
-	//
-	//logger.Info().Msgf("Vertex: %v", vert)
-	//spew.Dump(vert)
 }
 
 func queryCosmosAsync(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
