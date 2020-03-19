@@ -99,8 +99,11 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	g := api.NewGraph("g")
-	query := g.V()
+	// adds an edge from vertex with property name:jan to vertex with property name:hans
+	// jan <-knows- hans
+	query := g.V().Has("name", "jan").AddE("knows").From(g.V().Has("name", "hans"))
 	logger.Info().Msgf("Query: %s", query)
+
 	res, err := cosmos.ExecuteQuery(query)
 
 	if err != nil {
