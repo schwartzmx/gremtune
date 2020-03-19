@@ -54,10 +54,10 @@ func TestVertexPropertyValue(t *testing.T) {
 	// GIVEN
 	key := "myprop"
 	value := TypedValue{Value: "some value"}
-	valueWithIDInput := ValueWithID{
+	valueWithIDInput := []ValueWithID{ValueWithID{
 		ID:    "123",
 		Value: value,
-	}
+	}}
 
 	props := VertexPropertyMap{key: valueWithIDInput}
 
@@ -88,7 +88,7 @@ func TestVertexPropertyValueEmpty(t *testing.T) {
 
 	// GIVEN
 	key := "myprop"
-	valueWithIDInput := ValueWithID{}
+	valueWithIDInput := []ValueWithID{}
 	props := VertexPropertyMap{key: valueWithIDInput}
 
 	// WHEN
@@ -104,10 +104,10 @@ func TestVertexPropertyAsString(t *testing.T) {
 	// GIVEN
 	key := "myprop"
 	value := "some value"
-	valueWithIDInput := ValueWithID{
+	valueWithIDInput := []ValueWithID{ValueWithID{
 		ID:    "123",
 		Value: TypedValue{Value: value},
-	}
+	}}
 
 	props := VertexPropertyMap{key: valueWithIDInput}
 
@@ -125,10 +125,10 @@ func TestVertexPropertyAsInt32(t *testing.T) {
 	// GIVEN
 	key := "myprop"
 	value := int32(12345)
-	valueWithIDInput := ValueWithID{
+	valueWithIDInput := []ValueWithID{ValueWithID{
 		ID:    "123",
 		Value: TypedValue{Value: value},
-	}
+	}}
 
 	props := VertexPropertyMap{key: valueWithIDInput}
 

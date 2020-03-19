@@ -42,7 +42,7 @@ type ValueWithID struct {
 	Value TypedValue `mapstructure:"value,squash"`
 }
 
-type VertexPropertyMap map[string]ValueWithID
+type VertexPropertyMap map[string][]ValueWithID
 
 // Type defines the cosmos db complex types
 type Type string
@@ -125,12 +125,18 @@ func (e Edge) String() string {
 	return fmt.Sprintf("%s (%s)-%s->%s (%s) - type %s", e.InVLabel, e.InV, e.Label, e.OutVLabel, e.OutV, e.Type)
 }
 
+// Value returns the first value of the properties for this key
+// the others are ignored. Anyway it is not possible to store multiple
+// values for one property key.
 func (vpm VertexPropertyMap) Value(key string) (ValueWithID, bool) {
 	value, ok := vpm[key]
 	if !ok {
 		return ValueWithID{}, false
 	}
-	return value, true
+	if len(value) == 0 {
+		return ValueWithID{}, false
+	}
+	return value[0], true
 }
 
 func (vpm VertexPropertyMap) AsString(key string) (string, error) {
