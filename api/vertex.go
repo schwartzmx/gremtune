@@ -97,3 +97,11 @@ func (v *vertex) AddE(label string) interfaces.Edge {
 func (v *vertex) Profile() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".executionProfile()"))
 }
+
+func (v *vertex) HasInt(key string, value int) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".has('%s',%d)", key, value))
+}
+
+func (v *vertex) PropertyInt(key string, value int) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".property('%s',%d)", key, value))
+}

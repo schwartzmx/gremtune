@@ -35,11 +35,16 @@ type Vertex interface {
 	HasLabel(vertexLabel string) Vertex
 	// Property adds .property('<key>','<value>'), e.g. .property('name','hans'), to the query. The query call will add the given property.
 	Property(key, value string) Vertex
+	// PropertyInt adds .property('<key>',<int value>), e.g. .property('age',55), to the query. The query call will add the given property.
+	PropertyInt(key string, value int) Vertex
 	// Properties adds .properties(), to the query. The query call returns all properties of the vertex.
 	Properties() QueryBuilder
 	// Has adds .has('<key>','<value>'), e.g. .has('name','hans'), to the query. The query call returns all vertices
 	// with the property which is defined by the given key value pair.
 	Has(key, value string) Vertex
+	// Has adds .has('<key>',<int value>), e.g. .has('age',55), to the query. The query call returns all vertices
+	// with the property which is defined by the given key value pair.
+	HasInt(key string, value int) Vertex
 	// ValuesBy adds .values('<label>'), e.g. .values('user'), to the query. The query call returns all values of the vertex.
 	ValuesBy(label string) QueryBuilder
 	// Values adds .values(), to the query. The query call returns all values with the given label of the vertex.

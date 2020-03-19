@@ -248,6 +248,20 @@ func (mr *MockVertexMockRecorder) Property(key, value interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Property", reflect.TypeOf((*MockVertex)(nil).Property), key, value)
 }
 
+// PropertyInt mocks base method
+func (m *MockVertex) PropertyInt(key string, value int) interfaces.Vertex {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PropertyInt", key, value)
+	ret0, _ := ret[0].(interfaces.Vertex)
+	return ret0
+}
+
+// PropertyInt indicates an expected call of PropertyInt
+func (mr *MockVertexMockRecorder) PropertyInt(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PropertyInt", reflect.TypeOf((*MockVertex)(nil).PropertyInt), key, value)
+}
+
 // Properties mocks base method
 func (m *MockVertex) Properties() interfaces.QueryBuilder {
 	m.ctrl.T.Helper()
@@ -274,6 +288,20 @@ func (m *MockVertex) Has(key, value string) interfaces.Vertex {
 func (mr *MockVertexMockRecorder) Has(key, value interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Has", reflect.TypeOf((*MockVertex)(nil).Has), key, value)
+}
+
+// HasInt mocks base method
+func (m *MockVertex) HasInt(key string, value int) interfaces.Vertex {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasInt", key, value)
+	ret0, _ := ret[0].(interfaces.Vertex)
+	return ret0
+}
+
+// HasInt indicates an expected call of HasInt
+func (mr *MockVertexMockRecorder) HasInt(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasInt", reflect.TypeOf((*MockVertex)(nil).HasInt), key, value)
 }
 
 // ValuesBy mocks base method

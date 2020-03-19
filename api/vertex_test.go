@@ -56,6 +56,42 @@ func TestHas(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().has('%s','%s')", graphName, key, value), v.String())
 }
 
+func TestHasInt(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := 12345
+
+	// WHEN
+	v = v.HasInt(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().has('%s',%d)", graphName, key, value), v.String())
+}
+
+func TestPropertyInt(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := 12345
+
+	// WHEN
+	v = v.PropertyInt(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().property('%s',%d)", graphName, key, value), v.String())
+}
+
 func TestHasLabel(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
