@@ -11,12 +11,13 @@ type Property struct {
 }
 
 type Edge struct {
-	ID        ID     `mapstructure:"id"`
+	ID        string `mapstructure:"id"`
 	Label     string `mapstructure:"label"`
+	Type      Type   `mapstructure:"type"`
 	InVLabel  string `mapstructure:"inVLabel"`
-	InV       ID     `mapstructure:"inV"`
+	InV       string `mapstructure:"inV"`
 	OutVLabel string `mapstructure:"outVLabel"`
-	OutV      ID     `mapstructure:"outV"`
+	OutV      string `mapstructure:"outV"`
 }
 
 type Vertex struct {
@@ -53,7 +54,7 @@ func (id ID) String() string {
 }
 
 func (v Vertex) String() string {
-	return fmt.Sprintf("%s %s", v.ID, v.Label)
+	return fmt.Sprintf("%s %s (props %v)", v.ID, v.Label, v.Properties)
 }
 
 func (e Edge) String() string {

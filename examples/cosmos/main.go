@@ -109,8 +109,8 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	//query = g.VBy(29)
 	logger.Info().Msgf("Query: %s", query)
 	res, err := cosmos.ExecuteQuery(query)
-	queryStr := "g.V('7404ba4e-be30-486e-88e1-b2f5937a9001').out()"
-	//queryStr = "g.V('7404ba4e-be30-486e-88e1-b2f5937a9001').addE('knows').to(g.V('7404ba4e-be30-486e-88e1-b2f5937a9001'))"
+	queryStr := "g.V('7404ba4e-be30-486e-88e1-b2f5937a9001').addE('knows').to(g.V('7404ba4e-be30-486e-88e1-b2f5937a9001'))"
+	queryStr = "g.V('7404ba4e-be30-486e-88e1-b2f5937a9001')"
 	res, err = cosmos.Execute(queryStr)
 
 	if err != nil {

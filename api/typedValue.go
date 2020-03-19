@@ -61,28 +61,11 @@ func isTypeMatching(source interface{}, expectedType Type) bool {
 
 // TypedValue is a value with a cosmos db type
 type TypedValue struct {
-	Value interface{} `mapstructure:"value"`
-	Type  Type        `mapstructure:"type"`
-	ID    string      `mapstructure:"id"`
-	Label string      `mapstructure:"id"`
+	Value interface{}
+	Type  Type
 }
 
 // toValue converts the given input to a TypedValue
-// Supported values are:
-//
-// * string: toValue("hello")
-//
-// * bool: toValue(true)
-//
-// * int32: toValue(map[string]interface{}{
-//			"@type":  TypeInt32,
-//			"@value": int32(11),
-//		})
-//
-// * float64: toValue(map[string]interface{}{
-//			"@type":  TypeFloat64,
-//			"@value": float64(11),
-//		})
 func toValue(input interface{}) (TypedValue, error) {
 	switch v := input.(type) {
 	case string:
@@ -100,21 +83,11 @@ func toValue(input interface{}) (TypedValue, error) {
 			Type:  TypeFloat64,
 			Value: v,
 		}, nil
-	case map[string]interface{}:
-		var value TypedValue
-		if err := mapStructToType(v, &value); err != nil {
-			return TypedValue{}, err
-		}
-
-		if len(value.Type) == 0 {
-			return TypedValue{}, fmt.Errorf("Failed to decode type, expected field @type is missing")
-		}
-
-		if value.Value == nil {
-			return TypedValue{}, fmt.Errorf("Failed to decode type, expected field @value is missing")
-		}
-
-		return value, nil
+	case int32:
+		return TypedValue{
+			Type:  TypeInt32,
+			Value: v,
+		}, nil
 	default:
 		return TypedValue{}, fmt.Errorf("Unknown type %T, can't process element: %v", v, v)
 	}

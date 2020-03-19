@@ -102,13 +102,13 @@ func toTypeArray(input []byte, target interface{}) error {
 
 	// handling of complex types
 	for _, element := range parsedInput {
+		mapStrct, ok := element.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", element, element)
+		}
+
 		switch targetValue := target.(type) {
 		case *[]Property:
-			mapStrct, ok := element.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", element, element)
-			}
-
 			var property Property
 			if err := mapStructToType(mapStrct, &property); err != nil {
 				return err
@@ -117,32 +117,18 @@ func toTypeArray(input []byte, target interface{}) error {
 			return nil
 		case *[]Edge:
 			var edge Edge
-			if err := untypedToType(element, &edge); err != nil {
+			if err := mapStructToType(mapStrct, &edge); err != nil {
 				return err
 			}
 			*targetValue = append(*targetValue, edge)
 			return nil
 		case *[]Vertex:
-			fmt.Printf("DDD %T, %v\n", element, element)
-
-			mapStrct, ok := element.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", element, element)
-			}
-
 			var vertex Vertex
 			if err := mapStructToType(mapStrct, &vertex); err != nil {
 				return err
 			}
 			*targetValue = append(*targetValue, vertex)
 			return nil
-
-			//var vertex Vertex
-			//if err := untypedToType(element, &vertex); err != nil {
-			//	return err
-			//}
-			//*targetValue = append(*targetValue, vertex)
-			//return nil
 		default:
 			return fmt.Errorf("Unexpected type %T", target)
 		}

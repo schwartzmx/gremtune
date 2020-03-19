@@ -137,6 +137,10 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 				"id":"80c0dfb2-b422-4005-829e-9c79acf4f642",
 				"value":"max.mustermann@example.com"
 			}]
+			,"abcd":[{
+				"id":"4f5a5962-c6a2-4eab-81cf-5b530393b54e",
+				"value":true
+			}]
 		}}]`
 
 	vertex, err := api.ToVertices(json.RawMessage(data))
@@ -150,15 +154,15 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	// Edge
 	// type, {id, label, inVLabel,outVLabel,{id,id}}
-	data = `[
-		id:9d36e5e8-24d4-4086-800e-7429741c1fa6,
-		label:knows,
-		type:edge,
-		inVLabel:user,
-		outVLabel:user,
-		inV:7404ba4e-be30-486e-88e1-b2f5937a9001,
-		outV:7404ba4e-be30-486e-88e1-b2f5937a9001
-		]`
+	data = `[{
+		"id":"623709d5-fe22-4377-bc5b-9cb150fff124",
+		"label":"knows",
+		"type":"edge",
+		"inVLabel":"user",
+		"outVLabel":"user",
+		"inV":"7404ba4e-be30-486e-88e1-b2f5937a9001",
+		"outV":"7404ba4e-be30-486e-88e1-b2f5937a9001"
+	}]`
 	edge, err := api.ToEdges(json.RawMessage(data))
 	if err != nil {
 		panic(err)
