@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/rs/zerolog"
 	gremcos "github.com/supplyon/gremcos"
+	"github.com/supplyon/gremcos/api"
 )
 
 func main() {
@@ -96,19 +96,35 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 }
 
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
-	res, err := cosmos.Execute("g.V().executionProfile()")
+
+	g := api.NewGraph("g")
+	// adds an edge from vertex with property name:jan to vertex with property name:hans
+	// jan <-knows- hans
+	query := g.V().Has("name", "jan").AddE("knows").From(g.V().Has("name", "hans"))
+	logger.Info().Msgf("Query: %s", query)
+
+	res, err := cosmos.ExecuteQuery(query)
+
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
 		return
 	}
 
-	for i, chunk := range res {
-		jsonEncodedResponse, err := json.Marshal(chunk.Result.Data)
-
-		if err != nil {
-			logger.Error().Err(err).Msg("Failed to encode the raw json into json")
-			continue
-		}
-		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
+	responses := api.ResponseArray(res)
+	values, err := responses.ToValues()
+	if err == nil {
+		logger.Info().Msgf("Received Values: %v", values)
+	}
+	properties, err := responses.ToProperties()
+	if err == nil {
+		logger.Info().Msgf("Received Properties: %v", properties)
+	}
+	vertices, err := responses.ToVertices()
+	if err == nil {
+		logger.Info().Msgf("Received Vertices: %v", vertices)
+	}
+	edges, err := responses.ToEdges()
+	if err == nil {
+		logger.Info().Msgf("Received Edges: %v", edges)
 	}
 }

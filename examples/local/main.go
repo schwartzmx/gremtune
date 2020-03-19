@@ -8,10 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/supplyon/gremcos/api"
-
 	"github.com/rs/zerolog"
 	gremcos "github.com/supplyon/gremcos"
+	"github.com/supplyon/gremcos/api"
 	"github.com/supplyon/gremcos/interfaces"
 )
 
@@ -43,7 +42,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	// create tickers for doing health check and queries
-	queryTicker := time.NewTicker(time.Millisecond * 2000)
+	queryTicker := time.NewTicker(time.Second * 2)
 	healthCheckTicker := time.NewTicker(time.Second * 20)
 
 	// ensure to clean up as soon as the processLoop has been left
@@ -80,6 +79,7 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	query := g.AddV("User").Property("userid", "12345").Property("email", "max.mustermann@example.com").Id()
 	logger.Info().Msgf("Query: %s", query)
 	res, err := cosmos.ExecuteQuery(query)
+
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
 		return
@@ -92,6 +92,7 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 			logger.Error().Err(err).Msg("Failed to encode the raw json into json")
 			continue
 		}
+
 		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
 	}
 }
