@@ -15,7 +15,7 @@ func TestNewVertex(t *testing.T) {
 	require.NotNil(t, g)
 
 	// WHEN
-	v := NewVertex(g)
+	v := NewVertexG(g)
 
 	// THEN
 	assert.NotNil(t, v)

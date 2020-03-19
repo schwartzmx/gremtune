@@ -67,3 +67,7 @@ func (e *edge) InV() interfaces.Vertex {
 	e.Add(NewSimpleQB(".inV()"))
 	return NewVertexE(e)
 }
+
+func (e *edge) Profile() interfaces.QueryBuilder {
+	return e.Add(NewSimpleQB(".executionProfile()"))
+}

@@ -11,6 +11,7 @@ type QueryBuilder interface {
 // queries on graph level
 type Graph interface {
 	QueryBuilder
+
 	// V adds .V() to the query. The query call returns all vertices.
 	V() Vertex
 	// VBy adds .V(<id>), e.g. .V(123), to the query. The query call returns the vertex with the given id.
@@ -28,6 +29,8 @@ type Graph interface {
 type Vertex interface {
 	QueryBuilder
 	Dropper
+	Profiler
+
 	// HasLabel adds .hasLabel('<label>'), e.g. .hasLabel('user'), to the query. The query call returns all vertices with the given label.
 	HasLabel(vertexLabel string) Vertex
 	// Property adds .property('<key>','<value>'), e.g. .property('name','hans'), to the query. The query call will add the given property.
@@ -56,6 +59,7 @@ type Vertex interface {
 type Edge interface {
 	QueryBuilder
 	Dropper
+	Profiler
 
 	// To adds .to(<vertex>), to the query. The query call will be the second step to add an edge
 	To(v Vertex) Edge
@@ -73,4 +77,9 @@ type Edge interface {
 type Dropper interface {
 	// Drop adds .drop(), to the query. The query call will drop/ delete all referenced entities
 	Drop() QueryBuilder
+}
+
+type Profiler interface {
+	// Profile adds ..executionProfile(), to the query. The query call will return profiling information of the executed query
+	Profile() QueryBuilder
 }

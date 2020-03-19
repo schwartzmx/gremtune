@@ -93,3 +93,7 @@ func (v *vertex) AddE(label string) interfaces.Edge {
 	v.Add(NewSimpleQB(".addE('%s')", label))
 	return NewEdgeV(v)
 }
+
+func (v *vertex) Profile() interfaces.QueryBuilder {
+	return v.Add(NewSimpleQB(".executionProfile()"))
+}
