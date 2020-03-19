@@ -19,6 +19,8 @@ type Graph interface {
 	VByUUID(id uuid.UUID) Vertex
 	// AddV adds .addV('<label>'), e.g. .addV('user'), to the query. The query call adds a vertex with the given label and returns that vertex.
 	AddV(label string) Vertex
+	// E adds .E() to the query. The query call returns all edges.
+	E() Edge
 }
 
 // Vertex represents a QueryBuilder that can be used to create
@@ -49,10 +51,6 @@ type Vertex interface {
 
 	// AddE adds .addE(<label>), to the query. The query call will be the first step to add an edge
 	AddE(label string) Edge
-}
-
-type Path interface {
-	QueryBuilder
 }
 
 type Edge interface {

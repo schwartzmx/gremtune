@@ -8,9 +8,18 @@ type edge struct {
 	builders []interfaces.QueryBuilder
 }
 
-func NewEdge(v interfaces.Vertex) interfaces.Edge {
+func NewEdgeV(v interfaces.Vertex) interfaces.Edge {
 	queryBuilders := make([]interfaces.QueryBuilder, 0)
 	queryBuilders = append(queryBuilders, v)
+
+	return &edge{
+		builders: queryBuilders,
+	}
+}
+
+func NewEdgeG(g interfaces.Graph) interfaces.Edge {
+	queryBuilders := make([]interfaces.QueryBuilder, 0)
+	queryBuilders = append(queryBuilders, g)
 
 	return &edge{
 		builders: queryBuilders,

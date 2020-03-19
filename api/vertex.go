@@ -18,7 +18,7 @@ func (v *vertex) String() string {
 	return queryString
 }
 
-func NewVertex(g interfaces.Graph) interfaces.Vertex {
+func NewVertexG(g interfaces.Graph) interfaces.Vertex {
 	queryBuilders := make([]interfaces.QueryBuilder, 0)
 	queryBuilders = append(queryBuilders, g)
 
@@ -91,5 +91,5 @@ func (v *vertex) Drop() interfaces.QueryBuilder {
 // AddE adds .addE(<label>), to the query. The query call will be the first step to add an edge
 func (v *vertex) AddE(label string) interfaces.Edge {
 	v.Add(NewSimpleQB(".addE('%s')", label))
-	return NewEdge(v)
+	return NewEdgeV(v)
 }
