@@ -44,3 +44,74 @@ func TestToValue(t *testing.T) {
 	assert.NoError(t, errFloat64)
 	assert.Equal(t, inputFloat64, valueFloat64.AsFloat64())
 }
+
+func TestVertexPropertyValue(t *testing.T) {
+	t.Parallel()
+
+	// GIVEN
+	key := "myprop"
+	value := TypedValue{Value: "some value"}
+	valueWithIDInput := []ValueWithID{ValueWithID{
+		ID:    "123",
+		Value: value,
+	}}
+
+	props := VertexPropertyMap{key: valueWithIDInput}
+
+	// WHEN
+	valueWithIDExtracted, exists := props.Value(key)
+
+	// THEN
+	assert.True(t, exists)
+	assert.Equal(t, value, valueWithIDExtracted.Value)
+}
+
+func TestVertexPropertyValueMissing(t *testing.T) {
+	t.Parallel()
+
+	// GIVEN
+	key := "myprop"
+	props := VertexPropertyMap{}
+
+	// WHEN
+	_, exists := props.Value(key)
+
+	// THEN
+	assert.False(t, exists)
+}
+
+func TestVertexPropertyValueEmpty(t *testing.T) {
+	t.Parallel()
+
+	// GIVEN
+	key := "myprop"
+	valueWithIDInput := []ValueWithID{}
+	props := VertexPropertyMap{key: valueWithIDInput}
+
+	// WHEN
+	_, exists := props.Value(key)
+
+	// THEN
+	assert.False(t, exists)
+}
+
+func TestVertexPropertyAsString(t *testing.T) {
+	t.Parallel()
+
+	// GIVEN
+	key := "myprop"
+	value := "some value"
+	valueWithIDInput := []ValueWithID{ValueWithID{
+		ID:    "123",
+		Value: TypedValue{Value: value},
+	}}
+
+	props := VertexPropertyMap{key: valueWithIDInput}
+
+	// WHEN
+	valueWithIDExtracted, err := props.AsString(key)
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Equal(t, value, valueWithIDExtracted)
+}
