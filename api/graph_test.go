@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewGraph(t *testing.T) {
@@ -48,6 +50,22 @@ func TestVBy(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V('%d')", graphName, id), v.String())
 }
 
+func TestVByUUID(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	id, err := uuid.NewV4()
+	require.NoError(t, err)
+
+	// WHEN
+	v := g.VByUUID(id)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V('%s')", graphName, id), v.String())
+}
+
 func TestAddV(t *testing.T) {
 
 	// GIVEN
@@ -61,4 +79,18 @@ func TestAddV(t *testing.T) {
 	// THEN
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.addV('%s')", graphName, label), v.String())
+}
+
+func TestE(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+
+	// WHEN
+	v := g.E()
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.E()", graphName), v.String())
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewVertex(t *testing.T) {
+func TestNewVertexG(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -16,6 +16,22 @@ func TestNewVertex(t *testing.T) {
 
 	// WHEN
 	v := NewVertexG(g)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, graphName, v.String())
+}
+
+func TestNewVertexE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+
+	// WHEN
+	v := NewVertexE(e)
 
 	// THEN
 	assert.NotNil(t, v)
@@ -154,6 +170,55 @@ func TestId(t *testing.T) {
 	// THEN
 	assert.NotNil(t, qb)
 	assert.Equal(t, fmt.Sprintf("%s.V().id()", graphName), qb.String())
+}
+
+func TestProfile(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	qb := v.Profile()
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.V().executionProfile()", graphName), qb.String())
+}
+
+func TestDrop(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	qb := v.Drop()
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.V().drop()", graphName), qb.String())
+}
+
+func TestAddE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	label := "mylabel"
+
+	// WHEN
+	qb := v.AddE(label)
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.V().addE('%s')", graphName, label), qb.String())
 }
 
 func TestChain(t *testing.T) {
