@@ -35,28 +35,18 @@ type Value struct {
 type VertexPropertyMap map[string][]Value
 
 type VertexProperty struct {
-	ID    ID     `mapstructure:"id"`
-	Value string `mapstructure:"value"`
+	Value
 	Label string `mapstructure:"label"`
-}
-
-type ID struct {
-	Value int  `mapstructure:"value"`
-	Type  Type `mapstructure:"type"`
 }
 
 func (p VertexProperty) String() string {
 	return fmt.Sprintf("[%s] '%s':'%s'", p.ID, p.Label, p.Value)
 }
 
-func (id ID) String() string {
-	return fmt.Sprintf("%d", id.Value)
-}
-
 func (v Vertex) String() string {
-	return fmt.Sprintf("%s %s (props %v)", v.ID, v.Label, v.Properties)
+	return fmt.Sprintf("%s %s (props %v - type %s", v.ID, v.Label, v.Properties, v.Type)
 }
 
 func (e Edge) String() string {
-	return fmt.Sprintf("%s (%s)-%s->%s (%s)", e.InVLabel, e.InV, e.Label, e.OutVLabel, e.OutV)
+	return fmt.Sprintf("%s (%s)-%s->%s (%s) - type %s", e.InVLabel, e.InV, e.Label, e.OutVLabel, e.OutV, e.Type)
 }

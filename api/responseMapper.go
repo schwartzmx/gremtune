@@ -35,44 +35,6 @@ func mapStructToType(source map[string]interface{}, target interface{}) error {
 	return nil
 }
 
-// untypedToType converts the given untyped value into a known type
-func untypedToType(source interface{}, target interface{}) error {
-
-	// extract the type information
-	typedValue, err := toValue(source)
-	if err != nil {
-		return err
-	}
-
-	// verify the type
-	if !isTypeMatching(target, typedValue.Type) {
-		return fmt.Errorf("Expected type %T but got %s", target, typedValue.Type)
-	}
-
-	// if it is not a complex type we can stop here and return the TypedValue
-	if !isComplexType(typedValue.Type) {
-		targetAsTypedValue, ok := target.(*TypedValue)
-		if !ok {
-			return fmt.Errorf("%T is not %T", target, typedValue)
-		}
-		targetAsTypedValue.Value = typedValue.Value
-		targetAsTypedValue.Type = typedValue.Type
-		return nil
-	}
-
-	// cast the extracted typed value into a mapstruct
-	mapStrct, ok := typedValue.Value.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", typedValue.Value, typedValue.Value)
-	}
-
-	// convert the mapstruct into the target type
-	if err := mapStructToType(mapStrct, &target); err != nil {
-		return err
-	}
-	return nil
-}
-
 // toTypeArray converts a given byte slice into the provided slice of one type
 // Example
 //
