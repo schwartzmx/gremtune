@@ -2,14 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/rs/zerolog"
 	gremcos "github.com/supplyon/gremcos"
+	"github.com/supplyon/gremcos/api"
 )
 
 func main() {
@@ -82,6 +85,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 			stopProcessing = true
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
+			os.Exit(0)
 		case <-healthCheckTicker.C:
 			err := cosmos.IsHealthy()
 			logEvent := logger.Debug()
@@ -96,19 +100,52 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 }
 
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
-	res, err := cosmos.Execute("g.V().executionProfile()")
+
+	g := api.NewGraph("g")
+	//query := g.AddV("User").Property("pk", "test").Property("email", "max.mustermann@example.com")
+	id, _ := uuid.FromString("8fff9259-09e6-4ea5-aaf8-250b31cc7f44")
+	query := g.VByUUID(id).ValueMap()
+	// 8fff9259-09e6-4ea5-aaf8-250b31cc7f44
+	//query = g.VBy(29)
+	logger.Info().Msgf("Query: %s", query)
+	res, err := cosmos.ExecuteQuery(query)
+	queryStr := "g.V('7404ba4e-be30-486e-88e1-b2f5937a9001').out()"
+	//queryStr = "g.V('7404ba4e-be30-486e-88e1-b2f5937a9001').addE('knows').to(g.V('7404ba4e-be30-486e-88e1-b2f5937a9001'))"
+	res, err = cosmos.Execute(queryStr)
+
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
 		return
 	}
 
 	for i, chunk := range res {
+
 		jsonEncodedResponse, err := json.Marshal(chunk.Result.Data)
 
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to encode the raw json into json")
 			continue
 		}
+
 		logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
+
+		v, _ := api.ToVertices(chunk.Result.Data)
+		fmt.Printf("V %v\n", v)
 	}
+
+	//res, err := cosmos.Execute("g.V().executionProfile()")
+	//if err != nil {
+	//	logger.Error().Err(err).Msg("Failed to execute a gremlin command")
+	//	return
+	//}
+	//
+	//for i, chunk := range res {
+	//	jsonEncodedResponse, err := json.Marshal(chunk.Result.Data)
+	//
+	//	if err != nil {
+	//		logger.Error().Err(err).Msg("Failed to encode the raw json into json")
+	//		continue
+	//	}
+	//	logger.Info().Str("reqID", chunk.RequestID).Int("chunk", i).Msgf("Received data: %s", jsonEncodedResponse)
+	//}
 }

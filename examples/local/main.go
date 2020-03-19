@@ -78,7 +78,7 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	// values
 	// []TypedValue
-	data := `["bla",true,{"@type":"g:Int32","@value":1287}]`
+	data := `["max.mustermann@example.com",1234,true]`
 	values, err := api.ToValues(json.RawMessage(data))
 	if err != nil {
 		panic(err)
@@ -86,20 +86,14 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	fmt.Println("\n###### VALUES ##########################################")
 	fmt.Printf("IN: %s\n", data)
 	fmt.Printf("OUT: %s\n", values)
-
+	//
 	// properties
 	// type, {id, label, value}
 	data = `[{
-	"@type":"g:VertexProperty",
-	"@value":{
-	"id":{
-		"@type":"g:Int64",
-		"@value":30
-	},
-	"value":"prop value",
-	"label":"prop key"
-	}
-}]`
+			"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk",
+			"value":"test",
+			"label":"pk"
+		}]`
 
 	properties, err := api.ToProperties(json.RawMessage(data))
 	if err != nil {
@@ -113,10 +107,11 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	// valueMap
 	// map[string]TypedValue
 	data = `[{
-	"string":["bla"],
-	"bool":[true],
-	"int":[{"@type":"g:Int32","@value":1287}]
-}]`
+			"pk":["test"],
+			"email":["max.mustermann@example.com"],
+			"number":[1234],
+			"bool":[true]
+		}]`
 	valueMap, err := api.ToValueMap(json.RawMessage(data))
 	if err != nil {
 		panic(err)
@@ -128,16 +123,22 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	// vertex
 	// type, {id, label}
+
 	data = `[{
-	"@type":"g:Vertex",
-	"@value":{
-	"id":{
-		"@type":"g:Int64",
-		"@value":29
-	},
-	"label":"user"
-	}
-}]`
+		"type":"vertex",
+		"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44",
+		"label":"User",
+		"properties":{
+			"pk":[{
+				"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk",
+				"value":"test"
+			}]
+			,"email":[{
+				"id":"80c0dfb2-b422-4005-829e-9c79acf4f642",
+				"value":"max.mustermann@example.com"
+			}]
+		}}]`
+
 	vertex, err := api.ToVertices(json.RawMessage(data))
 	if err != nil {
 		panic(err)
@@ -149,26 +150,15 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	// Edge
 	// type, {id, label, inVLabel,outVLabel,{id,id}}
-	data = `[{
-	"@type":"g:Edge",
-	"@value":{
-		"id":{
-			"@type":"g:Int64",
-			"@value":38
-		},
-		"label":"knows",
-		"inVLabel":"user",
-		"outVLabel":"user",
-		"inV":{
-			"@type":"g:Int64",
-			"@value":29
-		},
-		"outV":{
-			"@type":"g:Int64",
-			"@value":33
-		}
-	}
-}]`
+	data = `[
+		id:9d36e5e8-24d4-4086-800e-7429741c1fa6,
+		label:knows,
+		type:edge,
+		inVLabel:user,
+		outVLabel:user,
+		inV:7404ba4e-be30-486e-88e1-b2f5937a9001,
+		outV:7404ba4e-be30-486e-88e1-b2f5937a9001
+		]`
 	edge, err := api.ToEdges(json.RawMessage(data))
 	if err != nil {
 		panic(err)

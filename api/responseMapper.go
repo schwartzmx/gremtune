@@ -20,7 +20,7 @@ func mapStructToType(source map[string]interface{}, target interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		Result:           target,
 		WeaklyTypedInput: true,
-		ErrorUnused:      true,
+		//ErrorUnused:      true,
 	}
 
 	decoder, err := mapstructure.NewDecoder(config)
@@ -103,9 +103,16 @@ func toTypeArray(input []byte, target interface{}) error {
 	// handling of complex types
 	for _, element := range parsedInput {
 		switch targetValue := target.(type) {
-		case *[]VertexProperty:
-			var property VertexProperty
-			if err := untypedToType(element, &property); err != nil {
+		case *[]Property:
+			fmt.Printf("DDD %T, %v\n", element, element)
+
+			mapStrct, ok := element.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", element, element)
+			}
+
+			var property Property
+			if err := mapStructToType(mapStrct, &property); err != nil {
 				return err
 			}
 			*targetValue = append(*targetValue, property)
@@ -139,8 +146,8 @@ func ToValues(input []byte) ([]TypedValue, error) {
 	return typedValues, nil
 }
 
-func ToProperties(input []byte) ([]VertexProperty, error) {
-	var properties []VertexProperty
+func ToProperties(input []byte) ([]Property, error) {
+	var properties []Property
 	if err := toTypeArray(input, &properties); err != nil {
 		return nil, err
 	}

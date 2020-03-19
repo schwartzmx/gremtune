@@ -1,6 +1,14 @@
 package api
 
-import "fmt"
+import (
+	"fmt"
+)
+
+type Property struct {
+	ID    string `mapstructure:"id"`
+	Value string `mapstructure:"value"`
+	Label string `mapstructure:"label"`
+}
 
 type VertexProperty struct {
 	ID    ID     `mapstructure:"id"`
@@ -23,8 +31,8 @@ type Vertex struct {
 }
 
 type ID struct {
-	Value int  `mapstructure:"@value"`
-	Type  Type `mapstructure:"@type"`
+	Value int  `mapstructure:"value"`
+	Type  Type `mapstructure:"type"`
 }
 
 func (p VertexProperty) String() string {

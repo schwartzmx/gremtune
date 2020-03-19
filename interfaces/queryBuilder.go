@@ -1,5 +1,7 @@
 package interfaces
 
+import "github.com/gofrs/uuid"
+
 // QueryBuilder can be used to generate queries for the cosmos db
 type QueryBuilder interface {
 	String() string
@@ -13,6 +15,8 @@ type Graph interface {
 	V() Vertex
 	// VBy adds .V(<id>), e.g. .V(123), to the query. The query call returns the vertex with the given id.
 	VBy(id int) Vertex
+	// VByUUID adds .V(<id>), e.g. .V('8fff9259-09e6-4ea5-aaf8-250b31cc7f44'), to the query. The query call returns the vertex with the given id.
+	VByUUID(id uuid.UUID) Vertex
 	// AddV adds .addV('<label>'), e.g. .addV('user'), to the query. The query call adds a vertex with the given label and returns that vertex.
 	AddV(label string) Vertex
 }

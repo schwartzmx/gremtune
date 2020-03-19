@@ -61,8 +61,8 @@ func isTypeMatching(source interface{}, expectedType Type) bool {
 
 // TypedValue is a value with a cosmos db type
 type TypedValue struct {
-	Value interface{} `mapstructure:"@value"`
-	Type  Type        `mapstructure:"@type"`
+	Value interface{} `mapstructure:"value"`
+	Type  Type        `mapstructure:"type"`
 }
 
 // toValue converts the given input to a TypedValue
@@ -91,6 +91,11 @@ func toValue(input interface{}) (TypedValue, error) {
 	case bool:
 		return TypedValue{
 			Type:  TypeBool,
+			Value: v,
+		}, nil
+	case float64:
+		return TypedValue{
+			Type:  TypeFloat64,
 			Value: v,
 		}, nil
 	case map[string]interface{}:
@@ -169,6 +174,8 @@ func (tv TypedValue) String() string {
 		return fmt.Sprintf("%d", tv.AsInt32())
 	case TypeBool:
 		return fmt.Sprintf("%t", tv.AsBool())
+	case TypeFloat64:
+		return fmt.Sprintf("%f", tv.AsFloat64())
 	case TypeString:
 		return tv.AsString()
 	default:
