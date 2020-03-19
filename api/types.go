@@ -125,3 +125,24 @@ func (v Vertex) String() string {
 func (e Edge) String() string {
 	return fmt.Sprintf("%s (%s)-%s->%s (%s) - type %s", e.InVLabel, e.InV, e.Label, e.OutVLabel, e.OutV, e.Type)
 }
+
+func (vpm VertexPropertyMap) Value(key string) (ValueWithID, bool) {
+	value, ok := vpm[key]
+	if !ok {
+		return ValueWithID{}, false
+	}
+
+	if len(value) == 0 {
+		return ValueWithID{}, false
+	}
+	return value[0], true
+}
+
+func (vpm VertexPropertyMap) AsString(key string) (string, error) {
+	value, ok := vpm.Value(key)
+	if !ok {
+		return "", fmt.Errorf("%s does not exist", key)
+	}
+
+	return value.Value.AsStringE()
+}
