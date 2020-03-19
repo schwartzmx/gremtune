@@ -138,7 +138,7 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	"label":"user"
 	}
 }]`
-	vertex, err := api.ToVertex(json.RawMessage(data))
+	vertex, err := api.ToVertices(json.RawMessage(data))
 	if err != nil {
 		panic(err)
 	}
@@ -169,7 +169,7 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 		}
 	}
 }]`
-	edge, err := api.ToEdge(json.RawMessage(data))
+	edge, err := api.ToEdges(json.RawMessage(data))
 	if err != nil {
 		panic(err)
 	}

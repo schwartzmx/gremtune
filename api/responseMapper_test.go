@@ -6,6 +6,91 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestToTypeArrayTypedValues(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	var typedValues []TypedValue
+	data := `["bla",true,{"@type":"g:Int32","@value":1287}]`
+	err := toTypeArray([]byte(data), &typedValues)
+
+	assert.NoError(t, err)
+	assert.Len(t, typedValues, 3)
+	assert.Equal(t, "bla", typedValues[0].AsString())
+	assert.True(t, typedValues[1].AsBool())
+	assert.Equal(t, int32(1287), typedValues[2].AsInt32())
+}
+
+func TestToTypeArrayProperties(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	var properties []VertexProperty
+	dataProperties := `[{
+		"@type":"g:VertexProperty",
+		"@value":{
+		"id":{
+			"@type":"g:Int64",
+			"@value":30
+		},
+		"value":"prop value",
+		"label":"prop key"
+		}
+	}]`
+
+	var vertices []Vertex
+	dataVertices := `[{
+		"@type":"g:Vertex",
+		"@value":{
+		"id":{
+			"@type":"g:Int64",
+			"@value":30
+		},
+		"label":"vertex label"
+		}
+	}]`
+	var edges []Edge
+	dataEdges := `[{
+		"@type":"g:Edge",
+		"@value":{
+			"id":{
+				"@type":"g:Int64",
+				"@value":38
+			},
+			"label":"knows",
+			"inVLabel":"user1",
+			"outVLabel":"user2",
+			"inV":{
+				"@type":"g:Int64",
+				"@value":29
+			},
+			"outV":{
+				"@type":"g:Int64",
+				"@value":33
+			}
+		}
+	}]`
+
+	// WHEN
+	errProperties := toTypeArray([]byte(dataProperties), &properties)
+	errVertices := toTypeArray([]byte(dataVertices), &vertices)
+	errEdges := toTypeArray([]byte(dataEdges), &edges)
+
+	// THEN
+	assert.NoError(t, errProperties)
+	assert.Len(t, properties, 1)
+	assert.Equal(t, "prop value", properties[0].Value)
+	assert.Equal(t, "prop key", properties[0].Label)
+
+	assert.NoError(t, errVertices)
+	assert.Len(t, vertices, 1)
+	assert.Equal(t, "vertex label", vertices[0].Label)
+
+	assert.NoError(t, errEdges)
+	assert.Len(t, edges, 1)
+	assert.Equal(t, "knows", edges[0].Label)
+	assert.Equal(t, "user1", edges[0].InVLabel)
+	assert.Equal(t, "user2", edges[0].OutVLabel)
+}
+
 func TestUntypedToComplexType(t *testing.T) {
 	t.Parallel()
 	// GIVEN

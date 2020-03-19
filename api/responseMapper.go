@@ -73,89 +73,96 @@ func untypedToType(source interface{}, target interface{}) error {
 	return nil
 }
 
-func ToValues(input []byte) ([]TypedValue, error) {
+// toTypeArray converts a given byte slice into the provided slice of one type
+// Example
+//
+// var vertices []Vertex
+//
+// err := toTypeArray(data, &vertices)
+func toTypeArray(input []byte, target interface{}) error {
 	if input == nil {
-		return nil, fmt.Errorf("Data is nil")
+		return fmt.Errorf("Data is nil")
 	}
 
 	parsedInput := make([]interface{}, 0)
 	if err := json.Unmarshal(input, &parsedInput); err != nil {
-		return nil, err
+		return err
 	}
 
-	return toValues(parsedInput)
+	// just for the primitive type
+	switch targetValue := target.(type) {
+	case *[]TypedValue:
+		values, err := toValues(parsedInput)
+		if err != nil {
+			return err
+		}
+		*targetValue = append(*targetValue, values...)
+		return nil
+	}
+
+	// handling of complex types
+	for _, element := range parsedInput {
+		switch targetValue := target.(type) {
+		case *[]VertexProperty:
+			var property VertexProperty
+			if err := untypedToType(element, &property); err != nil {
+				return err
+			}
+			*targetValue = append(*targetValue, property)
+			return nil
+		case *[]Edge:
+			var edge Edge
+			if err := untypedToType(element, &edge); err != nil {
+				return err
+			}
+			*targetValue = append(*targetValue, edge)
+			return nil
+		case *[]Vertex:
+			var vertex Vertex
+			if err := untypedToType(element, &vertex); err != nil {
+				return err
+			}
+			*targetValue = append(*targetValue, vertex)
+			return nil
+		default:
+			return fmt.Errorf("Unexpected type %T", target)
+		}
+	}
+	return nil
+}
+
+func ToValues(input []byte) ([]TypedValue, error) {
+	var typedValues []TypedValue
+	if err := toTypeArray(input, &typedValues); err != nil {
+		return nil, err
+	}
+	return typedValues, nil
 }
 
 func ToProperties(input []byte) ([]VertexProperty, error) {
-	if input == nil {
-		return nil, fmt.Errorf("Input is nil")
-	}
-
-	parsedInput := make([]interface{}, 0)
-	if err := json.Unmarshal(input, &parsedInput); err != nil {
+	var properties []VertexProperty
+	if err := toTypeArray(input, &properties); err != nil {
 		return nil, err
 	}
-
-	result := make([]VertexProperty, 0, len(parsedInput))
-	for _, element := range parsedInput {
-		var property VertexProperty
-		if err := untypedToType(element, &property); err != nil {
-			return nil, err
-		}
-		result = append(result, property)
-	}
-
-	return result, nil
+	return properties, nil
 }
 
-func ToVertex(input []byte) ([]Vertex, error) {
-	if input == nil {
-		return nil, fmt.Errorf("Data is nil")
-	}
-
-	parsedInput := make([]interface{}, 0)
-	if err := json.Unmarshal(input, &parsedInput); err != nil {
+func ToVertices(input []byte) ([]Vertex, error) {
+	var vertices []Vertex
+	if err := toTypeArray(input, &vertices); err != nil {
 		return nil, err
 	}
-
-	result := make([]Vertex, 0, len(parsedInput))
-	for _, element := range parsedInput {
-		var vertex Vertex
-
-		if err := untypedToType(element, &vertex); err != nil {
-			return nil, err
-		}
-
-		result = append(result, vertex)
-	}
-
-	return result, nil
+	return vertices, nil
 }
 
-func ToEdge(input []byte) ([]Edge, error) {
-	if input == nil {
-		return nil, fmt.Errorf("Data is nil")
-	}
-
-	parsedInput := make([]interface{}, 0)
-	if err := json.Unmarshal(input, &parsedInput); err != nil {
+func ToEdges(input []byte) ([]Edge, error) {
+	var edges []Edge
+	if err := toTypeArray(input, &edges); err != nil {
 		return nil, err
 	}
-
-	result := make([]Edge, 0, len(parsedInput))
-	for _, element := range parsedInput {
-		var edge Edge
-		if err := untypedToType(element, &edge); err != nil {
-			return nil, err
-		}
-		result = append(result, edge)
-	}
-
-	return result, nil
+	return edges, nil
 }
 
-// TODO: do the unmarshalling into the []map[string]interface{}/ map[string]interface{}
-// outside of the concrete methods if possible
 func ToValueMap(input []byte) (map[string]TypedValue, error) {
 	if input == nil {
 		return nil, fmt.Errorf("Data is nil")
