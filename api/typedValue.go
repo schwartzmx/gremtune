@@ -14,11 +14,6 @@ const (
 	TypeEdge   Type = "edge"
 )
 
-var complexTypes = map[Type]struct{}{
-	TypeVertex: {},
-	TypeEdge:   {},
-}
-
 // TypedValue is a value with a cosmos db type
 type TypedValue struct {
 	Value interface{}

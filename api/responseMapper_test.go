@@ -55,7 +55,7 @@ func TestToProperties(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, properties, 1)
 	assert.Equal(t, "8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk", properties[0].ID)
-	assert.Equal(t, "prop value", properties[0].Value)
+	assert.Equal(t, "prop value", properties[0].Value.AsString())
 	assert.Equal(t, "prop key", properties[0].Label)
 }
 
@@ -118,6 +118,7 @@ func TestToEdges(t *testing.T) {
 	assert.Equal(t, "7404ba4e-be30-486e-88e1-b2f5937a9001", edges[0].InV)
 	assert.Equal(t, "1111ba4e-be30-486e-88e1-b2f5937a9001", edges[0].OutV)
 }
+
 func TestToTypeArrayTypedValues(t *testing.T) {
 	t.Parallel()
 	// GIVEN
@@ -181,7 +182,7 @@ func TestToTypeArrayProperties(t *testing.T) {
 	// THEN
 	assert.NoError(t, errProperties)
 	assert.Len(t, properties, 1)
-	assert.Equal(t, "prop value", properties[0].Value)
+	assert.Equal(t, "prop value", properties[0].Value.AsString())
 	assert.Equal(t, "prop key", properties[0].Label)
 
 	assert.NoError(t, errVertices)

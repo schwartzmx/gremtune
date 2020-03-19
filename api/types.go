@@ -5,9 +5,9 @@ import (
 )
 
 type Property struct {
-	ID    string `mapstructure:"id"`
-	Value string `mapstructure:"value"`
-	Label string `mapstructure:"label"`
+	ID    string     `mapstructure:"id"`
+	Value TypedValue `mapstructure:"value,squash"`
+	Label string     `mapstructure:"label"`
 }
 
 type Edge struct {
@@ -27,15 +27,15 @@ type Vertex struct {
 	Properties VertexPropertyMap `mapstructure:"properties"`
 }
 
-type Value struct {
-	ID    string      `mapstructure:"id"`
-	Value interface{} `mapstructure:"value"`
+type ValueWithID struct {
+	ID    string     `mapstructure:"id"`
+	Value TypedValue `mapstructure:"value,squash"`
 }
 
-type VertexPropertyMap map[string][]Value
+type VertexPropertyMap map[string][]ValueWithID
 
 type VertexProperty struct {
-	Value
+	ValueWithID
 	Label string `mapstructure:"label"`
 }
 
