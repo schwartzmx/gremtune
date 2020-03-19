@@ -8,7 +8,6 @@ import (
 
 // Property represents the cosmos db type for a property.
 // As it would be returned by a call to .properties().
-// As it would be returned by a call to .properties().
 type Property struct {
 	ID    string     `mapstructure:"id"`
 	Value TypedValue `mapstructure:"value,squash"`
@@ -43,7 +42,7 @@ type ValueWithID struct {
 	Value TypedValue `mapstructure:"value,squash"`
 }
 
-type VertexPropertyMap map[string][]ValueWithID
+type VertexPropertyMap map[string]ValueWithID
 
 // Type defines the cosmos db complex types
 type Type string
@@ -131,11 +130,7 @@ func (vpm VertexPropertyMap) Value(key string) (ValueWithID, bool) {
 	if !ok {
 		return ValueWithID{}, false
 	}
-
-	if len(value) == 0 {
-		return ValueWithID{}, false
-	}
-	return value[0], true
+	return value, true
 }
 
 func (vpm VertexPropertyMap) AsString(key string) (string, error) {

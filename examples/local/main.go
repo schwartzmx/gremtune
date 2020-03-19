@@ -42,7 +42,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	// create tickers for doing health check and queries
-	queryTicker := time.NewTicker(time.Millisecond * 20)
+	queryTicker := time.NewTicker(time.Second * 2)
 	healthCheckTicker := time.NewTicker(time.Second * 20)
 
 	// ensure to clean up as soon as the processLoop has been left
@@ -60,7 +60,6 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 			stopProcessing = true
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
-			os.Exit(1)
 		case <-healthCheckTicker.C:
 			err := cosmos.IsHealthy()
 			logEvent := logger.Debug()

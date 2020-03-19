@@ -31,6 +31,7 @@ func TestResponseToValues(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, values, 3)
 	assert.Equal(t, "max.mustermann@example.com", values[0].AsString())
+	assert.Equal(t, int32(1234), values[1].AsInt32())
 	assert.True(t, values[2].AsBool())
 }
 

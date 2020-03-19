@@ -12,7 +12,7 @@ func Test_toValues(t *testing.T) {
 	// GIVEN
 	inputStr := "hello"
 	inputBool := true
-	inputFloat64 := 12345
+	inputFloat64 := 123.45
 	input := []interface{}{inputStr, inputBool, inputFloat64}
 
 	// WHEN
@@ -21,6 +21,9 @@ func Test_toValues(t *testing.T) {
 	// THEN
 	assert.NoError(t, err)
 	assert.Len(t, values, 3)
+	assert.Equal(t, inputStr, values[0].AsString())
+	assert.True(t, values[1].AsBool())
+	assert.Equal(t, inputFloat64, values[2].AsFloat64())
 }
 
 func TestToValue(t *testing.T) {
@@ -51,10 +54,10 @@ func TestVertexPropertyValue(t *testing.T) {
 	// GIVEN
 	key := "myprop"
 	value := TypedValue{Value: "some value"}
-	valueWithIDInput := []ValueWithID{ValueWithID{
+	valueWithIDInput := ValueWithID{
 		ID:    "123",
 		Value: value,
-	}}
+	}
 
 	props := VertexPropertyMap{key: valueWithIDInput}
 
@@ -85,7 +88,7 @@ func TestVertexPropertyValueEmpty(t *testing.T) {
 
 	// GIVEN
 	key := "myprop"
-	valueWithIDInput := []ValueWithID{}
+	valueWithIDInput := ValueWithID{}
 	props := VertexPropertyMap{key: valueWithIDInput}
 
 	// WHEN
@@ -101,10 +104,10 @@ func TestVertexPropertyAsString(t *testing.T) {
 	// GIVEN
 	key := "myprop"
 	value := "some value"
-	valueWithIDInput := []ValueWithID{ValueWithID{
+	valueWithIDInput := ValueWithID{
 		ID:    "123",
 		Value: TypedValue{Value: value},
-	}}
+	}
 
 	props := VertexPropertyMap{key: valueWithIDInput}
 
@@ -122,10 +125,10 @@ func TestVertexPropertyAsInt32(t *testing.T) {
 	// GIVEN
 	key := "myprop"
 	value := int32(12345)
-	valueWithIDInput := []ValueWithID{ValueWithID{
+	valueWithIDInput := ValueWithID{
 		ID:    "123",
 		Value: TypedValue{Value: value},
-	}}
+	}
 
 	props := VertexPropertyMap{key: valueWithIDInput}
 

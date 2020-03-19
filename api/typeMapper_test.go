@@ -22,6 +22,8 @@ func TestToValueMap(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, valueMap, 3)
 	assert.True(t, valueMap["bool value"].AsBool())
+	assert.Equal(t, int32(1234), valueMap["a number"].AsInt32())
+	assert.Equal(t, "max.mustermann@example.com", valueMap["email"].AsString())
 }
 
 func TestToValues(t *testing.T) {
@@ -36,6 +38,7 @@ func TestToValues(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, values, 3)
 	assert.Equal(t, "max.mustermann@example.com", values[0].AsString())
+	assert.Equal(t, int32(1234), values[1].AsInt32())
 	assert.True(t, values[2].AsBool())
 }
 
@@ -196,89 +199,3 @@ func TestToTypeArrayProperties(t *testing.T) {
 	assert.Equal(t, "user1", edges[0].InVLabel)
 	assert.Equal(t, "user2", edges[0].OutVLabel)
 }
-
-//func TestUntypedToComplexType(t *testing.T) {
-//	t.Parallel()
-//	// GIVEN
-//	label := "thelabel"
-//	id := 11
-//	inputVertex := map[string]interface{}{
-//		"@type": TypeVertex,
-//		"@value": map[string]interface{}{
-//			"id": map[string]interface{}{
-//				"@type":  TypeVertex,
-//				"@value": id,
-//			},
-//			"label": label,
-//		},
-//	}
-//	var vertex Vertex
-//
-//	inputTValue1 := "hello"
-//	var tValue1 TypedValue
-//
-//	// WHEN
-//	errVertex := untypedToType(inputVertex, &vertex)
-//	errTValue1 := untypedToType(inputTValue1, &tValue1)
-//
-//	// THEN
-//	assert.NoError(t, errVertex)
-//	assert.Equal(t, id, vertex.ID.Value)
-//	assert.Equal(t, label, vertex.Label)
-//
-//	assert.NoError(t, errTValue1)
-//	assert.Equal(t, "hello", tValue1.AsString())
-//}
-//
-//func TestUntypedToComplexTypeFail(t *testing.T) {
-//	t.Parallel()
-//	// GIVEN
-//	inputInvalid1 := map[string]interface{}{
-//		"someting": "wrong",
-//	}
-//	inputInvalid2 := 1234
-//	inputInvalid3 := map[string]interface{}{
-//		"@type":  TypeVertex,
-//		"@value": 1234,
-//	}
-//	inputWrongType := map[string]interface{}{
-//		"@type": TypeString,
-//		"@value": map[string]interface{}{
-//			"id": map[string]interface{}{
-//				"@type":  TypeVertex,
-//				"@value": 11,
-//			},
-//			"label": "label",
-//			"value": "value",
-//		},
-//	}
-//
-//	inputWrongTarget := map[string]interface{}{
-//		"@type": TypeString,
-//		"@value": map[string]interface{}{
-//			"id": map[string]interface{}{
-//				"@type":  TypeVertex,
-//				"@value": 11,
-//			},
-//			"label": "label",
-//			"value": "value",
-//		},
-//	}
-//
-//	var vertex Vertex
-//
-//	// WHEN
-//	errInputInvalid1 := untypedToType(inputInvalid1, &vertex)
-//	errInputInvalid2 := untypedToType(inputInvalid2, &vertex)
-//	errInputInvalid3 := untypedToType(inputInvalid3, &vertex)
-//	errInputWrongType := untypedToType(inputWrongType, &vertex)
-//	errInputWrongTarget := untypedToType(inputWrongTarget, &vertex)
-//
-//	// THEN
-//	assert.Error(t, errInputInvalid1)
-//	assert.Error(t, errInputInvalid2)
-//	assert.Error(t, errInputInvalid3)
-//	assert.Error(t, errInputWrongType)
-//	assert.Error(t, errInputWrongTarget)
-//}
-//

@@ -38,6 +38,23 @@ func TestNewEdgeV(t *testing.T) {
 	assert.Equal(t, graphName, e.String())
 }
 
+func TestAdd(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+
+	// WHEN
+	edge := e.Add(NewSimpleQB(".test()"))
+
+	// THEN
+	assert.NotNil(t, edge)
+	assert.Equal(t, fmt.Sprintf("%s.test()", graphName), e.String())
+}
+
 func TestTo(t *testing.T) {
 
 	// GIVEN

@@ -68,6 +68,7 @@ func (e *edge) InV() interfaces.Vertex {
 	return NewVertexE(e)
 }
 
+// Profile adds ..executionProfile(), to the query. The query call will return profiling information of the executed query
 func (e *edge) Profile() interfaces.QueryBuilder {
 	return e.Add(NewSimpleQB(".executionProfile()"))
 }
