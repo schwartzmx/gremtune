@@ -27,6 +27,15 @@ func NewVertex(g interfaces.Graph) interfaces.Vertex {
 	}
 }
 
+func NewVertexE(e interfaces.Edge) interfaces.Vertex {
+	queryBuilders := make([]interfaces.QueryBuilder, 0)
+	queryBuilders = append(queryBuilders, e)
+
+	return &vertex{
+		builders: queryBuilders,
+	}
+}
+
 // Add can be used to add a custom QueryBuilder
 // e.g. g.V().Add(NewSimpleQB(".myCustomCall('%s')",label))
 func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {
@@ -72,4 +81,15 @@ func (v *vertex) Property(key, value string) interfaces.Vertex {
 // Id adds .id()
 func (v *vertex) Id() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".id()"))
+}
+
+// Drop adds .drop(), to the query. The query call will drop/ delete all referenced entities
+func (v *vertex) Drop() interfaces.QueryBuilder {
+	return v.Add(NewSimpleQB(".drop()"))
+}
+
+// AddE adds .addE(<label>), to the query. The query call will be the first step to add an edge
+func (v *vertex) AddE(label string) interfaces.Edge {
+	v.Add(NewSimpleQB(".addE('%s')", label))
+	return NewEdge(v)
 }

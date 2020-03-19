@@ -25,6 +25,7 @@ type Graph interface {
 // queries on vertex level
 type Vertex interface {
 	QueryBuilder
+	Dropper
 	// HasLabel adds .hasLabel('<label>'), e.g. .hasLabel('user'), to the query. The query call returns all vertices with the given label.
 	HasLabel(vertexLabel string) Vertex
 	// Property adds .property('<key>','<value>'), e.g. .property('name','hans'), to the query. The query call will add the given property.
@@ -45,4 +46,33 @@ type Vertex interface {
 	Add(builder QueryBuilder) Vertex
 	// Id adds .id(), to the query. The query call returns the id of the vertex.
 	Id() QueryBuilder
+
+	// AddE adds .addE(<label>), to the query. The query call will be the first step to add an edge
+	AddE(label string) Edge
+}
+
+type Path interface {
+	QueryBuilder
+}
+
+type Edge interface {
+	QueryBuilder
+	Dropper
+
+	// To adds .to(<vertex>), to the query. The query call will be the second step to add an edge
+	To(v Vertex) Edge
+	// From adds .from(<vertex>), to the query. The query call will be the second step to add an edge
+	From(v Vertex) Edge
+
+	// OutV adds .outV(), to the query. The query call will return the vertices on the outgoing side of this edge
+	OutV() Vertex
+	// InV adds .inV(), to the query. The query call will return the vertices on the incoming side of this edge
+	InV() Vertex
+
+	Add(builder QueryBuilder) Edge
+}
+
+type Dropper interface {
+	// Drop adds .drop(), to the query. The query call will drop/ delete all referenced entities
+	Drop() QueryBuilder
 }
