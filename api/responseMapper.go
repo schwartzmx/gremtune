@@ -20,7 +20,7 @@ func mapStructToType(source map[string]interface{}, target interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		Result:           target,
 		WeaklyTypedInput: true,
-		//ErrorUnused:      true,
+		ErrorUnused:      true,
 	}
 
 	decoder, err := mapstructure.NewDecoder(config)
@@ -104,8 +104,6 @@ func toTypeArray(input []byte, target interface{}) error {
 	for _, element := range parsedInput {
 		switch targetValue := target.(type) {
 		case *[]Property:
-			fmt.Printf("DDD %T, %v\n", element, element)
-
 			mapStrct, ok := element.(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", element, element)
@@ -125,12 +123,26 @@ func toTypeArray(input []byte, target interface{}) error {
 			*targetValue = append(*targetValue, edge)
 			return nil
 		case *[]Vertex:
+			fmt.Printf("DDD %T, %v\n", element, element)
+
+			mapStrct, ok := element.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", element, element)
+			}
+
 			var vertex Vertex
-			if err := untypedToType(element, &vertex); err != nil {
+			if err := mapStructToType(mapStrct, &vertex); err != nil {
 				return err
 			}
 			*targetValue = append(*targetValue, vertex)
 			return nil
+
+			//var vertex Vertex
+			//if err := untypedToType(element, &vertex); err != nil {
+			//	return err
+			//}
+			//*targetValue = append(*targetValue, vertex)
+			//return nil
 		default:
 			return fmt.Errorf("Unexpected type %T", target)
 		}

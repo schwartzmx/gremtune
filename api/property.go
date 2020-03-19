@@ -10,12 +10,6 @@ type Property struct {
 	Label string `mapstructure:"label"`
 }
 
-type VertexProperty struct {
-	ID    ID     `mapstructure:"id"`
-	Value string `mapstructure:"value"`
-	Label string `mapstructure:"label"`
-}
-
 type Edge struct {
 	ID        ID     `mapstructure:"id"`
 	Label     string `mapstructure:"label"`
@@ -26,7 +20,22 @@ type Edge struct {
 }
 
 type Vertex struct {
+	Type       Type              `mapstructure:"type"`
+	ID         string            `mapstructure:"id"`
+	Label      string            `mapstructure:"label"`
+	Properties VertexPropertyMap `mapstructure:"properties"`
+}
+
+type Value struct {
+	ID    string      `mapstructure:"id"`
+	Value interface{} `mapstructure:"value"`
+}
+
+type VertexPropertyMap map[string][]Value
+
+type VertexProperty struct {
 	ID    ID     `mapstructure:"id"`
+	Value string `mapstructure:"value"`
 	Label string `mapstructure:"label"`
 }
 

@@ -63,6 +63,8 @@ func isTypeMatching(source interface{}, expectedType Type) bool {
 type TypedValue struct {
 	Value interface{} `mapstructure:"value"`
 	Type  Type        `mapstructure:"type"`
+	ID    string      `mapstructure:"id"`
+	Label string      `mapstructure:"id"`
 }
 
 // toValue converts the given input to a TypedValue
