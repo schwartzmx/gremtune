@@ -146,3 +146,12 @@ func (vpm VertexPropertyMap) AsString(key string) (string, error) {
 
 	return value.Value.AsStringE()
 }
+
+func (vpm VertexPropertyMap) AsInt32(key string) (int32, error) {
+	value, ok := vpm.Value(key)
+	if !ok {
+		return 0, fmt.Errorf("%s does not exist", key)
+	}
+
+	return value.Value.AsInt32E()
+}

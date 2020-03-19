@@ -115,3 +115,24 @@ func TestVertexPropertyAsString(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, value, valueWithIDExtracted)
 }
+
+func TestVertexPropertyAsInt32(t *testing.T) {
+	t.Parallel()
+
+	// GIVEN
+	key := "myprop"
+	value := int32(12345)
+	valueWithIDInput := []ValueWithID{ValueWithID{
+		ID:    "123",
+		Value: TypedValue{Value: value},
+	}}
+
+	props := VertexPropertyMap{key: valueWithIDInput}
+
+	// WHEN
+	valueWithIDExtracted, err := props.AsInt32(key)
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Equal(t, value, valueWithIDExtracted)
+}
