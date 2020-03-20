@@ -72,3 +72,13 @@ func (e *edge) InV() interfaces.Vertex {
 func (e *edge) Profile() interfaces.QueryBuilder {
 	return e.Add(NewSimpleQB(".executionProfile()"))
 }
+
+// HasLabel adds .hasLabel('<label>'), e.g. .hasLabel('user'), to the query. The query call returns all edges with the given label.
+func (e *edge) HasLabel(label string) interfaces.Edge {
+	return e.Add(NewSimpleQB(".hasLabel('%s')", label))
+}
+
+// Count adds .count(), to the query. The query call will return the number of entities found in the query.
+func (e *edge) Count() interfaces.QueryBuilder {
+	return e.Add(NewSimpleQB(".count()"))
+}

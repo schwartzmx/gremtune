@@ -156,3 +156,38 @@ func TestOutV(t *testing.T) {
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.outV()", graphName), e.String())
 }
+
+func TestEdgeHasLabel(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	label := "label"
+
+	// WHEN
+	e = e.HasLabel(label)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.hasLabel('%s')", graphName, label), e.String())
+}
+
+func TestEdgeCount(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+
+	// WHEN
+	qb := e.Count()
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.count()", graphName), qb.String())
+}

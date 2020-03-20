@@ -30,6 +30,7 @@ type Vertex interface {
 	QueryBuilder
 	Dropper
 	Profiler
+	Counter
 
 	// HasLabel adds .hasLabel('<label>'), e.g. .hasLabel('user'), to the query. The query call returns all vertices with the given label.
 	HasLabel(vertexLabel string) Vertex
@@ -59,12 +60,19 @@ type Vertex interface {
 
 	// AddE adds .addE(<label>), to the query. The query call will be the first step to add an edge
 	AddE(label string) Edge
+
+	// OutE adds .outE(), to the query. The query call returns all outgoing edges of the Vertex
+	OutE() Edge
+
+	// InE adds .inE(), to the query. The query call returns all incoming edges of the Vertex
+	InE() Edge
 }
 
 type Edge interface {
 	QueryBuilder
 	Dropper
 	Profiler
+	Counter
 
 	// To adds .to(<vertex>), to the query. The query call will be the second step to add an edge
 	To(v Vertex) Edge
@@ -75,8 +83,12 @@ type Edge interface {
 	OutV() Vertex
 	// InV adds .inV(), to the query. The query call will return the vertices on the incoming side of this edge
 	InV() Vertex
-
+	// Add can be used to add a custom QueryBuilder
+	// e.g. g.V().Add(NewSimpleQB(".myCustomCall('%s')",label))
 	Add(builder QueryBuilder) Edge
+
+	// HasLabel adds .hasLabel('<label>'), e.g. .hasLabel('user'), to the query. The query call returns all edges with the given label.
+	HasLabel(label string) Edge
 }
 
 type Dropper interface {
@@ -85,6 +97,11 @@ type Dropper interface {
 }
 
 type Profiler interface {
-	// Profile adds ..executionProfile(), to the query. The query call will return profiling information of the executed query
+	// Profile adds .executionProfile(), to the query. The query call will return profiling information of the executed query
 	Profile() QueryBuilder
+}
+
+type Counter interface {
+	// Count adds .count(), to the query. The query call will return the number of entities found in the query.
+	Count() QueryBuilder
 }
