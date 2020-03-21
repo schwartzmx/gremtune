@@ -277,3 +277,54 @@ func TestChain(t *testing.T) {
 	assert.NotNil(t, qb)
 	assert.Equal(t, fmt.Sprintf("%s.addV('%s').property('%s','%s').property('%s','%s').properties()", graphName, vertrexlabel, key1, value1, key2, value2), qb.String())
 }
+
+func TestVertexCount(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+
+	// WHEN
+	qb := v.Count()
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.count()", graphName), qb.String())
+}
+
+func TestOutE(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+
+	// WHEN
+	e := v.OutE()
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.outE()", graphName), e.String())
+}
+
+func TestInE(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+
+	// WHEN
+	e := v.InE()
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.inE()", graphName), e.String())
+}

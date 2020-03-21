@@ -105,3 +105,20 @@ func (v *vertex) HasInt(key string, value int) interfaces.Vertex {
 func (v *vertex) PropertyInt(key string, value int) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".property('%s',%d)", key, value))
 }
+
+// OutE adds .outE(), to the query. The query call returns all outgoing edges of the Vertex
+func (v *vertex) OutE() interfaces.Edge {
+	v.Add(NewSimpleQB(".outE()"))
+	return NewEdgeV(v)
+}
+
+// InE adds .inE(), to the query. The query call returns all incoming edges of the Vertex
+func (v *vertex) InE() interfaces.Edge {
+	v.Add(NewSimpleQB(".inE()"))
+	return NewEdgeV(v)
+}
+
+// Count adds .count(), to the query. The query call will return the number of entities found in the query.
+func (v *vertex) Count() interfaces.QueryBuilder {
+	return v.Add(NewSimpleQB(".count()"))
+}
