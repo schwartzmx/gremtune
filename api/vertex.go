@@ -122,3 +122,8 @@ func (v *vertex) InE() interfaces.Edge {
 func (v *vertex) Count() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".count()"))
 }
+
+// PropertyList adds .property(list,'<key>','<value>'), e.g. .property(list, 'name','hans'), to the query. The query call will add the given property.
+func (v *vertex) PropertyList(key, value string) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".property(list,'%s','%s')", key, value))
+}

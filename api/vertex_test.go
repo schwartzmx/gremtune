@@ -328,3 +328,22 @@ func TestInE(t *testing.T) {
 	assert.NotNil(t, e)
 	assert.Equal(t, fmt.Sprintf("%s.inE()", graphName), e.String())
 }
+
+func TestPropertyList(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+	key := "key"
+	value := "value"
+
+	// WHEN
+	v = v.PropertyList(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.property(list,'%s','%s')", graphName, key, value), v.String())
+}
