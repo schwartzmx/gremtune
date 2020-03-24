@@ -38,6 +38,8 @@ type Vertex interface {
 	Property(key, value string) Vertex
 	// PropertyInt adds .property('<key>',<int value>), e.g. .property('age',55), to the query. The query call will add the given property.
 	PropertyInt(key string, value int) Vertex
+	// PropertyList adds .property(list,'<key>','<value>'), e.g. .property(list, 'name','hans'), to the query. The query call will add the given property.
+	PropertyList(key, value string) Vertex
 	// Properties adds .properties(), to the query. The query call returns all properties of the vertex.
 	Properties() QueryBuilder
 	// Has adds .has('<key>','<value>'), e.g. .has('name','hans'), to the query. The query call returns all vertices
