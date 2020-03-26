@@ -53,7 +53,7 @@ func TestHas(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.V().has('%s','%s')", graphName, key, value), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",\"%s\")", graphName, key, value), v.String())
 }
 
 func TestHasInt(t *testing.T) {
@@ -71,7 +71,7 @@ func TestHasInt(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.V().has('%s',%d)", graphName, key, value), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",%d)", graphName, key, value), v.String())
 }
 
 func TestPropertyInt(t *testing.T) {
@@ -89,7 +89,7 @@ func TestPropertyInt(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.V().property('%s',%d)", graphName, key, value), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",%d)", graphName, key, value), v.String())
 }
 
 func TestHasLabel(t *testing.T) {
@@ -106,7 +106,7 @@ func TestHasLabel(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.V().hasLabel('%s')", graphName, label), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.V().hasLabel(\"%s\")", graphName, label), v.String())
 }
 
 func TestValuesBy(t *testing.T) {
@@ -123,7 +123,7 @@ func TestValuesBy(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, qb)
-	assert.Equal(t, fmt.Sprintf("%s.V().values('%s')", graphName, label), qb.String())
+	assert.Equal(t, fmt.Sprintf("%s.V().values(\"%s\")", graphName, label), qb.String())
 }
 
 func TestValues(t *testing.T) {
@@ -189,7 +189,7 @@ func TestProperty(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.V().property('%s','%s')", graphName, key, value), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",\"%s\")", graphName, key, value), v.String())
 }
 
 func TestId(t *testing.T) {
@@ -254,7 +254,7 @@ func TestAddE(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, qb)
-	assert.Equal(t, fmt.Sprintf("%s.V().addE('%s')", graphName, label), qb.String())
+	assert.Equal(t, fmt.Sprintf("%s.V().addE(\"%s\")", graphName, label), qb.String())
 }
 
 func TestChain(t *testing.T) {
@@ -275,7 +275,7 @@ func TestChain(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, qb)
-	assert.Equal(t, fmt.Sprintf("%s.addV('%s').property('%s','%s').property('%s','%s').properties()", graphName, vertrexlabel, key1, value1, key2, value2), qb.String())
+	assert.Equal(t, fmt.Sprintf("%s.addV(\"%s\").property(\"%s\",\"%s\").property(\"%s\",\"%s\").properties()", graphName, vertrexlabel, key1, value1, key2, value2), qb.String())
 }
 
 func TestVertexCount(t *testing.T) {
@@ -345,5 +345,5 @@ func TestPropertyList(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.property(list,'%s','%s')", graphName, key, value), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.property(list,\"%s\",\"%s\")", graphName, key, value), v.String())
 }

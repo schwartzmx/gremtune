@@ -35,7 +35,7 @@ func (e *edge) String() string {
 }
 
 // Add can be used to add a custom QueryBuilder
-// e.g. g.V().Add(NewSimpleQB(".myCustomCall('%s')",label))
+// e.g. g.V().Add(NewSimpleQB(".myCustomCall("%s")",label))
 func (e *edge) Add(builder interfaces.QueryBuilder) interfaces.Edge {
 	e.builders = append(e.builders, builder)
 	return e
@@ -73,9 +73,9 @@ func (e *edge) Profile() interfaces.QueryBuilder {
 	return e.Add(NewSimpleQB(".executionProfile()"))
 }
 
-// HasLabel adds .hasLabel('<label>'), e.g. .hasLabel('user'), to the query. The query call returns all edges with the given label.
+// HasLabel adds .hasLabel("<label>"), e.g. .hasLabel("user"), to the query. The query call returns all edges with the given label.
 func (e *edge) HasLabel(label string) interfaces.Edge {
-	return e.Add(NewSimpleQB(".hasLabel('%s')", label))
+	return e.Add(NewSimpleQB(".hasLabel(\"%s\")", label))
 }
 
 // Count adds .count(), to the query. The query call will return the number of entities found in the query.
