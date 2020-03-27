@@ -47,7 +47,7 @@ func TestVBy(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.V('%d')", graphName, id), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.V(\"%d\")", graphName, id), v.String())
 }
 
 func TestVByUUID(t *testing.T) {
@@ -63,7 +63,7 @@ func TestVByUUID(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.V('%s')", graphName, id), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.V(\"%s\")", graphName, id), v.String())
 }
 
 func TestAddV(t *testing.T) {
@@ -78,7 +78,7 @@ func TestAddV(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.addV('%s')", graphName, label), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.addV(\"%s\")", graphName, label), v.String())
 }
 
 func TestE(t *testing.T) {

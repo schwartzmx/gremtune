@@ -28,21 +28,21 @@ func (g *graph) V() interfaces.Vertex {
 // VBy adds .V(<id>), e.g. .V(123)
 func (g *graph) VBy(id int) interfaces.Vertex {
 	vertex := NewVertexG(g)
-	vertex.Add(NewSimpleQB(".V('%d')", id))
+	vertex.Add(NewSimpleQB(".V(\"%d\")", id))
 	return vertex
 }
 
-// VByUUID adds .V(<id>), e.g. .V('8fff9259-09e6-4ea5-aaf8-250b31cc7f44'), to the query. The query call returns the vertex with the given id.
+// VByUUID adds .V(<id>), e.g. .V("8fff9259-09e6-4ea5-aaf8-250b31cc7f44"), to the query. The query call returns the vertex with the given id.
 func (g *graph) VByUUID(id uuid.UUID) interfaces.Vertex {
 	vertex := NewVertexG(g)
-	vertex.Add(NewSimpleQB(".V('%s')", id))
+	vertex.Add(NewSimpleQB(".V(\"%s\")", id))
 	return vertex
 }
 
-// AddV adds .addV('<label>'), e.g. .addV('user')
+// AddV adds .addV("<label>"), e.g. .addV("user")
 func (g *graph) AddV(label string) interfaces.Vertex {
 	vertex := NewVertexG(g)
-	vertex.Add(NewSimpleQB(".addV('%s')", label))
+	vertex.Add(NewSimpleQB(".addV(\"%s\")", label))
 	return vertex
 }
 

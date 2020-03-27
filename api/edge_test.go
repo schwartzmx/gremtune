@@ -172,7 +172,7 @@ func TestEdgeHasLabel(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, e)
-	assert.Equal(t, fmt.Sprintf("%s.hasLabel('%s')", graphName, label), e.String())
+	assert.Equal(t, fmt.Sprintf("%s.hasLabel(\"%s\")", graphName, label), e.String())
 }
 
 func TestEdgeCount(t *testing.T) {
