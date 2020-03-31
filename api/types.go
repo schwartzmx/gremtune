@@ -106,11 +106,16 @@ func (tv TypedValue) AsBool() bool {
 }
 
 func (tv TypedValue) AsStringE() (string, error) {
-	return cast.ToStringE(tv.Value)
+	value, err := cast.ToStringE(tv.Value)
+	if err != nil {
+		return "", err
+	}
+	return UnEscape(value)
 }
 
 func (tv TypedValue) AsString() string {
-	return cast.ToString(tv.Value)
+	result, _ := UnEscape(cast.ToString(tv.Value))
+	return result
 }
 
 func (tv TypedValue) String() string {
