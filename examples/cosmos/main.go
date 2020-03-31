@@ -100,7 +100,7 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 	g := api.NewGraph("g")
 	// adds an edge from vertex with property name:jan to vertex with property name:hans
 	// jan <-knows- hans
-	query := g.V().Has("name", "jan").AddE("knows").From(g.V().Has("name", "hans"))
+	query := g.AddV("User").Property("userid", "12345").Property("email", "max.mustermann@example.com").Id()
 	logger.Info().Msgf("Query: %s", query)
 
 	res, err := cosmos.ExecuteQuery(query)

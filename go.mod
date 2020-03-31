@@ -3,7 +3,6 @@ module github.com/supplyon/gremcos
 go 1.13
 
 require (
-	github.com/cosmtrek/air v1.12.1 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/golang/mock v1.4.3
 	github.com/gorilla/websocket v1.4.1
