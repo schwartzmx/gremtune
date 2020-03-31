@@ -45,7 +45,7 @@ func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {
 
 // Has adds .has("<key>","<value>"), e.g. .has("name","hans")
 func (v *vertex) Has(key, value string) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".has(\"%s\",\"%s\")", key, value))
+	return v.Add(NewSimpleQB(".has(\"%s\",\"%s\")", key, Escape(value)))
 }
 
 // HasLabel adds .hasLabel("<label>"), e.g. .hasLabel("user")
@@ -75,7 +75,7 @@ func (v *vertex) Properties() interfaces.QueryBuilder {
 
 // Property adds .property("<key>","<value>"), e.g. .property("name","hans")
 func (v *vertex) Property(key, value string) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".property(\"%s\",\"%s\")", key, value))
+	return v.Add(NewSimpleQB(".property(\"%s\",\"%s\")", key, Escape(value)))
 }
 
 // Id adds .id()
@@ -125,5 +125,5 @@ func (v *vertex) Count() interfaces.QueryBuilder {
 
 // PropertyList adds .property(list,"<key>","<value>"), e.g. .property(list, "name","hans"), to the query. The query call will add the given property.
 func (v *vertex) PropertyList(key, value string) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".property(list,\"%s\",\"%s\")", key, value))
+	return v.Add(NewSimpleQB(".property(list,\"%s\",\"%s\")", key, Escape(value)))
 }
