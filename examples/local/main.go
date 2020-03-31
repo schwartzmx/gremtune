@@ -89,11 +89,6 @@ func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	g := api.NewGraph("g")
 
-	//value := "$\\$\t\n"
-	value := "$ \\$ $ a$a"
-	value = api.EscapeGroovyChars(value)
-	//value = escapeGroovyChars(value)
-
 	query := g.AddV("User").Property("userid", "12345").Property("email", value).Id()
 	logger.Info().Msgf("Query: %s", query)
 	res, err := cosmos.ExecuteQuery(query)
