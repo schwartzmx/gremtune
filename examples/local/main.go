@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
 	"time"
 
@@ -60,6 +61,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 			stopProcessing = true
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
+			os.Exit(1)
 		case <-healthCheckTicker.C:
 			err := cosmos.IsHealthy()
 			logEvent := logger.Debug()
@@ -73,10 +75,26 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 	logger.Info().Msg("Process loop left")
 }
 
+func escapeGroovyChars(value string) string {
+
+	// remove control chars
+	re := regexp.MustCompile("\\\\|\n|\t|\f|\r")
+	value = re.ReplaceAllString(value, "")
+	re = regexp.MustCompile("(\\$)")
+	value = re.ReplaceAllString(value, "\\$1")
+	return value
+}
+
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	g := api.NewGraph("g")
-	query := g.AddV("User").Property("userid", "12345").Property("email", "max.mustermann@example.com").Id()
+
+	//value := "$\\$\t\n"
+	value := "$ \\$ $ a$a"
+	value = api.EscapeGroovyChars(value)
+	//value = escapeGroovyChars(value)
+
+	query := g.AddV("User").Property("userid", "12345").Property("email", value).Id()
 	logger.Info().Msgf("Query: %s", query)
 	res, err := cosmos.ExecuteQuery(query)
 
