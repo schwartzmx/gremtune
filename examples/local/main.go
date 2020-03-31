@@ -60,7 +60,6 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 			stopProcessing = true
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
-			os.Exit(1)
 		case <-healthCheckTicker.C:
 			err := cosmos.IsHealthy()
 			logEvent := logger.Debug()
@@ -77,8 +76,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
 	g := api.NewGraph("g")
-
-	query := g.AddV("User").Property("userid", "12345").Property("email", "hans").Id()
+	query := g.AddV("User").Property("userid", "12345").Property("email", "max.mustermann@example.com").Id()
 	logger.Info().Msgf("Query: %s", query)
 	res, err := cosmos.ExecuteQuery(query)
 
