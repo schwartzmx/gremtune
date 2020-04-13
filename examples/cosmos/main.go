@@ -82,6 +82,8 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 			stopProcessing = true
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
+			time.Sleep(time.Millisecond * 200)
+			os.Exit(1)
 		case <-healthCheckTicker.C:
 			err := cosmos.IsHealthy()
 			logEvent := logger.Debug()
