@@ -12,6 +12,10 @@ import (
 	"github.com/supplyon/gremcos/interfaces"
 )
 
+// This is not really an error since this happens usually when the socket is closed by the peer.
+// But in order to support the workflow of message processing as implemented in gremcos we need a error type here.
+var socketClosedEvent = fmt.Errorf("Received msgType == -1 this is no frame --> close the readworker")
+
 // client is a container for the gremcos client.
 type client struct {
 
@@ -165,8 +169,8 @@ func (c *client) executeRequest(query string, bindings, rebindings *map[string]s
 		return nil, err
 	}
 
-	c.responseNotifier.Store(id, make(chan error, 1))
-	c.responseStatusNotifier.Store(id, make(chan int, 1))
+	c.responseNotifier.Store(id, newSafeCloseErrorChannel(1))
+	c.responseStatusNotifier.Store(id, newSafeCloseIntChannel(1))
 	c.dispatchRequest(msg)
 
 	// this call blocks until the response has been retrieved from the server
@@ -195,8 +199,8 @@ func (c *client) executeAsync(query string, bindings, rebindings *map[string]str
 		log.Println(err)
 		return
 	}
-	c.responseNotifier.Store(id, make(chan error, 1))
-	c.responseStatusNotifier.Store(id, make(chan int, 1))
+	c.responseNotifier.Store(id, newSafeCloseErrorChannel(1))
+	c.responseStatusNotifier.Store(id, newSafeCloseIntChannel(1))
 	c.dispatchRequest(msg)
 	go c.retrieveResponseAsync(id, responseChannel)
 	return
@@ -299,16 +303,15 @@ func (c *client) Close() error {
 		// notify the workers to stop working
 		close(c.quitChannel)
 
-		// clean up all response channels in order to unblock pending responses
 		c.responseNotifier.Range(func(key, value interface{}) bool {
-			channel := value.(chan error)
-			close(channel)
+			channel := value.(*safeCloseErrorChannel)
+			channel.Close()
 			return true
 		})
 
 		c.responseStatusNotifier.Range(func(key, value interface{}) bool {
-			channel := value.(chan int)
-			close(channel)
+			channel := value.(*safeCloseIntChannel)
+			channel.Close()
 			return true
 		})
 
@@ -356,9 +359,8 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 	for {
 		msgType, msg, err := c.conn.Read()
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
-			err = fmt.Errorf("Received msgType == -1 this is no frame --> close the readworker")
-			errs <- err
-			c.setLastErr(err)
+			errs <- socketClosedEvent
+			c.setLastErr(socketClosedEvent)
 
 			// to return at this point is save since we call workerSaveExit() to clean up everything
 			// when the function is left
