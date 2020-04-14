@@ -29,23 +29,27 @@ func TestEscapeUnescape(t *testing.T) {
 	value2 := `^°!"§$%&/()=?*+'#~,.;:-_<>|@€²³¼½¬{[]}\`
 	value3 := "Hello $'World"
 	value4 := `^°!"§%&/()=?*+'#~,.;:-_<>|@€²³¼½¬{[]}` // no $ and no \
+	value5 := `invalid escape sequence %&`
 
 	// WHEN
 	escaped1 := Escape(value1)
 	escaped2 := Escape(value2)
 	escaped3 := Escape(value3)
 	escaped4 := Escape(value4)
+	escaped5 := Escape(value5)
 
 	unescaped1 := UnEscape(escaped1)
 	unescaped2 := UnEscape(escaped2)
 	unescaped3 := UnEscape(escaped3)
 	unescaped4 := UnEscape(escaped4)
+	unescaped5 := UnEscape(escaped5)
 
 	// THEN
 	assert.Equal(t, value1, unescaped1)
 	assert.Equal(t, value2, unescaped2)
 	assert.Equal(t, value3, unescaped3)
 	assert.Equal(t, value4, unescaped4)
+	assert.Equal(t, value5, unescaped5)
 }
 
 func TestShouldEscape(t *testing.T) {
