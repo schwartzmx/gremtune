@@ -371,3 +371,48 @@ func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
 	assert.NotEmpty(t, errorChannel)
 	assert.NotNil(t, client.LastError())
 }
+
+func TestForceCloseOnClosedChannelPanic(t *testing.T) {
+	// This test was added to reproduce https://github.com/supplyon/gremcos/issues/29
+
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	client := newClient(mockedDialer)
+
+	mockedDialer.EXPECT().IsConnected().Return(true)
+	mockedDialer.EXPECT().Close().Return(nil)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		resp, err := client.Execute("g.V()")
+		assert.NotEmpty(t, resp)
+		assert.NoError(t, err)
+	}()
+
+	// catch the request that should be send over the wire
+	requestToSend := <-client.requests
+	// convert it to a readable request
+	req, err := packedRequest2Request(requestToSend)
+	require.NoError(t, err)
+
+	// now create the according response
+	response := interfaces.Response{RequestID: req.RequestID, Status: interfaces.Status{Code: interfaces.StatusSuccess}}
+	packet, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	// now inject send the response
+	err = client.handleResponse(packet)
+	require.NoError(t, err)
+
+	// Immediately close the client even while there are still requests ongoing
+	// in general that is not a good idea to do that, however this should not result in a
+	// panic as described at https://github.com/supplyon/gremcos/issues/29.
+	client.Close()
+
+	// wait until the execution has been completed
+	wg.Wait()
+}

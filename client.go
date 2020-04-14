@@ -299,12 +299,22 @@ func (c *client) Close() error {
 		// notify the workers to stop working
 		close(c.quitChannel)
 
+		// TODO: first obtain the keys and then delete + close them one after another
 		// clean up all response channels in order to unblock pending responses
+		fmt.Printf("[C] START\n")
 		c.responseNotifier.Range(func(key, value interface{}) bool {
+			fmt.Printf("[C] Will delete (id=%v,v=%v)\n", key, value)
+			time.Sleep(time.Millisecond * 100)
+			c.responseNotifier.Delete(key)
+			fmt.Printf("[C] Deleted (id=%v,v=%v)\n", key, value)
+			time.Sleep(time.Millisecond * 100)
 			channel := value.(chan error)
+			fmt.Printf("[C] Will close %v (id=%v,v=%v)\n", channel, key, value)
 			close(channel)
+			fmt.Printf("[C] Closed (id=%v,v=%v)\n", key, value)
 			return true
 		})
+		fmt.Printf("[C] END\n")
 
 		c.responseStatusNotifier.Range(func(key, value interface{}) bool {
 			channel := value.(chan int)

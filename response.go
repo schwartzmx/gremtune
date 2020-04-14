@@ -132,11 +132,17 @@ func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 
 	// ensure that the cleanup is done in any case
 	defer func() {
-		if responseErrorChannel != nil {
+		fmt.Printf("[R] START\n")
+		v, ok := c.responseNotifier.Load(id)
+		fmt.Printf("[R] Should close? %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
+		if v != nil {
+			fmt.Printf("[R] Will close %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
 			close(responseErrorChannel)
+			fmt.Printf("[R] Closed %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
 		}
+		fmt.Printf("[R] END\n")
 		if responseStatusNotifier != nil {
-			close(responseStatusNotifier)
+			//	close(responseStatusNotifier)
 		}
 		c.responseNotifier.Delete(id)
 		c.responseStatusNotifier.Delete(id)
