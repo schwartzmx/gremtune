@@ -20,11 +20,14 @@ func TestMultiCloseSafeCloseErrorChannel(t *testing.T) {
 	safeCloseErrChan := newSafeCloseErrorChannel(1)
 
 	// WHEN
-	safeCloseErrChan.Close()
-	safeCloseErrChan.Close()
+	shouldNotPanicFun := func() {
+		safeCloseErrChan.Close()
+		safeCloseErrChan.Close()
+	}
 
 	// THEN
 	// there should be no panic
+	assert.NotPanics(t, shouldNotPanicFun)
 }
 
 func TestNewSafeCloseIntChannel(t *testing.T) {
