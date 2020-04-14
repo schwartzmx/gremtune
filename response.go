@@ -44,6 +44,8 @@ func (c *client) saveResponse(resp interfaces.Response, err error) {
 
 	// obtain or create (if needed) the error notification channel for the currently active response
 	respNotifier, _ := c.responseNotifier.LoadOrStore(resp.RequestID, newSafeCloseErrorChannel(1))
+	respNotifierChannel := respNotifier.(*safeCloseErrorChannel)
+
 	// obtain or create (if needed) the status notification channel for the currently active response
 	responseStatusNotifier, _ := c.responseStatusNotifier.LoadOrStore(resp.RequestID, newSafeCloseIntChannel(1))
 	responseStatusNotifierChannel := responseStatusNotifier.(*safeCloseIntChannel)
@@ -59,7 +61,6 @@ func (c *client) saveResponse(resp interfaces.Response, err error) {
 	// note that here the given error can be nil.
 	// this is the good case that just completes the retrieval of the response
 	if resp.Status.Code != interfaces.StatusPartialContent {
-		respNotifierChannel := respNotifier.(*safeCloseErrorChannel)
 		respNotifierChannel.c <- err
 	}
 }
