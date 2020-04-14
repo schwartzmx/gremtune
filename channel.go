@@ -2,21 +2,21 @@ package gremcos
 
 import "sync"
 
-type CloseOnceChannel struct {
-	Channel chan error
-	once    sync.Once
+type safeCloseErrorChannel struct {
+	c    chan error
+	once sync.Once
 }
 
-func NewCloseOnceChannel(channel chan error) *CloseOnceChannel {
-	return &CloseOnceChannel{
-		Channel: channel,
+func newSafeCloseErrorChannel(channelBuffer int) *safeCloseErrorChannel {
+	return &safeCloseErrorChannel{
+		c: make(chan error, channelBuffer),
 	}
 }
 
-func (c *CloseOnceChannel) Close() {
+func (c *safeCloseErrorChannel) Close() {
 	c.once.Do(func() {
-		if c.Channel != nil {
-			close(c.Channel)
+		if c.c != nil {
+			close(c.c)
 		}
 	})
 }
