@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewCloseOnceChannel(t *testing.T) {
+func TestNewSafeCloseErrorChannel(t *testing.T) {
 	// GIVEN
 	// WHEN
 	safeCloseErrChan := newSafeCloseErrorChannel(1)
@@ -15,13 +15,34 @@ func TestNewCloseOnceChannel(t *testing.T) {
 	assert.NotNil(t, safeCloseErrChan)
 }
 
-func TestMultiCloseErrChannel(t *testing.T) {
+func TestMultiCloseSafeCloseErrorChannel(t *testing.T) {
 	// GIVEN
 	safeCloseErrChan := newSafeCloseErrorChannel(1)
 
 	// WHEN
 	safeCloseErrChan.Close()
 	safeCloseErrChan.Close()
+
+	// THEN
+	// there should be no panic
+}
+
+func TestNewSafeCloseIntChannel(t *testing.T) {
+	// GIVEN
+	// WHEN
+	safeCloseIntChan := newSafeCloseIntChannel(1)
+
+	// THEN
+	assert.NotNil(t, safeCloseIntChan)
+}
+
+func TestMultiCloseSafeCloseIntChannel(t *testing.T) {
+	// GIVEN
+	safeCloseIntChan := newSafeCloseIntChannel(1)
+
+	// WHEN
+	safeCloseIntChan.Close()
+	safeCloseIntChan.Close()
 
 	// THEN
 	// there should be no panic
