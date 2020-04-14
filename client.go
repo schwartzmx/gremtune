@@ -166,7 +166,7 @@ func (c *client) executeRequest(query string, bindings, rebindings *map[string]s
 	}
 
 	c.responseNotifier.Store(id, newSafeCloseErrorChannel(1))
-	c.responseStatusNotifier.Store(id, make(chan int, 1))
+	c.responseStatusNotifier.Store(id, newSafeCloseIntChannel(1))
 	c.dispatchRequest(msg)
 
 	// this call blocks until the response has been retrieved from the server
@@ -196,7 +196,7 @@ func (c *client) executeAsync(query string, bindings, rebindings *map[string]str
 		return
 	}
 	c.responseNotifier.Store(id, newSafeCloseErrorChannel(1))
-	c.responseStatusNotifier.Store(id, make(chan int, 1))
+	c.responseStatusNotifier.Store(id, newSafeCloseIntChannel(1))
 	c.dispatchRequest(msg)
 	go c.retrieveResponseAsync(id, responseChannel)
 	return
@@ -318,8 +318,8 @@ func (c *client) Close() error {
 		fmt.Printf("[C] END\n")
 
 		c.responseStatusNotifier.Range(func(key, value interface{}) bool {
-			channel := value.(chan int)
-			close(channel)
+			channel := value.(*safeCloseIntChannel)
+			channel.Close()
 			return true
 		})
 

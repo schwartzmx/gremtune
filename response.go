@@ -43,22 +43,24 @@ func (c *client) saveResponse(resp interfaces.Response, err error) {
 	c.results.Store(resp.RequestID, newdata) // Add new data to buffer for future retrieval
 
 	// obtain or create (if needed) the error notification channel for the currently active response
-	respNotifier, _ := c.responseNotifier.LoadOrStore(resp.RequestID, make(chan error, 1))
+	respNotifier, _ := c.responseNotifier.LoadOrStore(resp.RequestID, newSafeCloseErrorChannel(1))
 	// obtain or create (if needed) the status notification channel for the currently active response
-	responseStatusNotifier, _ := c.responseStatusNotifier.LoadOrStore(resp.RequestID, make(chan int, 1))
+	responseStatusNotifier, _ := c.responseStatusNotifier.LoadOrStore(resp.RequestID, newSafeCloseIntChannel(1))
+	responseStatusNotifierChannel := responseStatusNotifier.(*safeCloseIntChannel)
 
 	// FIXME: This looks weird. the status code of the current response is only posted to the responseStatusNotifier channel
 	// if there is space left on the channel. If not then the status is just silently not posted (ignored).
-	if cap(responseStatusNotifier.(chan int)) > len(responseStatusNotifier.(chan int)) {
+	if cap(responseStatusNotifierChannel.c) > len(responseStatusNotifierChannel.c) {
 		// Channel is not full so adding the response status to the channel else it will cause the method to wait till the response is read by requester
-		responseStatusNotifier.(chan int) <- resp.Status.Code
+		responseStatusNotifierChannel.c <- resp.Status.Code
 	}
 
 	// post an error in case it is not a partial messsage.
 	// note that here the given error can be nil.
 	// this is the good case that just completes the retrieval of the response
 	if resp.Status.Code != interfaces.StatusPartialContent {
-		respNotifier.(chan error) <- err
+		respNotifierChannel := respNotifier.(*safeCloseErrorChannel)
+		respNotifierChannel.c <- err
 	}
 }
 
@@ -66,9 +68,11 @@ func (c *client) saveResponse(resp interfaces.Response, err error) {
 func (c *client) retrieveResponseAsync(id string, responseChannel chan interfaces.AsyncResponse) {
 	var responseProcessedIndex int
 	responseNotifier, _ := c.responseNotifier.Load(id)
+	responseNotifierChannel := responseNotifier.(*safeCloseErrorChannel)
 	responseStatusNotifier, _ := c.responseStatusNotifier.Load(id)
+	responseStatusNotifierChannel := responseStatusNotifier.(*safeCloseIntChannel)
 
-	for status := range responseStatusNotifier.(chan int) {
+	for status := range responseStatusNotifierChannel.c {
 		_ = status
 
 		// this block retrieves all but the last of the partial responses
@@ -85,15 +89,14 @@ func (c *client) retrieveResponseAsync(id string, responseChannel chan interface
 			}
 		}
 
-		responseNotifierChannel := responseNotifier.(chan error)
 		// Checks to see If there was an Error or full response that has been provided by cosmos
 		// If not, then continue with consuming the other partial messages
-		if len(responseNotifierChannel) <= 0 {
+		if len(responseNotifierChannel.c) <= 0 {
 			continue
 		}
 
 		//Checks to see If there was an Error or will get nil when final response has been provided by cosmos
-		err := <-responseNotifierChannel
+		err := <-responseNotifierChannel.c
 
 		if dataI, ok := c.results.Load(id); ok {
 			d := dataI.([]interface{})
@@ -115,9 +118,9 @@ func (c *client) retrieveResponseAsync(id string, responseChannel chan interface
 	}
 
 	// All the Partial response object including the final one has been sent to the responseChannel
-	// so closing responseStatusNotifier, responseNotifier, responseChannel and removing all the repose stored
-	close(responseStatusNotifier.(chan int))
-	close(responseNotifier.(chan error))
+	// so closing responseStatusNotifierChannel, responseNotifierChannel, responseChannel and removing all the repose stored
+	responseStatusNotifierChannel.Close()
+	responseNotifierChannel.Close()
 	c.responseNotifier.Delete(id)
 	c.responseStatusNotifier.Delete(id)
 	c.deleteResponse(id)
@@ -127,22 +130,25 @@ func (c *client) retrieveResponseAsync(id string, responseChannel chan interface
 // retrieveResponse retrieves the response saved by saveResponse.
 func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 
-	var responseErrorChannel chan error
-	var responseStatusNotifier chan int
+	var responseErrorChannel *safeCloseErrorChannel
+	var responseStatusNotifierChannel *safeCloseIntChannel
 
 	// ensure that the cleanup is done in any case
 	defer func() {
 		fmt.Printf("[R] START\n")
-		v, ok := c.responseNotifier.Load(id)
-		fmt.Printf("[R] Should close? %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
-		if v != nil {
-			fmt.Printf("[R] Will close %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
-			close(responseErrorChannel)
-			fmt.Printf("[R] Closed %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
+		if responseErrorChannel != nil {
+			responseErrorChannel.Close()
 		}
+		//v, ok := c.responseNotifier.Load(id)
+		//fmt.Printf("[R] Should close? %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
+		//if v != nil {
+		//	fmt.Printf("[R] Will close %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
+		//	close(responseErrorChannel)
+		//	fmt.Printf("[R] Closed %v (ok=%t,id=%v,v=%v)\n", responseErrorChannel, ok, id, v)
+		//}
 		fmt.Printf("[R] END\n")
-		if responseStatusNotifier != nil {
-			//	close(responseStatusNotifier)
+		if responseStatusNotifierChannel != nil {
+			responseStatusNotifierChannel.Close()
 		}
 		c.responseNotifier.Delete(id)
 		c.responseStatusNotifier.Delete(id)
@@ -153,15 +159,15 @@ func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 	if !ok {
 		return nil, fmt.Errorf("Response with id %s not found", id)
 	}
-	responseErrorChannel = responseErrorChannelUntyped.(chan error)
+	responseErrorChannel = responseErrorChannelUntyped.(*safeCloseErrorChannel)
 
 	responseStatusNotifierUntyped, ok := c.responseStatusNotifier.Load(id)
 	if !ok {
 		return nil, fmt.Errorf("Response with id %s not found", id)
 	}
-	responseStatusNotifier = responseStatusNotifierUntyped.(chan int)
+	responseStatusNotifierChannel = responseStatusNotifierUntyped.(*safeCloseIntChannel)
 
-	err := <-responseErrorChannel
+	err := <-responseErrorChannel.c
 	// Hint: Don't return here immediately in case the obtained error is != nil.
 	// We don't want to loose the responses obtained so far, especially the
 	// data stored in the attribute map of each response is useful.
