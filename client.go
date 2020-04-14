@@ -165,7 +165,7 @@ func (c *client) executeRequest(query string, bindings, rebindings *map[string]s
 		return nil, err
 	}
 
-	c.responseNotifier.Store(id, make(chan error, 1))
+	c.responseNotifier.Store(id, newSafeCloseErrorChannel(1))
 	c.responseStatusNotifier.Store(id, make(chan int, 1))
 	c.dispatchRequest(msg)
 
@@ -195,7 +195,7 @@ func (c *client) executeAsync(query string, bindings, rebindings *map[string]str
 		log.Println(err)
 		return
 	}
-	c.responseNotifier.Store(id, make(chan error, 1))
+	c.responseNotifier.Store(id, newSafeCloseErrorChannel(1))
 	c.responseStatusNotifier.Store(id, make(chan int, 1))
 	c.dispatchRequest(msg)
 	go c.retrieveResponseAsync(id, responseChannel)
@@ -308,9 +308,10 @@ func (c *client) Close() error {
 			c.responseNotifier.Delete(key)
 			fmt.Printf("[C] Deleted (id=%v,v=%v)\n", key, value)
 			time.Sleep(time.Millisecond * 100)
-			channel := value.(chan error)
+			channel := value.(*safeCloseErrorChannel)
+			channel.Close()
 			fmt.Printf("[C] Will close %v (id=%v,v=%v)\n", channel, key, value)
-			close(channel)
+			//close(channel)
 			fmt.Printf("[C] Closed (id=%v,v=%v)\n", key, value)
 			return true
 		})
