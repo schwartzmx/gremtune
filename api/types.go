@@ -110,12 +110,11 @@ func (tv TypedValue) AsStringE() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return UnEscape(value)
+	return UnEscape(value), nil
 }
 
 func (tv TypedValue) AsString() string {
-	result, _ := UnEscape(cast.ToString(tv.Value))
-	return result
+	return UnEscape(cast.ToString(tv.Value))
 }
 
 func (tv TypedValue) String() string {
