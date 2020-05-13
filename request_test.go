@@ -33,6 +33,87 @@ func TestRequestPreparation(t *testing.T) {
 	}
 }
 
+// TestRequestPreparationWithSessionAndTimeout tests the ability to package a query with session and timeout into a request struct for further manipulation
+func TestRequestPreparationWithSessionAndTimeout(t *testing.T) {
+	query := "g.V(x)"
+	sessionID := "testSessionIDAndTimeout"
+	timeout := 85000
+	req, id, err := prepareRequestWithSessionAndTimeout(query, sessionID, timeout)
+	if err != nil {
+		t.Error(err)
+	}
+
+	expectedRequest := request{
+		RequestID: id,
+		Op:        "eval",
+		Processor: "session",
+		Args: map[string]interface{}{
+			"gremlin":                 query,
+			"language":                "gremlin-groovy",
+			"session":                 sessionID,
+			"manageTransaction":       false,
+			"batchSize":               64,
+			"scriptEvaluationTimeout": 85000,
+		},
+	}
+
+	if reflect.DeepEqual(req, expectedRequest) != true {
+		t.Fail()
+	}
+}
+
+// TestRequestPreparationWithSession tests the ability to package a query with session into a request struct for further manipulation
+func TestRequestPreparationWithSession(t *testing.T) {
+	query := "g.V(x)"
+	sessionID := "testSessionID"
+	req, id, err := prepareRequestWithSession(query, sessionID)
+	if err != nil {
+		t.Error(err)
+	}
+
+	expectedRequest := request{
+		RequestID: id,
+		Op:        "eval",
+		Processor: "session",
+		Args: map[string]interface{}{
+			"gremlin":           query,
+			"language":          "gremlin-groovy",
+			"session":           sessionID,
+			"manageTransaction": false,
+			"batchSize":         64,
+		},
+	}
+
+	if reflect.DeepEqual(req, expectedRequest) != true {
+		t.Fail()
+	}
+}
+
+// TestRequestPreparationWithSession tests the ability to package a query with session into a request struct for further manipulation
+func TestRequestPreparationCommitSession(t *testing.T) {
+	sessionID := "testSessionID"
+	req, id, err := prepareCommitSessionRequest(sessionID)
+	if err != nil {
+		t.Error(err)
+	}
+
+	expectedRequest := request{
+		RequestID: id,
+		Op:        "close",
+		Processor: "session",
+		Args: map[string]interface{}{
+			"language":          "gremlin-groovy",
+			"session":           sessionID,
+			"manageTransaction": false,
+			"force":             false,
+		},
+	}
+
+	if reflect.DeepEqual(req, expectedRequest) != true {
+		t.Fail()
+	}
+}
+
 // TestRequestPackaging tests the ability for gremtune to format a request using the established Gremlin Server WebSockets protocol for delivery to the server
 func TestRequestPackaging(t *testing.T) {
 	testRequest := request{
