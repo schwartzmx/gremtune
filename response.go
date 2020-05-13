@@ -158,13 +158,14 @@ func (c *Client) retrieveResponse(id string) (data []Response, err error) {
 			for i := range d {
 				data[i] = d[i].(Response)
 			}
-			close(resp.(chan error))
-			close(responseStatusNotifier.(chan int))
-			c.responseNotifier.Delete(id)
-			c.responseStatusNotifier.Delete(id)
-			c.deleteResponse(id)
 		}
 	}
+	close(resp.(chan error))
+	close(responseStatusNotifier.(chan int))
+	c.responseNotifier.Delete(id)
+	c.responseStatusNotifier.Delete(id)
+	c.deleteResponse(id)
+
 	return
 }
 
