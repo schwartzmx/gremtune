@@ -66,6 +66,21 @@ func TestVByUUID(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V(\"%s\")", graphName, id), v.String())
 }
 
+func TestVByStr(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	id := "1234ABCD"
+
+	// WHEN
+	v := g.VByStr(id)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V(\"%s\")", graphName, id), v.String())
+}
+
 func TestAddV(t *testing.T) {
 
 	// GIVEN

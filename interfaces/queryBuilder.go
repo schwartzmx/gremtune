@@ -18,6 +18,8 @@ type Graph interface {
 	VBy(id int) Vertex
 	// VByUUID adds .V(<id>), e.g. .V('8fff9259-09e6-4ea5-aaf8-250b31cc7f44'), to the query. The query call returns the vertex with the given id.
 	VByUUID(id uuid.UUID) Vertex
+	// VByStr adds .V(<id>), e.g. .V("123a"), to the query.  The query call returns the vertex with the given id.
+	VByStr(id string) Vertex
 	// AddV adds .addV('<label>'), e.g. .addV('user'), to the query. The query call adds a vertex with the given label and returns that vertex.
 	AddV(label string) Vertex
 	// E adds .E() to the query. The query call returns all edges.
