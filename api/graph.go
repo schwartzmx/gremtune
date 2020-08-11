@@ -39,6 +39,13 @@ func (g *graph) VByUUID(id uuid.UUID) interfaces.Vertex {
 	return vertex
 }
 
+// VByStr adds .V(<id>), e.g. .V("123a"), to the query.  The query call returns the vertex with the given id.
+func (g *graph) VByStr(id string) interfaces.Vertex {
+	vertex := NewVertexG(g)
+	vertex.Add(NewSimpleQB(".V(\"%s\")", id))
+	return vertex
+}
+
 // AddV adds .addV("<label>"), e.g. .addV("user")
 func (g *graph) AddV(label string) interfaces.Vertex {
 	vertex := NewVertexG(g)
