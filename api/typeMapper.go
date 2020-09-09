@@ -100,7 +100,7 @@ func toTypeArray(input []byte, target interface{}) error {
 }
 
 // ToValues converts the given input byte array into an array of TypedValue type.
-// The method will fail in case the data in the given byte array are no primitive values.
+// The method will fail in case the data in the given byte array does not contain primitive values.
 func ToValues(input []byte) ([]TypedValue, error) {
 	var typedValues []TypedValue
 	if err := toTypeArray(input, &typedValues); err != nil {
@@ -110,7 +110,7 @@ func ToValues(input []byte) ([]TypedValue, error) {
 }
 
 // ToProperties converts the given input byte array into an array of Property type.
-// The method will fail in case the data in the given byte array are no properties.
+// The method will fail in case the data in the given byte array does not contain values of type property.
 func ToProperties(input []byte) ([]Property, error) {
 	var properties []Property
 	if err := toTypeArray(input, &properties); err != nil {
@@ -120,7 +120,7 @@ func ToProperties(input []byte) ([]Property, error) {
 }
 
 // ToVertices converts the given input byte array into an array of Vertex type.
-// The method will fail in case the data in the given byte array are no vertices.
+// The method will fail in case the data in the given byte array does not contain values of type vertex.
 func ToVertices(input []byte) ([]Vertex, error) {
 	var vertices []Vertex
 	if err := toTypeArray(input, &vertices); err != nil {
@@ -130,7 +130,7 @@ func ToVertices(input []byte) ([]Vertex, error) {
 }
 
 // ToEdges converts the given input byte array into an array of Edge type.
-// The method will fail in case the data in the given byte array are no edges.
+// The method will fail in case the data in the given byte array does not contain values of type edge.
 func ToEdges(input []byte) ([]Edge, error) {
 	var edges []Edge
 	if err := toTypeArray(input, &edges); err != nil {
