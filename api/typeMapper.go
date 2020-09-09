@@ -159,7 +159,7 @@ func ToValueMap(input []byte) (map[string]TypedValue, error) {
 
 			value, err := toValues(entry)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Mapping of response to map of TypedValue failed. Please ensure that the response is a map of primitive types.")
 			}
 
 			if len(value) != 1 {
