@@ -6,6 +6,99 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const dataVertices = `[{
+	"id": "example",
+	"label": "device",
+	"type": "vertex",
+	"properties": {
+	  "pk": [
+		{
+		  "id": "example",
+		  "value": "example"
+		}
+	  ],
+	  "deviceIPAddress": [
+		{
+		  "id": "example",
+		  "value": ".36"
+		}
+	  ],
+	  "critical": [
+		{
+		  "id": "example",
+		  "value": "No"
+		}
+	  ],
+	  "placeInNetwork": [
+		{
+		  "id": "example-f57f0a21dfde",
+		  "value": "example_bldg-example"
+		}
+	  ],
+	  "vendor": [
+		{
+		  "id": "example-example-example-example-eb02386bacd3",
+		  "value": "example"
+		}
+	  ],
+	  "deviceModel": [
+		{
+		  "id": "example-example-example-b150-976553721ca4",
+		  "value": "example 10506e"
+		}
+	  ],
+	  "deviceTypeName": [
+		{
+		  "id": "example-example-example-9c7e-50bc3ab37313",
+		  "value": "Switch"
+		}
+	  ],
+	  "region": [
+		{
+		  "id": "example-example-4698-example-1ee85c528c66",
+		  "value": "A"
+		}
+	  ],
+	  "snmpDomain": [
+		{
+		  "id": "example-20a2-example-example-4eefa4e22898",
+		  "value": "example"
+		}
+	  ],
+	  "sysObjID": [
+		{
+		  "id": "example-example-4b5f-example-fde71caa478b",
+		  "value": "1.2.3.4.5.6.7"
+		}
+	  ],
+	  "deviceFamily": [
+		{
+		  "id": "example-example-example-9a91-7b8ff62e9378",
+		  "value": "example OS"
+		}
+	  ],
+	  "userName": [
+		{
+		  "id": "example-example-4171-example-fb8d25a49de5",
+		  "value": "example"
+		}
+	  ],
+	  "assetTag": [
+		{
+		  "id": "example-2958-example-example-99b18ee05fa0",
+		  "value": "12345678"
+		}
+	  ],
+	  "createdAt": [
+		{
+		  "id": "example-example-example-example-543efdc271fe",
+		  "value": "2020-08-20T04:16:08.7220998Z"
+		}
+	  ]
+	}
+  }
+]`
+
 func TestToValueMap(t *testing.T) {
 	t.Parallel()
 	// GIVEN
@@ -60,6 +153,72 @@ func TestToProperties(t *testing.T) {
 	assert.Equal(t, "8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk", properties[0].ID)
 	assert.Equal(t, "prop value", properties[0].Value.AsString())
 	assert.Equal(t, "prop key", properties[0].Label)
+}
+
+func TestToPropertiesFailMapProperties(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+
+	// WHEN
+	properties, err := ToProperties([]byte(dataVertices))
+
+	// THEN
+	assert.Error(t, err)
+	assert.Empty(t, properties)
+}
+
+func TestToPropertiesFailMapEdges(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+
+	// WHEN
+	edges, err := ToEdges([]byte(dataVertices))
+
+	// THEN
+	assert.Error(t, err)
+	assert.Empty(t, edges)
+}
+
+func TestToPropertiesFailMapValues(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := "invalid"
+
+	// WHEN
+	values, err := ToValues([]byte(data))
+
+	// THEN
+	assert.Error(t, err)
+	assert.Empty(t, values)
+}
+
+func TestToPropertiesFailMapValueMap(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+
+	// WHEN
+	valuemap, err := ToValueMap([]byte(dataVertices))
+
+	// THEN
+	assert.Error(t, err)
+	assert.Empty(t, valuemap)
+}
+
+func TestToPropertiesFailMapVertices(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	dataValues := `[{
+		"id":"8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk",
+		"value":"prop value",
+		"label":"prop key"
+	}]`
+
+	// WHEN
+	vertices, err := ToVertices([]byte(dataValues))
+
+	// THEN
+	assert.Error(t, err)
+	assert.Empty(t, vertices)
 }
 
 func TestToVertices(t *testing.T) {

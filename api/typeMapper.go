@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 )
 
 // mapStructToType converts the given map struct into the desired target type
@@ -73,21 +74,21 @@ func toTypeArray(input []byte, target interface{}) error {
 		case *[]Property:
 			var property Property
 			if err := mapStructToType(mapStrct, &property); err != nil {
-				return err
+				return errors.Wrap(err, "Mapping of response to Property failed. Please ensure that the response contains only properties.")
 			}
 			*targetValue = append(*targetValue, property)
 			return nil
 		case *[]Edge:
 			var edge Edge
 			if err := mapStructToType(mapStrct, &edge); err != nil {
-				return err
+				return errors.Wrap(err, "Mapping of response to Edge failed. Please ensure that the response contains only edges.")
 			}
 			*targetValue = append(*targetValue, edge)
 			return nil
 		case *[]Vertex:
 			var vertex Vertex
 			if err := mapStructToType(mapStrct, &vertex); err != nil {
-				return err
+				return errors.Wrap(err, "Mapping of response to Vertex failed. Please ensure that the response contains only vertices.")
 			}
 			*targetValue = append(*targetValue, vertex)
 			return nil
@@ -98,14 +99,18 @@ func toTypeArray(input []byte, target interface{}) error {
 	return nil
 }
 
+// ToValues converts the given input byte array into an array of TypedValue type.
+// The method will fail in case the data in the given byte array does not contain primitive values.
 func ToValues(input []byte) ([]TypedValue, error) {
 	var typedValues []TypedValue
 	if err := toTypeArray(input, &typedValues); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Mapping of response to TypedValue failed. Please ensure that the response contains only primitive types.")
 	}
 	return typedValues, nil
 }
 
+// ToProperties converts the given input byte array into an array of Property type.
+// The method will fail in case the data in the given byte array does not contain values of type property.
 func ToProperties(input []byte) ([]Property, error) {
 	var properties []Property
 	if err := toTypeArray(input, &properties); err != nil {
@@ -114,6 +119,8 @@ func ToProperties(input []byte) ([]Property, error) {
 	return properties, nil
 }
 
+// ToVertices converts the given input byte array into an array of Vertex type.
+// The method will fail in case the data in the given byte array does not contain values of type vertex.
 func ToVertices(input []byte) ([]Vertex, error) {
 	var vertices []Vertex
 	if err := toTypeArray(input, &vertices); err != nil {
@@ -122,6 +129,8 @@ func ToVertices(input []byte) ([]Vertex, error) {
 	return vertices, nil
 }
 
+// ToEdges converts the given input byte array into an array of Edge type.
+// The method will fail in case the data in the given byte array does not contain values of type edge.
 func ToEdges(input []byte) ([]Edge, error) {
 	var edges []Edge
 	if err := toTypeArray(input, &edges); err != nil {
@@ -130,6 +139,8 @@ func ToEdges(input []byte) ([]Edge, error) {
 	return edges, nil
 }
 
+// ToValueMap converts the given input byte array into a map of TypedValue's.
+// The method will fail in case the data in the given byte array does not consist of key value pairs where these values are primitive types.
 func ToValueMap(input []byte) (map[string]TypedValue, error) {
 	if input == nil {
 		return nil, fmt.Errorf("Data is nil")
@@ -148,7 +159,7 @@ func ToValueMap(input []byte) (map[string]TypedValue, error) {
 
 			value, err := toValues(entry)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Mapping of response to map of TypedValue failed. Please ensure that the response is a map of primitive types.")
 			}
 
 			if len(value) != 1 {
