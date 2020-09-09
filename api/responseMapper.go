@@ -2,8 +2,11 @@ package api
 
 import "github.com/supplyon/gremcos/interfaces"
 
+// ResponseArray an array type for responses
 type ResponseArray []interfaces.Response
 
+// ToValues converts the given ResponseArray into an array of TypedValue type.
+// The method will fail in case the data in the given ResponseArray are no primitive types.
 func (responses ResponseArray) ToValues() ([]TypedValue, error) {
 	result := make([]TypedValue, 0)
 	for _, response := range responses {
@@ -16,6 +19,8 @@ func (responses ResponseArray) ToValues() ([]TypedValue, error) {
 	return result, nil
 }
 
+// ToProperties converts the given ResponseArray into an array of Property type.
+// The method will fail in case the data in the given ResponseArray are no properties.
 func (responses ResponseArray) ToProperties() ([]Property, error) {
 	result := make([]Property, 0)
 	for _, response := range responses {
@@ -28,6 +33,8 @@ func (responses ResponseArray) ToProperties() ([]Property, error) {
 	return result, nil
 }
 
+// ToVertices converts the given ResponseArray into an array of Vertex type.
+// The method will fail in case the data in the given ResponseArray are no vertices.
 func (responses ResponseArray) ToVertices() ([]Vertex, error) {
 	result := make([]Vertex, 0)
 	for _, response := range responses {
@@ -40,6 +47,8 @@ func (responses ResponseArray) ToVertices() ([]Vertex, error) {
 	return result, nil
 }
 
+// ToEdges converts the given ResponseArray into an array of Edge type.
+// The method will fail in case the data in the given ResponseArray are no edges.
 func (responses ResponseArray) ToEdges() ([]Edge, error) {
 	result := make([]Edge, 0)
 	for _, response := range responses {
