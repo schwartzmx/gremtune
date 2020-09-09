@@ -6,7 +6,7 @@ import "github.com/supplyon/gremcos/interfaces"
 type ResponseArray []interfaces.Response
 
 // ToValues converts the given ResponseArray into an array of TypedValue type.
-// The method will fail in case the data in the given ResponseArray are no primitive types.
+// The method will fail in case the data in the given ResponseArray does not contain primitive values.
 func (responses ResponseArray) ToValues() ([]TypedValue, error) {
 	result := make([]TypedValue, 0)
 	for _, response := range responses {
@@ -20,7 +20,7 @@ func (responses ResponseArray) ToValues() ([]TypedValue, error) {
 }
 
 // ToProperties converts the given ResponseArray into an array of Property type.
-// The method will fail in case the data in the given ResponseArray are no properties.
+// The method will fail in case the data in the given ResponseArray does not contain values of type property.
 func (responses ResponseArray) ToProperties() ([]Property, error) {
 	result := make([]Property, 0)
 	for _, response := range responses {
@@ -34,7 +34,7 @@ func (responses ResponseArray) ToProperties() ([]Property, error) {
 }
 
 // ToVertices converts the given ResponseArray into an array of Vertex type.
-// The method will fail in case the data in the given ResponseArray are no vertices.
+// The method will fail in case the data in the given ResponseArray does not contain values of type vertex.
 func (responses ResponseArray) ToVertices() ([]Vertex, error) {
 	result := make([]Vertex, 0)
 	for _, response := range responses {
@@ -48,7 +48,7 @@ func (responses ResponseArray) ToVertices() ([]Vertex, error) {
 }
 
 // ToEdges converts the given ResponseArray into an array of Edge type.
-// The method will fail in case the data in the given ResponseArray are no edges.
+// The method will fail in case the data in the given ResponseArray does not contain values of type edge.
 func (responses ResponseArray) ToEdges() ([]Edge, error) {
 	result := make([]Edge, 0)
 	for _, response := range responses {
