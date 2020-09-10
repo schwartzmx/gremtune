@@ -99,6 +99,211 @@ const dataVertices = `[{
   }
 ]`
 
+const dataProperties = `[
+	{
+	  "id": "example",
+	  "value": "example",
+	  "label": "pk"
+	},
+	{
+	  "id": "example",
+	  "value": ".36",
+	  "label": "deviceIPAddress"
+	},
+	{
+	  "id": "example3",
+	  "value": "No",
+	  "label": "critical"
+	},
+	{
+	  "id": "example-f57f0a21dfde",
+	  "value": "example_bldg-example",
+	  "label": "placeInNetwork"
+	},
+	{
+	  "id": "example-example-example-example-eb02386bacd3",
+	  "value": "example",
+	  "label": "vendor"
+	},
+	{
+	  "id": "example-example-example-b150-976553721ca4",
+	  "value": "example 10506e",
+	  "label": "deviceModel"
+	},
+	{
+	  "id": "example-example-example-9c7e-50bc3ab37313",
+	  "value": "Switch",
+	  "label": "deviceTypeName"
+	},
+	{
+	  "id": "example-example-4698-example-1ee85c528c66",
+	  "value": "A",
+	  "label": "region"
+	},
+	{
+	  "id": "example-20a2-example-example-4eefa4e22898",
+	  "value": "example",
+	  "label": "snmpDomain"
+	},
+	{
+	  "id": "example-example-4b5f-example-fde71caa478b",
+	  "value": "1.2.3.4.5.6.7",
+	  "label": "sysObjID"
+	},
+	{
+	  "id": "example-example-example-9a91-7b8ff62e9378",
+	  "value": "example OS",
+	  "label": "deviceFamily"
+	},
+	{
+	  "id": "example-20a2-example-example-4eefa4e22898",
+	  "value": "example",
+	  "label": "userName"
+	},
+	{
+	  "id": "example-2958-example-example-99b18ee05fa0",
+	  "value": "12345678",
+	  "label": "assetTag"
+	},
+	{
+	  "id": "example-example-example-example-543efdc271fe",
+	  "value": "2020-08-20T04:16:08.7220998Z",
+	  "label": "createdAt"
+	}
+  ]`
+
+const dataValues = `[
+	"example",
+	".36",
+	"No",
+	"example_bldg-example",
+	"example",
+	"example 10506e",
+	"Switch",
+	"A",
+	"example",
+	"1.2.3.4.5.6.7",
+	"example OS",
+	"example",
+	"12345678",
+	"2020-08-20T04:16:08.7220998Z"
+  ]`
+
+const dataValueMap = `[{
+	"pk" : ["example"],
+	"deviceIPAddress" : [".36"],
+	"critical" : ["No"],
+	"placeInNetwork" : ["example_bldg-example"],
+	"vendor" : ["example"],
+	"deviceModel" : ["example 10506e"],
+	"deviceTypeName" : ["Switch"],
+	"region" : ["A"],
+	"snmpDomain" : ["example"],
+	"sysObjID" : ["1.2.3.4.5.6.7"],
+	"deviceFamily" : ["example OS"],
+	"userName" : ["example"],
+	"assetTag" : ["12345678"],
+	"createdAt" : ["2020-08-20T04:16:08.7220998Z"]
+  }]`
+
+func TestToPropertiesMulti(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	// the expected props is a map <label,value>. Its values have to match the given input for the test
+	// which is 'dataProperties'
+	expectedProps := map[string]string{
+		"pk":              "example",
+		"deviceIPAddress": ".36",
+		"critical":        "No",
+		"placeInNetwork":  "example_bldg-example",
+		"vendor":          "example",
+		"deviceModel":     "example 10506e",
+		"deviceTypeName":  "Switch",
+		"region":          "A",
+		"snmpDomain":      "example",
+		"sysObjID":        "1.2.3.4.5.6.7",
+		"deviceFamily":    "example OS",
+		"userName":        "example",
+		"assetTag":        "12345678",
+		"createdAt":       "2020-08-20T04:16:08.7220998Z",
+	}
+
+	// WHEN
+	properties, err := ToProperties([]byte(dataProperties))
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, properties, 14)
+	for _, prop := range properties {
+		assert.Equal(t, expectedProps[prop.Label], prop.Value.AsString())
+	}
+}
+
+func TestToValuesMulti(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	// the expected props is a list of values.
+	// Its values have to match the given input for the test which is 'dataValues'
+	expectedProps := []string{
+		"example",
+		".36",
+		"No",
+		"example_bldg-example",
+		"example",
+		"example 10506e",
+		"Switch",
+		"A",
+		"example",
+		"1.2.3.4.5.6.7",
+		"example OS",
+		"example",
+		"12345678",
+		"2020-08-20T04:16:08.7220998Z",
+	}
+
+	// WHEN
+	values, err := ToValues([]byte(dataValues))
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, values, 14)
+	for _, val := range values {
+		assert.Contains(t, expectedProps, val.AsString())
+	}
+}
+
+func TestToValueMapMulti(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	// the expected valueMap is a map <label,value>. Its values have to match the given input for the test
+	// which is 'dataValueMap'
+	expectedValueMap := map[string]string{
+		"pk":              "example",
+		"deviceIPAddress": ".36",
+		"critical":        "No",
+		"placeInNetwork":  "example_bldg-example",
+		"vendor":          "example",
+		"deviceModel":     "example 10506e",
+		"deviceTypeName":  "Switch",
+		"region":          "A",
+		"snmpDomain":      "example",
+		"sysObjID":        "1.2.3.4.5.6.7",
+		"deviceFamily":    "example OS",
+		"userName":        "example",
+		"assetTag":        "12345678",
+		"createdAt":       "2020-08-20T04:16:08.7220998Z",
+	}
+	// WHEN
+	valueMap, err := ToValueMap([]byte(dataValueMap))
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, valueMap, 14)
+	for key, value := range valueMap {
+		assert.Equal(t, expectedValueMap[key], value.AsString())
+	}
+}
+
 func TestToValueMap(t *testing.T) {
 	t.Parallel()
 	// GIVEN

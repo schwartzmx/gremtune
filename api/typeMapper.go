@@ -77,21 +77,18 @@ func toTypeArray(input []byte, target interface{}) error {
 				return errors.Wrap(err, "Mapping of response to Property failed. Please ensure that the response contains only properties.")
 			}
 			*targetValue = append(*targetValue, property)
-			return nil
 		case *[]Edge:
 			var edge Edge
 			if err := mapStructToType(mapStrct, &edge); err != nil {
 				return errors.Wrap(err, "Mapping of response to Edge failed. Please ensure that the response contains only edges.")
 			}
 			*targetValue = append(*targetValue, edge)
-			return nil
 		case *[]Vertex:
 			var vertex Vertex
 			if err := mapStructToType(mapStrct, &vertex); err != nil {
 				return errors.Wrap(err, "Mapping of response to Vertex failed. Please ensure that the response contains only vertices.")
 			}
 			*targetValue = append(*targetValue, vertex)
-			return nil
 		default:
 			return fmt.Errorf("Unexpected type %T", target)
 		}
