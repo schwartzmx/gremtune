@@ -77,12 +77,7 @@ func multiParamQuery(query string, params ...string) interfaces.QueryBuilder {
 		return NewSimpleQB(fmt.Sprintf("%s()", query))
 	}
 
-	qStr := ""
-	for _, p := range params {
-		qStr += fmt.Sprintf("\"%s\",", p)
-	}
-
-	qStr = strings.TrimSuffix(qStr, ",")
-	qStr = fmt.Sprintf("%s(%s)", query, qStr)
+	qStr := strings.Join(params, "\",\"")
+	qStr = fmt.Sprintf("%s(\"%s\")", query, qStr)
 	return NewSimpleQB(qStr)
 }
