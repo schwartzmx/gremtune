@@ -1,6 +1,9 @@
 package api
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/gofrs/uuid"
 	"github.com/supplyon/gremcos/interfaces"
 )
@@ -62,4 +65,24 @@ func (g *graph) E() interfaces.Edge {
 
 func (g *graph) String() string {
 	return g.name
+}
+
+// multiParamQuery creates a query based on the given (optional) parameters.
+// The query is the name of the query method that supports 0..* parameters.
+// Examples:
+//    q1:=multiParamQuery(".out","label1","label2") ==> generates ".out('label1','label2')"
+//    q2:=multiParamQuery(".out") ==> generates ".out()"
+func multiParamQuery(query string, params ...string) interfaces.QueryBuilder {
+	if len(params) == 0 {
+		return NewSimpleQB(fmt.Sprintf("%s()", query))
+	}
+
+	qStr := ""
+	for _, p := range params {
+		qStr += fmt.Sprintf("\"%s\",", p)
+	}
+
+	qStr = strings.TrimSuffix(qStr, ",")
+	qStr = fmt.Sprintf("%s(%s)", query, qStr)
+	return NewSimpleQB(qStr)
 }

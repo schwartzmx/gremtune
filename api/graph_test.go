@@ -109,3 +109,22 @@ func TestE(t *testing.T) {
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.E()", graphName), v.String())
 }
+
+func TestMultiparamQuery(t *testing.T) {
+
+	// GIVEN
+	queryStr := ".outE"
+	l1 := "label1"
+	l2 := "label2"
+
+	// WHEN
+	q1 := multiParamQuery(queryStr)
+	q2 := multiParamQuery(queryStr, l1)
+	q3 := multiParamQuery(queryStr, l1, l2)
+
+	// THEN
+	assert.NotNil(t, q1)
+	assert.Equal(t, ".outE()", q1.String())
+	assert.Equal(t, ".outE(\"label1\")", q2.String())
+	assert.Equal(t, ".outE(\"label1\",\"label2\")", q3.String())
+}
