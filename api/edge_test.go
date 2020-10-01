@@ -175,6 +175,25 @@ func TestEdgeHasLabel(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.hasLabel(\"%s\")", graphName, label), e.String())
 }
 
+func TestEdgeHasLabelMulti(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	l1 := "label1"
+	l2 := "label2"
+
+	// WHEN
+	e = e.HasLabel(l1, l2)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.hasLabel(\"%s\",\"%s\")", graphName, l1, l2), e.String())
+}
+
 func TestEdgeCount(t *testing.T) {
 
 	// GIVEN

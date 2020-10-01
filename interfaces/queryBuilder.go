@@ -34,8 +34,8 @@ type Vertex interface {
 	Profiler
 	Counter
 
-	// HasLabel adds .hasLabel('<label>'), e.g. .hasLabel('user'), to the query. The query call returns all vertices with the given label.
-	HasLabel(vertexLabel string) Vertex
+	// HasLabel adds .hasLabel([<label_1>,<label_2>,..,<label_n>]), e.g. .hasLabel('user','name'), to the query. The query call returns all vertices with the given label.
+	HasLabel(vertexLabel ...string) Vertex
 	// Property adds .property('<key>','<value>'), e.g. .property('name','hans'), to the query. The query call will add the given property.
 	Property(key, value string) Vertex
 	// PropertyInt adds .property('<key>',<int value>), e.g. .property('age',55), to the query. The query call will add the given property.
@@ -65,11 +65,11 @@ type Vertex interface {
 	// AddE adds .addE(<label>), to the query. The query call will be the first step to add an edge
 	AddE(label string) Edge
 
-	// OutE adds .outE(), to the query. The query call returns all outgoing edges of the Vertex
-	OutE() Edge
+	// OutE adds .outE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all outgoing edges of the Vertex
+	OutE(labels ...string) Edge
 
-	// InE adds .inE(), to the query. The query call returns all incoming edges of the Vertex
-	InE() Edge
+	// InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all incoming edges of the Vertex
+	InE(labels ...string) Edge
 }
 
 type Edge interface {
@@ -91,8 +91,8 @@ type Edge interface {
 	// e.g. g.V().Add(NewSimpleQB(".myCustomCall('%s')",label))
 	Add(builder QueryBuilder) Edge
 
-	// HasLabel adds .hasLabel('<label>'), e.g. .hasLabel('user'), to the query. The query call returns all edges with the given label.
-	HasLabel(label string) Edge
+	// HasLabel adds .hasLabel([<label_1>,<label_2>,..,<label_n>]), e.g. .hasLabel('user','name'), to the query. The query call returns all edges with the given label.
+	HasLabel(label ...string) Edge
 }
 
 type Dropper interface {

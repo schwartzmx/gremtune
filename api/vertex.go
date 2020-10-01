@@ -48,9 +48,10 @@ func (v *vertex) Has(key, value string) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".has(\"%s\",\"%s\")", key, Escape(value)))
 }
 
-// HasLabel adds .hasLabel("<label>"), e.g. .hasLabel("user")
-func (v *vertex) HasLabel(vertexLabel string) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".hasLabel(\"%s\")", vertexLabel))
+// HasLabel adds .hasLabel([<label_1>,<label_2>,..,<label_n>]), e.g. .hasLabel('user','name'), to the query. The query call returns all vertices with the given label.
+func (v *vertex) HasLabel(vertexLabel ...string) interfaces.Vertex {
+	query := multiParamQuery(".hasLabel", vertexLabel...)
+	return v.Add(query)
 }
 
 // ValuesBy adds .values("<label>"), e.g. .values("user")
@@ -106,15 +107,17 @@ func (v *vertex) PropertyInt(key string, value int) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".property(\"%s\",%d)", key, value))
 }
 
-// OutE adds .outE(), to the query. The query call returns all outgoing edges of the Vertex
-func (v *vertex) OutE() interfaces.Edge {
-	v.Add(NewSimpleQB(".outE()"))
+// OutE adds .outE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all outgoing edges of the Vertex
+func (v *vertex) OutE(labels ...string) interfaces.Edge {
+	query := multiParamQuery(".outE", labels...)
+	v.Add(query)
 	return NewEdgeV(v)
 }
 
-// InE adds .inE(), to the query. The query call returns all incoming edges of the Vertex
-func (v *vertex) InE() interfaces.Edge {
-	v.Add(NewSimpleQB(".inE()"))
+// InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all incoming edges of the Vertex
+func (v *vertex) InE(labels ...string) interfaces.Edge {
+	query := multiParamQuery(".inE", labels...)
+	v.Add(query)
 	return NewEdgeV(v)
 }
 
