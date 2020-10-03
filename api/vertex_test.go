@@ -109,6 +109,24 @@ func TestHasLabel(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().hasLabel(\"%s\")", graphName, label), v.String())
 }
 
+func TestHasLabelMulti(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	l1 := "label1"
+	l2 := "label2"
+
+	// WHEN
+	v = v.HasLabel(l1, l2)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().hasLabel(\"%s\",\"%s\")", graphName, l1, l2), v.String())
+}
+
 func TestValuesBy(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
@@ -312,6 +330,25 @@ func TestOutE(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.outE()", graphName), e.String())
 }
 
+func TestOutEMulti(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+	l1 := "label1"
+	l2 := "label2"
+
+	// WHEN
+	e := v.OutE(l1, l2)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.outE(\"label1\",\"label2\")", graphName), e.String())
+}
+
 func TestInE(t *testing.T) {
 
 	// GIVEN
@@ -327,6 +364,25 @@ func TestInE(t *testing.T) {
 	// THEN
 	assert.NotNil(t, e)
 	assert.Equal(t, fmt.Sprintf("%s.inE()", graphName), e.String())
+}
+
+func TestInEMulti(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+	l1 := "label1"
+	l2 := "label2"
+
+	// WHEN
+	e := v.InE(l1, l2)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.inE(\"label1\",\"label2\")", graphName), e.String())
 }
 
 func TestPropertyList(t *testing.T) {
