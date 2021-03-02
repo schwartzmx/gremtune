@@ -11,16 +11,19 @@ func TestEscape(t *testing.T) {
 	value1 := "abcdefghijklmnopqrstufvxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 	value2 := `^°!"§$%&/()=?*+'#~,.;:-_<>|@€²³¼½¬{[]}\`
 	value3 := `^°!§%&/()=?*+#~,.;:-_<>|@€²³¼½¬{[]}` // no $, no ", no ' and no \
+	value4 := "$hello$world"
 
 	// WHEN
 	escaped1 := Escape(value1)
 	escaped2 := Escape(value2)
 	escaped3 := Escape(value3)
+	escaped4 := Escape(value4)
 
 	// THEN
 	assert.Equal(t, value1, escaped1)
-	assert.Equal(t, "%5E%C2%B0%21%22%C2%A7$%25&%2F%28%29=%3F%2A+%27%23~%2C.%3B:-_%3C%3E%7C@%E2%82%AC%C2%B2%C2%B3%C2%BC%C2%BD%C2%AC%7B%5B%5D%7D%5C", escaped2)
+	assert.Equal(t, "%5E%C2%B0%21%22%C2%A7%24%25%26%2F%28%29%3D%3F%2A%2B%27%23~%2C.%3B%3A-_%3C%3E%7C%40%E2%82%AC%C2%B2%C2%B3%C2%BC%C2%BD%C2%AC%7B%5B%5D%7D%5C", escaped2)
 	assert.Equal(t, value3, escaped3)
+	assert.Equal(t, "%24hello%24world", escaped4)
 }
 
 func TestEscapeUnescape(t *testing.T) {
@@ -32,6 +35,7 @@ func TestEscapeUnescape(t *testing.T) {
 	value5 := `invalid escape sequence %&`
 	value6 := `2020-03-19 15:34:17.8242487 +0000 UTC`
 	value7 := `2020-03-19 15:34:17.8242487 +0000 UTC`
+	value8 := "$hello$world"
 
 	// WHEN
 	escaped1 := Escape(value1)
@@ -40,6 +44,7 @@ func TestEscapeUnescape(t *testing.T) {
 	escaped4 := Escape(value4)
 	escaped5 := Escape(value5)
 	escaped6 := Escape(value6)
+	escaped8 := Escape(value8)
 
 	unescaped1 := UnEscape(escaped1)
 	unescaped2 := UnEscape(escaped2)
@@ -48,6 +53,7 @@ func TestEscapeUnescape(t *testing.T) {
 	unescaped5 := UnEscape(escaped5)
 	unescaped6 := UnEscape(escaped6)
 	unescaped7 := UnEscape(value7)
+	unescaped8 := UnEscape(escaped8)
 
 	// THEN
 	assert.Equal(t, value1, unescaped1)
@@ -57,6 +63,7 @@ func TestEscapeUnescape(t *testing.T) {
 	assert.Equal(t, value5, unescaped5)
 	assert.Equal(t, value6, unescaped6)
 	assert.Equal(t, value7, unescaped7)
+	assert.Equal(t, value8, unescaped8)
 }
 
 func TestShouldEscape(t *testing.T) {
