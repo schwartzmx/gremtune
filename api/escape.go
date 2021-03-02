@@ -13,7 +13,7 @@ func Escape(value string) string {
 
 	// just use url query escaping to ensure that neither
 	// $, \ or control characters lead to failing queries.
-	return url.PathEscape(value)
+	return url.QueryEscape(value)
 }
 
 // UnEscape reverses potentially applied escaping. In case of an error the original input value will be returned
@@ -22,7 +22,7 @@ func UnEscape(value string) string {
 		return value
 	}
 
-	result, err := url.PathUnescape(value)
+	result, err := url.QueryUnescape(value)
 	if err != nil {
 		return value
 	}
