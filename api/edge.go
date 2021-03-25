@@ -70,6 +70,9 @@ func (e *edge) InV() interfaces.Vertex {
 
 // Profile adds ..executionProfile(), to the query. The query call will return profiling information of the executed query
 func (e *edge) Profile() interfaces.QueryBuilder {
+	if !gUSE_COSMOS_DB_QUERY_LANGUAGE {
+		return e.Add(NewSimpleQB(".profile()"))
+	}
 	return e.Add(NewSimpleQB(".executionProfile()"))
 }
 

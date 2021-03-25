@@ -96,6 +96,9 @@ func (v *vertex) AddE(label string) interfaces.Edge {
 }
 
 func (v *vertex) Profile() interfaces.QueryBuilder {
+	if !gUSE_COSMOS_DB_QUERY_LANGUAGE {
+		return v.Add(NewSimpleQB(".profile()"))
+	}
 	return v.Add(NewSimpleQB(".executionProfile()"))
 }
 
