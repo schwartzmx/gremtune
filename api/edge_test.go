@@ -123,6 +123,25 @@ func TestEdgeProfile(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.executionProfile()", graphName), e.String())
 }
 
+func TestEdgeProfile_GremlinDialect(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+
+	// WHEN
+	SetQueryLanguageTo(QueryLanguageTinkerpopGremlin)
+	qb := e.Profile()
+	SetQueryLanguageTo(QueryLanguageCosmosDB)
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.profile()", graphName), e.String())
+}
+
 func TestInV(t *testing.T) {
 
 	// GIVEN

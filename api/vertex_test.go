@@ -242,6 +242,24 @@ func TestProfile(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().executionProfile()", graphName), qb.String())
 }
 
+func TestProfile_GremlinDialect(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	SetQueryLanguageTo(QueryLanguageTinkerpopGremlin)
+	qb := v.Profile()
+	SetQueryLanguageTo(QueryLanguageCosmosDB)
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.V().profile()", graphName), qb.String())
+}
+
 func TestDrop(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
