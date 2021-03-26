@@ -31,6 +31,23 @@ This implementation is only working/ compatible with [TinkerPop 3.4.0](http://ti
 
 Cosmos DB specific error handling is done and described at [ErrorHandling.md](ErrorHandling.md). For example error responses returned by Cosmos due to a usage rate limit violation are handled accordingly.
 
+### Local Development
+
+For being able to develop locally against a local graph data base one can start a local gremlin-server via `make infra.up`.
+In order to be able to use all features the query language has to be switched to `QueryLanguageTinkerpopGremlin`.
+
+### Switch the Query Language
+
+Since the query language of the Cosmos DB and the tinkerpop gremlin implementation are not 100% compatible it is possible to set the language based on the use-case.
+The following piece of code depicts how to set the query language.
+
+```go
+    // If you want to run your queries against a apache tinkerpop gremlin server it is recommended
+    // to switch the used query language to QueryLanguageTinkerpopGremlin.
+    // Per default the CosmosDB compatible query language will be used.
+    api.SetQueryLanguageTo(api.QueryLanguageTinkerpopGremlin)
+```
+
 ## License
 
 See [LICENSE](LICENSE.md)

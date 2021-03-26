@@ -73,7 +73,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 
 func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
 
-	// If you want to run your queries against a apache tinkerpop gremlin server its recommended
+	// If you want to run your queries against a apache tinkerpop gremlin server it is recommended
 	// to switch the used query language to QueryLanguageTinkerpopGremlin.
 	// Per default the CosmosDB compatible query language will be used.
 	api.SetQueryLanguageTo(api.QueryLanguageTinkerpopGremlin)
