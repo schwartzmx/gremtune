@@ -28,14 +28,10 @@ type SuiteIntegrationTests struct {
 //	"timestamp":["2018-07-01T13:37:45-05:00"]
 //}
 type bulkResponseEntry struct {
-	ID        id       `json:"id,omitempty"`
+	ID        int      `json:"id,omitempty"`
 	Label     string   `json:"label,omitempty"`
 	Source    []string `json:"source,omitempty"`
 	Timestamp []string `json:"timestamp,omitempty"`
-}
-type id struct {
-	Type  string `json:"@type,omitempty"`
-	Value int    `json:"@value,omitempty"`
 }
 
 type nodeLabels []string
@@ -144,6 +140,7 @@ func (s *SuiteIntegrationTests) TestExecuteBulkDataAsync_IT() {
 
 		var nl []bulkResponseEntry
 		err = json.Unmarshal(asyncResponse.Response.Result.Data, &nl)
+
 		s.Assert().NoError(err)
 		s.Assert().Len(nl, 64, "There should only be 64 values")
 		start = time.Now()

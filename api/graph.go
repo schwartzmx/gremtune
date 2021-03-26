@@ -8,6 +8,21 @@ import (
 	"github.com/supplyon/gremcos/interfaces"
 )
 
+type QueryLanguage string
+
+const (
+	QueryLanguageCosmosDB         QueryLanguage = "cosmos"
+	QueryLanguageTinkerpopGremlin QueryLanguage = "tinkerpop"
+)
+
+var gUSE_COSMOS_DB_QUERY_LANGUAGE = true
+
+// SetQueryLanguageTo sets the query language that shall be used.
+// Per default QueryLanguageCosmosDB is in use.
+func SetQueryLanguageTo(ql QueryLanguage) {
+	gUSE_COSMOS_DB_QUERY_LANGUAGE = (ql == QueryLanguageCosmosDB)
+}
+
 // NewGraph creates a new graph query with the given name
 // Hint: The actual graph has to exist on the server in order to execute the
 // query that will be generated with this query builder
