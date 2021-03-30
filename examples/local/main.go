@@ -34,7 +34,7 @@ func main() {
 	logger.Info().Msg("Teared down")
 }
 
-func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan<- struct{}) {
+func processLoop(cosmos gremcos.Cosmos, logger zerolog.Logger, exitChannel chan<- struct{}) {
 	// register for common exit signals (e.g. ctrl-c)
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
@@ -71,7 +71,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 	logger.Info().Msg("Process loop left")
 }
 
-func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
+func queryCosmos(cosmos gremcos.Cosmos, logger zerolog.Logger) {
 
 	// If you want to run your queries against a apache tinkerpop gremlin server it is recommended
 	// to switch the used query language to QueryLanguageTinkerpopGremlin.
