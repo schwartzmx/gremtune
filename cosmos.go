@@ -9,13 +9,27 @@ import (
 	"github.com/supplyon/gremcos/interfaces"
 )
 
+// Cosmos is an abstraction of the CosmosDB
 type Cosmos interface {
+	// ExecuteQuery executes the given query and returns the according responses from the CosmosDB
 	ExecuteQuery(query interfaces.QueryBuilder) ([]interfaces.Response, error)
+
+	// Execute can be used to execute a raw query (string). This can be used to issue queries that are not yet supported by the QueryBuilder.
 	Execute(query string) ([]interfaces.Response, error)
+
+	// ExecuteAsync can be used to issue a query and streaming in the responses as they are available / are provided by the CosmosDB
 	ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error)
+
+	// IsConnected returns true in case the connection to the CosmosDB is up, false otherwise.
 	IsConnected() bool
+
+	// Stop stops the connector, terminates all background go routines and closes open connections.
 	Stop() error
+
+	// String
 	String() string
+
+	// IsHealthy returns nil in case the connection to the CosmosDB is up, the according error otherwise.
 	IsHealthy() error
 }
 
