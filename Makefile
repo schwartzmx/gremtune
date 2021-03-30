@@ -47,6 +47,7 @@ gen-mocks: sep ## Generates test doubles (mocks).
 	@mockgen -source=interfaces/queryExecutor.go -destination test/mocks/interfaces/mock_queryExecutor.go
 	@mockgen -source=interfaces/queryBuilder.go -destination test/mocks/interfaces/mock_queryBuilder.go
 	@mockgen -source=metrics/metrics.go -destination test/mocks/metrics/mock_metrics.go
+	@mockgen -source=cosmos.go -destination test/mocks/cosmos/mock_cosmos.go
 
 infra.up: ## Starts up the infra components
 	make -C infra up

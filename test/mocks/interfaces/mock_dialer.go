@@ -5,34 +5,49 @@
 package mock_interfaces
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockDialer is a mock of Dialer interface
+// MockDialer is a mock of Dialer interface.
 type MockDialer struct {
 	ctrl     *gomock.Controller
 	recorder *MockDialerMockRecorder
 }
 
-// MockDialerMockRecorder is the mock recorder for MockDialer
+// MockDialerMockRecorder is the mock recorder for MockDialer.
 type MockDialerMockRecorder struct {
 	mock *MockDialer
 }
 
-// NewMockDialer creates a new mock instance
+// NewMockDialer creates a new mock instance.
 func NewMockDialer(ctrl *gomock.Controller) *MockDialer {
 	mock := &MockDialer{ctrl: ctrl}
 	mock.recorder = &MockDialerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDialer) EXPECT() *MockDialerMockRecorder {
 	return m.recorder
 }
 
-// Connect mocks base method
+// Close mocks base method.
+func (m *MockDialer) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockDialerMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockDialer)(nil).Close))
+}
+
+// Connect mocks base method.
 func (m *MockDialer) Connect() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Connect")
@@ -40,13 +55,13 @@ func (m *MockDialer) Connect() error {
 	return ret0
 }
 
-// Connect indicates an expected call of Connect
+// Connect indicates an expected call of Connect.
 func (mr *MockDialerMockRecorder) Connect() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Connect", reflect.TypeOf((*MockDialer)(nil).Connect))
 }
 
-// IsConnected mocks base method
+// IsConnected mocks base method.
 func (m *MockDialer) IsConnected() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsConnected")
@@ -54,27 +69,27 @@ func (m *MockDialer) IsConnected() bool {
 	return ret0
 }
 
-// IsConnected indicates an expected call of IsConnected
+// IsConnected indicates an expected call of IsConnected.
 func (mr *MockDialerMockRecorder) IsConnected() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConnected", reflect.TypeOf((*MockDialer)(nil).IsConnected))
 }
 
-// Write mocks base method
-func (m *MockDialer) Write(arg0 []byte) error {
+// Ping mocks base method.
+func (m *MockDialer) Ping() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Write", arg0)
+	ret := m.ctrl.Call(m, "Ping")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Write indicates an expected call of Write
-func (mr *MockDialerMockRecorder) Write(arg0 interface{}) *gomock.Call {
+// Ping indicates an expected call of Ping.
+func (mr *MockDialerMockRecorder) Ping() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockDialer)(nil).Write), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockDialer)(nil).Ping))
 }
 
-// Read mocks base method
+// Read mocks base method.
 func (m *MockDialer) Read() (int, []byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Read")
@@ -84,36 +99,22 @@ func (m *MockDialer) Read() (int, []byte, error) {
 	return ret0, ret1, ret2
 }
 
-// Read indicates an expected call of Read
+// Read indicates an expected call of Read.
 func (mr *MockDialerMockRecorder) Read() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockDialer)(nil).Read))
 }
 
-// Close mocks base method
-func (m *MockDialer) Close() error {
+// Write mocks base method.
+func (m *MockDialer) Write(arg0 []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
+	ret := m.ctrl.Call(m, "Write", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Close indicates an expected call of Close
-func (mr *MockDialerMockRecorder) Close() *gomock.Call {
+// Write indicates an expected call of Write.
+func (mr *MockDialerMockRecorder) Write(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockDialer)(nil).Close))
-}
-
-// Ping mocks base method
-func (m *MockDialer) Ping() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ping")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Ping indicates an expected call of Ping
-func (mr *MockDialerMockRecorder) Ping() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockDialer)(nil).Ping))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockDialer)(nil).Write), arg0)
 }
