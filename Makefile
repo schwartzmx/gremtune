@@ -13,7 +13,7 @@ build: sep ## Builds the library
 
 test: sep ## Runs all unittests and generates a coverage report.
 	@echo "--> Run the unit-tests and checks for race conditions."
-	@go test . ./api -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic
+	@go test . ./api ./interfaces -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic
 
 
 test.integration: sep ## Runs all integration tests. As precondition a local gremlin-server has to run and listen on port 8182.
@@ -31,7 +31,7 @@ lint: ## Runs the linter to check for coding-style issues
 
 report.test: sep ## Runs all unittests and generates a coverage- and a test-report.
 	@echo "--> Run the unit-tests"	
-	@go test . ./api -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic -coverprofile=coverage.out -json | tee test-report.out
+	@go test . ./api ./interfaces -timeout 30s -race -run "^Test.*[^IT]$$" -covermode=atomic -coverprofile=coverage.out -json | tee test-report.out
 
 report.lint: ## Runs the linter to check for coding-style issues and generates the report file used in the ci pipeline
 	@echo "--> Lint project + Reporting"
