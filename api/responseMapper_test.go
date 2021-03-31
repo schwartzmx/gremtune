@@ -173,17 +173,3 @@ func TestResponseToEdges_Null(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, values)
 }
-
-func TestResponseToEdges_Empty(t *testing.T) {
-	t.Parallel()
-	// GIVEN
-	data := ""
-	responses := createTestResponse(data)
-
-	// WHEN
-	values, err := responses.ToEdges()
-
-	// THEN
-	assert.NoError(t, err)
-	assert.Empty(t, values)
-}
