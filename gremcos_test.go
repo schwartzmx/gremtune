@@ -28,7 +28,7 @@ type SuiteIntegrationTests struct {
 //	"timestamp":["2018-07-01T13:37:45-05:00"]
 //}
 type bulkResponseEntry struct {
-	ID        int      `json:"id,omitempty"`
+	ID        string   `json:"id,omitempty"`
 	Label     string   `json:"label,omitempty"`
 	Source    []string `json:"source,omitempty"`
 	Timestamp []string `json:"timestamp,omitempty"`
@@ -84,11 +84,11 @@ func (s *SuiteIntegrationTests) seedBulkData() {
 	s.truncateBulkData()
 	s.T().Log("Seeding bulk data started...")
 
-	_, err := s.client.Execute("g.addV('EmployerBulkData').property(id, '1234567890').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree')")
+	_, err := s.client.Execute(`g.addV("EmployerBulkData").property("user_id", "1234567890").property("timestamp", "2018-07-01T13:37:45-05:00").property("source", "tree")`)
 	s.Require().NoError(err)
 
 	for i := 9001; i < 9641; i++ {
-		_, err = s.client.Execute("g.addV('EmployeeBulkData').property(id, '" + strconv.Itoa(i) + "').property('timestamp', '2018-07-01T13:37:45-05:00').property('source', 'tree').as('y').addE('employes').from(V('1234567890')).to('y')")
+		_, err = s.client.Execute(`g.addV("EmployeeBulkData").property("user_id","` + strconv.Itoa(i) + `").property("timestamp", "2018-07-01T13:37:45-05:00").property("source", "tree").as("y").addE("employes").from(g.V().has("user_id","1234567890")).to("y")`)
 		s.Require().NoError(err)
 	}
 	s.T().Log("Seeding bulk data completed...")
@@ -97,7 +97,7 @@ func (s *SuiteIntegrationTests) seedBulkData() {
 func (s *SuiteIntegrationTests) TestExecute_IT() {
 
 	seedData(s.T(), s.client)
-	r, err := s.client.Execute("g.V('1234').label()")
+	r, err := s.client.Execute(`g.V().has("user_id","1234").label()`)
 	s.Require().NoError(err, "Unexpected error from server")
 	s.Require().Len(r, 1)
 
@@ -113,7 +113,7 @@ func (s *SuiteIntegrationTests) TestExecuteBulkData_IT() {
 	s.seedBulkData()
 	defer s.truncateBulkData()
 
-	r, err := s.client.Execute("g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)")
+	r, err := s.client.Execute(`g.V().hasLabel("EmployerBulkData").both("employes").hasLabel("EmployeeBulkData").valueMap(true)`)
 	s.Require().NoError(err, "Unexpected error from server")
 	s.Assert().Len(r, 10, "There should only be 10 responses")
 
@@ -128,7 +128,7 @@ func (s *SuiteIntegrationTests) TestExecuteBulkDataAsync_IT() {
 	s.seedBulkData()
 	defer s.truncateBulkData()
 	responseChannel := make(chan interfaces.AsyncResponse, 2)
-	err := s.client.ExecuteAsync("g.V().hasLabel('EmployerBulkData').both('employes').hasLabel('EmployeeBulkData').valueMap(true)", responseChannel)
+	err := s.client.ExecuteAsync(`g.V().hasLabel("EmployerBulkData").both("employes").hasLabel("EmployeeBulkData").valueMap(true)`, responseChannel)
 	s.Require().NoError(err, "Unexpected error from server")
 
 	count := 0
@@ -152,7 +152,7 @@ func (s *SuiteIntegrationTests) TestExecuteWithBindings_IT() {
 
 	seedData(s.T(), s.client)
 	r, err := s.client.ExecuteWithBindings(
-		"g.V(x).label()",
+		`g.V().has("user_id",x).label()`,
 		map[string]string{"x": "1234"},
 		map[string]string{},
 	)
@@ -205,7 +205,7 @@ func (s *SuiteIntegrationTests) TestPoolExecute_IT() {
 
 	seedData(s.T(), s.client)
 
-	r, err := s.pool.Execute(`g.V('1234').label()`)
+	r, err := s.pool.Execute(`g.V().has("user_id","1234").label()`)
 	s.Require().NoError(err, "Unexpected error from server")
 	s.T().Logf("PoolExecute get vertex, response: %s \n err: %s", r[0].Result.Data, err)
 	var nl nodeLabels

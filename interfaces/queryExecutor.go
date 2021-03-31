@@ -62,3 +62,19 @@ type AsyncResponse struct {
 func (r Response) String() string {
 	return fmt.Sprintf("Response \nRequestID: %v, \nStatus: {%#v}, \nResult: {%#v}\n", r.RequestID, r.Status, r.Result)
 }
+
+// IsEmpty returns true if the given Response contains no data (e.g. due to a query that results in a empty result set).
+func (r Response) IsEmpty() bool {
+	if r.Result.Data == nil {
+		return true
+	}
+	if len(r.Result.Data) == 0 {
+		return true
+	}
+	// Handling of gremlin-server returning "null" in case of
+	// a query returned no result instead of '[]' (as it is done by cosmos).
+	if string(r.Result.Data) == "null" {
+		return true
+	}
+	return false
+}

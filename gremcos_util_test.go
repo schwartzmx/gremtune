@@ -45,10 +45,10 @@ func newTestPool(t *testing.T, errChan chan error) *pool {
 func truncateData(t *testing.T, client interfaces.QueryExecutor) {
 	t.Log("Removing all data from gremlin server started...")
 
-	_, err := client.Execute(`g.V('1234').drop()`)
+	_, err := client.Execute(`g.V().has("user_id","1234").drop()`)
 	require.NoError(t, err)
 
-	_, err = client.Execute(`g.V('2145').drop()`)
+	_, err = client.Execute(`g.V().has("user_id","2145").drop()`)
 	require.NoError(t, err)
 	t.Log("Removing all data from gremlin server completed...")
 }
@@ -59,17 +59,17 @@ func seedData(t *testing.T, client interfaces.QueryExecutor) {
 	t.Log("Seeding data started...")
 
 	_, err := client.Execute(`
-		g.addV('Phil').property(id, '1234').
-			property('timestamp', '2018-07-01T13:37:45-05:00').
-			property('source', 'tree').
-			as('x').
-		  addV('Vincent').property(id, '2145').
-			property('timestamp', '2018-07-01T13:37:45-05:00').
-			property('source', 'tree').
-			as('y').
-		  addE('brother').
-			from('x').
-			to('y')
+		g.addV("Phil").property("user_id", "1234").
+			property("timestamp", "2018-07-01T13:37:45-05:00").
+			property("source", "tree").
+			as("x").
+		  addV("Vincent").property("user_id", "2145").
+			property("timestamp", "2018-07-01T13:37:45-05:00").
+			property("source", "tree").
+			as("y").
+		  addE("brother").
+			from("x").
+			to("y")
 	`)
 	require.NoError(t, err)
 	t.Log("Seeding data completed...")

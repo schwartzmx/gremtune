@@ -35,6 +35,20 @@ func TestResponseToValues(t *testing.T) {
 	assert.True(t, values[2].AsBool())
 }
 
+func TestResponseToValues_Null(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := "null"
+	responses := createTestResponse(data)
+
+	// WHEN
+	values, err := responses.ToValues()
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Empty(t, values)
+}
+
 func TestResponseToProperties(t *testing.T) {
 	t.Parallel()
 	// GIVEN
@@ -54,6 +68,20 @@ func TestResponseToProperties(t *testing.T) {
 	assert.Equal(t, "8fff9259-09e6-4ea5-aaf8-250b31cc7f44|pk", properties[0].ID)
 	assert.Equal(t, "prop value", properties[0].Value.AsString())
 	assert.Equal(t, "prop key", properties[0].Label)
+}
+
+func TestResponseToProperties_Null(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := "null"
+	responses := createTestResponse(data)
+
+	// WHEN
+	values, err := responses.ToProperties()
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Empty(t, values)
 }
 
 func TestResponseToVertices(t *testing.T) {
@@ -90,6 +118,20 @@ func TestResponseToVertices(t *testing.T) {
 	assert.Len(t, vertices[0].Properties, 3)
 }
 
+func TestResponseToVertices_Null(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := "null"
+	responses := createTestResponse(data)
+
+	// WHEN
+	values, err := responses.ToVertices()
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Empty(t, values)
+}
+
 func TestResponseToEdges(t *testing.T) {
 	t.Parallel()
 	// GIVEN
@@ -116,4 +158,18 @@ func TestResponseToEdges(t *testing.T) {
 	assert.Equal(t, "user2", edges[0].OutVLabel)
 	assert.Equal(t, "7404ba4e-be30-486e-88e1-b2f5937a9001", edges[0].InV)
 	assert.Equal(t, "1111ba4e-be30-486e-88e1-b2f5937a9001", edges[0].OutV)
+}
+
+func TestResponseToEdges_Null(t *testing.T) {
+	t.Parallel()
+	// GIVEN
+	data := "null"
+	responses := createTestResponse(data)
+
+	// WHEN
+	values, err := responses.ToEdges()
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Empty(t, values)
 }
