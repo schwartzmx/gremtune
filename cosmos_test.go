@@ -40,6 +40,14 @@ var websocketGenerator = func(host string, options ...optionWebsocket) (interfac
 	return mock, nil
 }
 
+func toCosmosImpl(t *testing.T, cosmos Cosmos) *cosmosImpl {
+	require.NotNil(t, cosmos, "Cosmos must not be nil")
+	cImpl, ok := cosmos.(*cosmosImpl)
+	require.True(t, ok, "Failed to cast to *cosmosImpl")
+	require.NotNil(t, cImpl, "Casted to nil of cosmosImpl")
+	return cImpl
+}
+
 func TestDialUsingDifferentWebsockets(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
@@ -58,11 +66,11 @@ func TestDialUsingDifferentWebsockets(t *testing.T) {
 		wsGenerator(websocketGenerator),
 	)
 	require.NoError(t, err)
-	require.NotNil(t, cosmos)
+	cImpl := toCosmosImpl(t, cosmos)
 
 	// WHEN
-	queryExecutor1, err1 := cosmos.dial()
-	queryExecutor2, err2 := cosmos.dial()
+	queryExecutor1, err1 := cImpl.dial()
+	queryExecutor2, err2 := cImpl.dial()
 
 	// THEN
 	require.NoError(t, err1)
@@ -95,11 +103,11 @@ func TestNew(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	require.NotNil(t, cosmos)
-	assert.Equal(t, idleTimeout, cosmos.connectionIdleTimeout)
-	assert.Equal(t, maxActiveConnections, cosmos.numMaxActiveConnections)
-	assert.Equal(t, username, cosmos.username)
-	assert.Equal(t, password, cosmos.password)
+	cImpl := toCosmosImpl(t, cosmos)
+	assert.Equal(t, idleTimeout, cImpl.connectionIdleTimeout)
+	assert.Equal(t, maxActiveConnections, cImpl.numMaxActiveConnections)
+	assert.Equal(t, username, cImpl.username)
+	assert.Equal(t, password, cImpl.password)
 }
 
 func TestStop(t *testing.T) {
@@ -111,8 +119,8 @@ func TestStop(t *testing.T) {
 
 	cosmos, err := New("ws://host", withMetrics(metrics))
 	require.NoError(t, err)
-	require.NotNil(t, cosmos)
-	cosmos.pool = mockedQueryExecutor
+	cImpl := toCosmosImpl(t, cosmos)
+	cImpl.pool = mockedQueryExecutor
 	mockedQueryExecutor.EXPECT().Close().Return(nil)
 
 	// WHEN
@@ -131,8 +139,8 @@ func TestIsHealthy(t *testing.T) {
 
 	cosmos, err := New("ws://host", withMetrics(metrics))
 	require.NoError(t, err)
-	require.NotNil(t, cosmos)
-	cosmos.pool = mockedQueryExecutor
+	cImpl := toCosmosImpl(t, cosmos)
+	cImpl.pool = mockedQueryExecutor
 
 	// WHEN -- connected --> healthy
 	mockedQueryExecutor.EXPECT().Ping().Return(nil)
@@ -157,8 +165,8 @@ func TestNewWithMetrics(t *testing.T) {
 
 	// THEN
 	require.NoError(t, err)
-	require.NotNil(t, cosmos)
-	assert.NotNil(t, cosmos.metrics)
+	cImpl := toCosmosImpl(t, cosmos)
+	assert.NotNil(t, cImpl.metrics)
 }
 
 func TestUpdateMetricsNoResponses(t *testing.T) {

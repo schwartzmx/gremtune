@@ -58,7 +58,7 @@ func main() {
 	logger.Info().Msg("Teared down")
 }
 
-func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan<- struct{}) {
+func processLoop(cosmos gremcos.Cosmos, logger zerolog.Logger, exitChannel chan<- struct{}) {
 	// register for common exit signals (e.g. ctrl-c)
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
@@ -95,7 +95,7 @@ func processLoop(cosmos *gremcos.Cosmos, logger zerolog.Logger, exitChannel chan
 	logger.Info().Msg("Process loop left")
 }
 
-func queryCosmos(cosmos *gremcos.Cosmos, logger zerolog.Logger) {
+func queryCosmos(cosmos gremcos.Cosmos, logger zerolog.Logger) {
 
 	g := api.NewGraph("g")
 	// adds an edge from vertex with property name:jan to vertex with property name:hans

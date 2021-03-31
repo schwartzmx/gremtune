@@ -5,61 +5,50 @@
 package mock_interfaces
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockWebsocketConnection is a mock of WebsocketConnection interface
+// MockWebsocketConnection is a mock of WebsocketConnection interface.
 type MockWebsocketConnection struct {
 	ctrl     *gomock.Controller
 	recorder *MockWebsocketConnectionMockRecorder
 }
 
-// MockWebsocketConnectionMockRecorder is the mock recorder for MockWebsocketConnection
+// MockWebsocketConnectionMockRecorder is the mock recorder for MockWebsocketConnection.
 type MockWebsocketConnectionMockRecorder struct {
 	mock *MockWebsocketConnection
 }
 
-// NewMockWebsocketConnection creates a new mock instance
+// NewMockWebsocketConnection creates a new mock instance.
 func NewMockWebsocketConnection(ctrl *gomock.Controller) *MockWebsocketConnection {
 	mock := &MockWebsocketConnection{ctrl: ctrl}
 	mock.recorder = &MockWebsocketConnectionMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockWebsocketConnection) EXPECT() *MockWebsocketConnectionMockRecorder {
 	return m.recorder
 }
 
-// SetPongHandler mocks base method
-func (m *MockWebsocketConnection) SetPongHandler(handler func(string) error) {
+// Close mocks base method.
+func (m *MockWebsocketConnection) Close() error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetPongHandler", handler)
-}
-
-// SetPongHandler indicates an expected call of SetPongHandler
-func (mr *MockWebsocketConnectionMockRecorder) SetPongHandler(handler interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPongHandler", reflect.TypeOf((*MockWebsocketConnection)(nil).SetPongHandler), handler)
-}
-
-// WriteMessage mocks base method
-func (m *MockWebsocketConnection) WriteMessage(messageType int, data []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WriteMessage", messageType, data)
+	ret := m.ctrl.Call(m, "Close")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// WriteMessage indicates an expected call of WriteMessage
-func (mr *MockWebsocketConnectionMockRecorder) WriteMessage(messageType, data interface{}) *gomock.Call {
+// Close indicates an expected call of Close.
+func (mr *MockWebsocketConnectionMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteMessage", reflect.TypeOf((*MockWebsocketConnection)(nil).WriteMessage), messageType, data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockWebsocketConnection)(nil).Close))
 }
 
-// ReadMessage mocks base method
+// ReadMessage mocks base method.
 func (m *MockWebsocketConnection) ReadMessage() (int, []byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReadMessage")
@@ -69,41 +58,25 @@ func (m *MockWebsocketConnection) ReadMessage() (int, []byte, error) {
 	return ret0, ret1, ret2
 }
 
-// ReadMessage indicates an expected call of ReadMessage
+// ReadMessage indicates an expected call of ReadMessage.
 func (mr *MockWebsocketConnectionMockRecorder) ReadMessage() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadMessage", reflect.TypeOf((*MockWebsocketConnection)(nil).ReadMessage))
 }
 
-// Close mocks base method
-func (m *MockWebsocketConnection) Close() error {
+// SetPongHandler mocks base method.
+func (m *MockWebsocketConnection) SetPongHandler(handler func(string) error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "SetPongHandler", handler)
 }
 
-// Close indicates an expected call of Close
-func (mr *MockWebsocketConnectionMockRecorder) Close() *gomock.Call {
+// SetPongHandler indicates an expected call of SetPongHandler.
+func (mr *MockWebsocketConnectionMockRecorder) SetPongHandler(handler interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockWebsocketConnection)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPongHandler", reflect.TypeOf((*MockWebsocketConnection)(nil).SetPongHandler), handler)
 }
 
-// WriteControl mocks base method
-func (m *MockWebsocketConnection) WriteControl(messageType int, data []byte, deadline time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WriteControl", messageType, data, deadline)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// WriteControl indicates an expected call of WriteControl
-func (mr *MockWebsocketConnectionMockRecorder) WriteControl(messageType, data, deadline interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteControl", reflect.TypeOf((*MockWebsocketConnection)(nil).WriteControl), messageType, data, deadline)
-}
-
-// SetReadDeadline mocks base method
+// SetReadDeadline mocks base method.
 func (m *MockWebsocketConnection) SetReadDeadline(t time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetReadDeadline", t)
@@ -111,13 +84,13 @@ func (m *MockWebsocketConnection) SetReadDeadline(t time.Time) error {
 	return ret0
 }
 
-// SetReadDeadline indicates an expected call of SetReadDeadline
+// SetReadDeadline indicates an expected call of SetReadDeadline.
 func (mr *MockWebsocketConnectionMockRecorder) SetReadDeadline(t interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReadDeadline", reflect.TypeOf((*MockWebsocketConnection)(nil).SetReadDeadline), t)
 }
 
-// SetWriteDeadline mocks base method
+// SetWriteDeadline mocks base method.
 func (m *MockWebsocketConnection) SetWriteDeadline(t time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetWriteDeadline", t)
@@ -125,8 +98,36 @@ func (m *MockWebsocketConnection) SetWriteDeadline(t time.Time) error {
 	return ret0
 }
 
-// SetWriteDeadline indicates an expected call of SetWriteDeadline
+// SetWriteDeadline indicates an expected call of SetWriteDeadline.
 func (mr *MockWebsocketConnectionMockRecorder) SetWriteDeadline(t interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWriteDeadline", reflect.TypeOf((*MockWebsocketConnection)(nil).SetWriteDeadline), t)
+}
+
+// WriteControl mocks base method.
+func (m *MockWebsocketConnection) WriteControl(messageType int, data []byte, deadline time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WriteControl", messageType, data, deadline)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WriteControl indicates an expected call of WriteControl.
+func (mr *MockWebsocketConnectionMockRecorder) WriteControl(messageType, data, deadline interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteControl", reflect.TypeOf((*MockWebsocketConnection)(nil).WriteControl), messageType, data, deadline)
+}
+
+// WriteMessage mocks base method.
+func (m *MockWebsocketConnection) WriteMessage(messageType int, data []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WriteMessage", messageType, data)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WriteMessage indicates an expected call of WriteMessage.
+func (mr *MockWebsocketConnectionMockRecorder) WriteMessage(messageType, data interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteMessage", reflect.TypeOf((*MockWebsocketConnection)(nil).WriteMessage), messageType, data)
 }
