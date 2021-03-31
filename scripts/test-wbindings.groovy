@@ -1,1 +1,1 @@
-g.V(x).label();
+g.V().has('user_id',x).label();
