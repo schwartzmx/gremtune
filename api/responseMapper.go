@@ -10,6 +10,9 @@ type ResponseArray []interfaces.Response
 func (responses ResponseArray) ToValues() ([]TypedValue, error) {
 	result := make([]TypedValue, 0)
 	for _, response := range responses {
+		if response.IsEmpty() {
+			continue
+		}
 		values, err := ToValues(response.Result.Data)
 		if err != nil {
 			return nil, err
@@ -24,6 +27,9 @@ func (responses ResponseArray) ToValues() ([]TypedValue, error) {
 func (responses ResponseArray) ToProperties() ([]Property, error) {
 	result := make([]Property, 0)
 	for _, response := range responses {
+		if response.IsEmpty() {
+			continue
+		}
 		properties, err := ToProperties(response.Result.Data)
 		if err != nil {
 			return nil, err
@@ -38,6 +44,9 @@ func (responses ResponseArray) ToProperties() ([]Property, error) {
 func (responses ResponseArray) ToVertices() ([]Vertex, error) {
 	result := make([]Vertex, 0)
 	for _, response := range responses {
+		if response.IsEmpty() {
+			continue
+		}
 		vertices, err := ToVertices(response.Result.Data)
 		if err != nil {
 			return nil, err
@@ -52,6 +61,9 @@ func (responses ResponseArray) ToVertices() ([]Vertex, error) {
 func (responses ResponseArray) ToEdges() ([]Edge, error) {
 	result := make([]Edge, 0)
 	for _, response := range responses {
+		if response.IsEmpty() {
+			continue
+		}
 		edges, err := ToEdges(response.Result.Data)
 		if err != nil {
 			return nil, err
