@@ -1,6 +1,11 @@
 package api
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/supplyon/gremcos/interfaces"
 )
 
@@ -74,11 +79,6 @@ func (v *vertex) Properties() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".properties()"))
 }
 
-// Property adds .property("<key>","<value>"), e.g. .property("name","hans")
-func (v *vertex) Property(key, value string) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".property(\"%s\",\"%s\")", key, Escape(value)))
-}
-
 // Id adds .id()
 func (v *vertex) Id() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".id()"))
@@ -138,4 +138,29 @@ func (v *vertex) Count() interfaces.QueryBuilder {
 // PropertyList adds .property(list,"<key>","<value>"), e.g. .property(list, "name","hans"), to the query. The query call will add the given property.
 func (v *vertex) PropertyList(key, value string) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".property(list,\"%s\",\"%s\")", key, Escape(value)))
+}
+
+// Property adds .property("<key>","<value>"), e.g. .property("name","hans") depending on the given type the quotes for the value are omitted.
+// e.g. .property("temperature",23.02) or .property("available",true)
+func (v *vertex) Property(key, value interface{}) interfaces.Vertex {
+
+	switch casted := value.(type) {
+	case string:
+		return v.Add(NewSimpleQB(".property(\"%s\",\"%s\")", key, Escape(casted)))
+	case bool:
+		return v.Add(NewSimpleQB(".property(\"%s\",%t)", key, casted))
+	case int:
+		return v.Add(NewSimpleQB(".property(\"%s\",%d)", key, casted))
+	case float64:
+		return v.Add(NewSimpleQB(".property(\"%s\",%f)", key, casted))
+	case time.Time:
+		return v.Add(NewSimpleQB(".property(\"%s\",\"%s\")", key, casted.String()))
+	default:
+		fmt.Printf("Type %T is not supported in v.Property() will try to cast to string", casted)
+		asStr, err := cast.ToStringE(casted)
+		if err != nil {
+			panic(errors.Wrapf(err, "cast %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", casted))
+		}
+		return v.Add(NewSimpleQB(".property(\"%s\",\"%s\")", key, Escape(asStr)))
+	}
 }
