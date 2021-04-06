@@ -1,6 +1,11 @@
 package api
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/supplyon/gremcos/interfaces"
 )
 
@@ -43,9 +48,16 @@ func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {
 	return v
 }
 
-// Has adds .has("<key>","<value>"), e.g. .has("name","hans")
-func (v *vertex) Has(key, value string) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".has(\"%s\",\"%s\")", key, Escape(value)))
+// Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
+// e.g. .has("temperature",23.02) or .has("available",true)
+func (v *vertex) Has(key, value interface{}) interfaces.Vertex {
+
+	keyVal, err := toKeyValueString(key, value)
+	if err != nil {
+		panic(errors.Wrapf(err, "cast has value %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", value))
+	}
+
+	return v.Add(NewSimpleQB(".has%s", keyVal))
 }
 
 // HasLabel adds .hasLabel([<label_1>,<label_2>,..,<label_n>]), e.g. .hasLabel('user','name'), to the query. The query call returns all vertices with the given label.
@@ -74,11 +86,6 @@ func (v *vertex) Properties() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".properties()"))
 }
 
-// Property adds .property("<key>","<value>"), e.g. .property("name","hans")
-func (v *vertex) Property(key, value string) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".property(\"%s\",\"%s\")", key, Escape(value)))
-}
-
 // Id adds .id()
 func (v *vertex) Id() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".id()"))
@@ -100,14 +107,6 @@ func (v *vertex) Profile() interfaces.QueryBuilder {
 		return v.Add(NewSimpleQB(".profile()"))
 	}
 	return v.Add(NewSimpleQB(".executionProfile()"))
-}
-
-func (v *vertex) HasInt(key string, value int) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".has(\"%s\",%d)", key, value))
-}
-
-func (v *vertex) PropertyInt(key string, value int) interfaces.Vertex {
-	return v.Add(NewSimpleQB(".property(\"%s\",%d)", key, value))
 }
 
 // HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all vertices
@@ -138,4 +137,41 @@ func (v *vertex) Count() interfaces.QueryBuilder {
 // PropertyList adds .property(list,"<key>","<value>"), e.g. .property(list, "name","hans"), to the query. The query call will add the given property.
 func (v *vertex) PropertyList(key, value string) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".property(list,\"%s\",\"%s\")", key, Escape(value)))
+}
+
+// Property adds .property("<key>","<value>"), e.g. .property("name","hans") depending on the given type the quotes for the value are omitted.
+// e.g. .property("temperature",23.02) or .property("available",true)
+func (v *vertex) Property(key, value interface{}) interfaces.Vertex {
+	keyVal, err := toKeyValueString(key, value)
+	if err != nil {
+		panic(errors.Wrapf(err, "cast property value %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", value))
+	}
+
+	return v.Add(NewSimpleQB(".property%s", keyVal))
+}
+
+// toKeyValueString creates a string based on the given key and value as a key/value pair using the following format
+//	(\"key\",\"value\")
+// Depending on the given type of the value the quotes for the value are omitted.
+// e.g. ("temperature",23.02) or ("available",true)
+func toKeyValueString(key, value interface{}) (string, error) {
+	switch casted := value.(type) {
+	case string:
+		return fmt.Sprintf("(\"%s\",\"%s\")", key, Escape(casted)), nil
+	case bool:
+		return fmt.Sprintf("(\"%s\",%t)", key, casted), nil
+	case int:
+		return fmt.Sprintf("(\"%s\",%d)", key, casted), nil
+	case float64:
+		return fmt.Sprintf("(\"%s\",%f)", key, casted), nil
+	case time.Time:
+		return fmt.Sprintf("(\"%s\",\"%s\")", key, casted.String()), nil
+	default:
+		fmt.Printf("Type %T is not supported in v.toKeyValueString() will try to cast to string", casted)
+		asStr, err := cast.ToStringE(casted)
+		if err != nil {
+			return "", errors.Wrapf(err, "cast %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", casted)
+		}
+		return fmt.Sprintf("(\"%s\",\"%s\")", key, Escape(asStr)), nil
+	}
 }

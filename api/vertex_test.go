@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,14 +68,14 @@ func TestHasInt(t *testing.T) {
 	value := 12345
 
 	// WHEN
-	v = v.HasInt(key, value)
+	v = v.Has(key, value)
 
 	// THEN
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",%d)", graphName, key, value), v.String())
 }
 
-func TestPropertyInt(t *testing.T) {
+func TestHasBool(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -82,14 +83,86 @@ func TestPropertyInt(t *testing.T) {
 	v := g.V()
 	require.NotNil(t, v)
 	key := "key"
-	value := 12345
+	value := true
 
 	// WHEN
-	v = v.PropertyInt(key, value)
+	v = v.Has(key, value)
 
 	// THEN
 	assert.NotNil(t, v)
-	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",%d)", graphName, key, value), v.String())
+	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",%t)", graphName, key, value), v.String())
+}
+
+func TestHasFloat(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := 12.34
+
+	// WHEN
+	v = v.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",%f)", graphName, key, value), v.String())
+}
+
+func TestHasTime(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := time.Now()
+
+	// WHEN
+	v = v.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",\"%s\")", graphName, key, value), v.String())
+}
+
+func TestHasMisc(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := myStructWithStringer{field1: "hello", field2: 12345}
+
+	// WHEN
+	v = v.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",\"%s\")", graphName, key, value.String()), v.String())
+}
+
+func TestHasMiscFail(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	type myStruct struct {
+		field1 string
+		field2 int
+	}
+	value := myStruct{field1: "hello", field2: 12345}
+
+	// WHEN + THEN
+	assert.Panics(t, func() { v.Has(key, value) }, "The code did not panic")
 }
 
 func TestHasLabel(t *testing.T) {
@@ -192,7 +265,7 @@ func TestProperties(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().properties()", graphName), qb.String())
 }
 
-func TestProperty(t *testing.T) {
+func TestPropertyStr(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -208,6 +281,123 @@ func TestProperty(t *testing.T) {
 	// THEN
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",\"%s\")", graphName, key, value), v.String())
+}
+
+func TestPropertyInt(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := 12345
+
+	// WHEN
+	v = v.Property(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",%d)", graphName, key, value), v.String())
+}
+
+func TestPropertyFloat(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := 23.02
+
+	// WHEN
+	v = v.Property(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",%f)", graphName, key, value), v.String())
+}
+
+func TestPropertyBool(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := true
+
+	// WHEN
+	v = v.Property(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",%t)", graphName, key, value), v.String())
+}
+
+func TestPropertyTime(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := time.Now()
+
+	// WHEN
+	v = v.Property(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",\"%s\")", graphName, key, value), v.String())
+}
+
+func TestPropertyMiscFail(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	type myStruct struct {
+		field1 string
+		field2 int
+	}
+	value := myStruct{field1: "hello", field2: 12345}
+
+	// WHEN + THEN
+	assert.Panics(t, func() { v.Property(key, value) }, "The code did not panic")
+}
+
+type myStructWithStringer struct {
+	field1 string
+	field2 int
+}
+
+func (ms myStructWithStringer) String() string {
+	return fmt.Sprintf("%s,%d", ms.field1, ms.field2)
+}
+
+func TestPropertyMisc(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+	value := myStructWithStringer{field1: "hello", field2: 12345}
+
+	// WHEN
+	v = v.Property(key, value)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().property(\"%s\",\"%s\")", graphName, key, value.String()), v.String())
 }
 
 func TestId(t *testing.T) {
