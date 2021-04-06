@@ -82,6 +82,17 @@ func (e *edge) HasLabel(labels ...string) interfaces.Edge {
 	return e.Add(query)
 }
 
+// Id adds .id()
+func (e *edge) Id() interfaces.QueryBuilder {
+	return e.Add(NewSimpleQB(".id()"))
+}
+
+// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all edges
+// with the given id.
+func (e *edge) HasId(id string) interfaces.Edge {
+	return e.Add(NewSimpleQB(".hasId(\"%s\")", id))
+}
+
 // Count adds .count(), to the query. The query call will return the number of entities found in the query.
 func (e *edge) Count() interfaces.QueryBuilder {
 	return e.Add(NewSimpleQB(".count()"))
