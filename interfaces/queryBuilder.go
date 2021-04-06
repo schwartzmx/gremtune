@@ -50,6 +50,9 @@ type Vertex interface {
 	// Has adds .has('<key>',<int value>), e.g. .has('age',55), to the query. The query call returns all vertices
 	// with the property which is defined by the given key value pair.
 	HasInt(key string, value int) Vertex
+	// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all vertices
+	// with the given id.
+	HasId(id string) Vertex
 	// ValuesBy adds .values('<label>'), e.g. .values('user'), to the query. The query call returns all values of the vertex.
 	ValuesBy(label string) QueryBuilder
 	// Values adds .values(), to the query. The query call returns all values with the given label of the vertex.
@@ -93,6 +96,13 @@ type Edge interface {
 
 	// HasLabel adds .hasLabel([<label_1>,<label_2>,..,<label_n>]), e.g. .hasLabel('user','name'), to the query. The query call returns all edges with the given label.
 	HasLabel(label ...string) Edge
+
+	// Id adds .id(), to the query. The query call returns the id of the edge.
+	Id() QueryBuilder
+
+	// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all edges
+	// with the given id.
+	HasId(id string) Edge
 }
 
 type Dropper interface {

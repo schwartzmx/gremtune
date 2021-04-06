@@ -229,3 +229,36 @@ func TestEdgeCount(t *testing.T) {
 	assert.NotNil(t, qb)
 	assert.Equal(t, fmt.Sprintf("%s.count()", graphName), qb.String())
 }
+
+func TestEdgeHasId(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	id := "my-id"
+
+	// WHEN
+	e = e.HasId(id)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.hasId(\"%s\")", graphName, id), e.String())
+}
+
+func TestEdgeId(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+
+	// WHEN
+	qb := e.Id()
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.id()", graphName), qb.String())
+}

@@ -110,6 +110,12 @@ func (v *vertex) PropertyInt(key string, value int) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".property(\"%s\",%d)", key, value))
 }
 
+// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all vertices
+// with the given id.
+func (v *vertex) HasId(id string) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".hasId(\"%s\")", id))
+}
+
 // OutE adds .outE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all outgoing edges of the Vertex
 func (v *vertex) OutE(labels ...string) interfaces.Edge {
 	query := multiParamQuery(".outE", labels...)

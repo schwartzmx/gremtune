@@ -421,3 +421,20 @@ func TestPropertyList(t *testing.T) {
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.property(list,\"%s\",\"%s\")", graphName, key, value), v.String())
 }
+
+func TestHasId(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	id := "my-id"
+
+	// WHEN
+	v = v.HasId(id)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().hasId(\"%s\")", graphName, id), v.String())
+}
