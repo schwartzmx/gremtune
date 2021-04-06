@@ -43,12 +43,9 @@ type Vertex interface {
 	PropertyList(key, value string) Vertex
 	// Properties adds .properties(), to the query. The query call returns all properties of the vertex.
 	Properties() QueryBuilder
-	// Has adds .has('<key>','<value>'), e.g. .has('name','hans'), to the query. The query call returns all vertices
-	// with the property which is defined by the given key value pair.
-	Has(key, value string) Vertex
-	// Has adds .has('<key>',<int value>), e.g. .has('age',55), to the query. The query call returns all vertices
-	// with the property which is defined by the given key value pair.
-	HasInt(key string, value int) Vertex
+	// Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
+	// e.g. .has("temperature",23.02) or .has("available",true)
+	Has(key, value interface{}) Vertex
 	// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all vertices
 	// with the given id.
 	HasId(id string) Vertex
