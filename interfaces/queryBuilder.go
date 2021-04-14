@@ -36,28 +36,44 @@ type Vertex interface {
 
 	// HasLabel adds .hasLabel([<label_1>,<label_2>,..,<label_n>]), e.g. .hasLabel('user','name'), to the query. The query call returns all vertices with the given label.
 	HasLabel(vertexLabel ...string) Vertex
+
 	// Property adds .property("<key>","<value>"), e.g. .property("name","hans") depending on the given type the quotes for the value are omitted.
 	// e.g. .property("temperature",23.02) or .property("available",true)
 	Property(key, value interface{}) Vertex
+
 	// PropertyList adds .property(list,'<key>','<value>'), e.g. .property(list, 'name','hans'), to the query. The query call will add the given property.
 	PropertyList(key, value string) Vertex
+
 	// Properties adds .properties(), to the query. The query call returns all properties of the vertex.
-	Properties() QueryBuilder
+	// The method can also be used to return only specific properties identified by their name.
+	// Then .properties("<prop1 name>","<prop2 name>",...) will be added to the query.
+	//	v.Properties("prop1","prop2")
+	Properties(key ...string) Property
+
 	// Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
 	// e.g. .has("temperature",23.02) or .has("available",true)
-	Has(key, value interface{}) Vertex
+	// The method can also be used to return vertices that have a certain property.
+	// Then .has("<prop name>") will be added to the query.
+	//	v.Has("prop1")
+	Has(key string, value ...interface{}) Vertex
+
 	// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all vertices
 	// with the given id.
 	HasId(id string) Vertex
+
 	// ValuesBy adds .values('<label>'), e.g. .values('user'), to the query. The query call returns all values of the vertex.
 	ValuesBy(label string) QueryBuilder
+
 	// Values adds .values(), to the query. The query call returns all values with the given label of the vertex.
 	Values() QueryBuilder
+
 	// ValueMap adds .valueMap(), to the query. The query call returns all values as a map of the vertex.
 	ValueMap() QueryBuilder
+
 	// Add can be used to add a custom QueryBuilder
 	// e.g. g.V().Add(NewSimpleQB(".myCustomCall('%s')",label))
 	Add(builder QueryBuilder) Vertex
+
 	// Id adds .id(), to the query. The query call returns the id of the vertex.
 	Id() QueryBuilder
 
@@ -99,6 +115,17 @@ type Edge interface {
 	// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all edges
 	// with the given id.
 	HasId(id string) Edge
+}
+
+type Property interface {
+	QueryBuilder
+	Dropper
+	Profiler
+	Counter
+
+	// Add can be used to add a custom QueryBuilder
+	// e.g. g.V().properties("prop1").Add(NewSimpleQB(".myCustomCall('%s')",label))
+	Add(builder QueryBuilder) Property
 }
 
 type Dropper interface {

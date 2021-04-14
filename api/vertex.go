@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -50,9 +51,16 @@ func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {
 
 // Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
 // e.g. .has("temperature",23.02) or .has("available",true)
-func (v *vertex) Has(key, value interface{}) interfaces.Vertex {
+// The method can also be used to return vertices that have a certain property.
+// Then .has("<prop name>") will be added to the query.
+//	v.Has("prop1")
+func (v *vertex) Has(key string, value ...interface{}) interfaces.Vertex {
 
-	keyVal, err := toKeyValueString(key, value)
+	if len(value) == 0 {
+		return v.Add(NewSimpleQB(".has(\"%s\")", key))
+	}
+
+	keyVal, err := toKeyValueString(key, value[0])
 	if err != nil {
 		panic(errors.Wrapf(err, "cast has value %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", value))
 	}
@@ -81,9 +89,22 @@ func (v *vertex) ValueMap() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".valueMap()"))
 }
 
-// Properties adds .properties()
-func (v *vertex) Properties() interfaces.QueryBuilder {
-	return v.Add(NewSimpleQB(".properties()"))
+// Properties adds .properties() or .properties("<prop1 name>","<prop2 name>",...)
+func (v *vertex) Properties(keys ...string) interfaces.Property {
+
+	query := NewSimpleQB(".properties()")
+	if len(keys) > 0 {
+		quotedKeys := make([]string, 0, len(keys))
+		for _, key := range keys {
+			quotedKeys = append(quotedKeys, fmt.Sprintf(`"%s"`, key))
+		}
+		keyList := strings.Join(quotedKeys, `,`)
+
+		query = NewSimpleQB(".properties(%s)", keyList)
+	}
+
+	v.Add(query)
+	return NewPropertyV(v)
 }
 
 // Id adds .id()
@@ -160,7 +181,7 @@ func toKeyValueString(key, value interface{}) (string, error) {
 		return fmt.Sprintf("(\"%s\",\"%s\")", key, Escape(casted)), nil
 	case bool:
 		return fmt.Sprintf("(\"%s\",%t)", key, casted), nil
-	case int:
+	case int, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return fmt.Sprintf("(\"%s\",%d)", key, casted), nil
 	case float64:
 		return fmt.Sprintf("(\"%s\",%f)", key, casted), nil

@@ -39,6 +39,23 @@ func TestNewVertexE(t *testing.T) {
 	assert.Equal(t, graphName, v.String())
 }
 
+func TestHasCheck(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	key := "key"
+
+	// WHEN
+	v = v.Has(key)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().has("%s")`, graphName, key), v.String())
+}
+
 func TestHas(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
@@ -263,6 +280,22 @@ func TestProperties(t *testing.T) {
 	// THEN
 	assert.NotNil(t, qb)
 	assert.Equal(t, fmt.Sprintf("%s.V().properties()", graphName), qb.String())
+}
+
+func TestPropertiesWithKey(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	qb := v.Properties("prop1", "prop2")
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf(`%s.V().properties("prop1","prop2")`, graphName), qb.String())
 }
 
 func TestPropertyStr(t *testing.T) {
