@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -81,9 +82,22 @@ func (v *vertex) ValueMap() interfaces.QueryBuilder {
 	return v.Add(NewSimpleQB(".valueMap()"))
 }
 
-// Properties adds .properties()
-func (v *vertex) Properties() interfaces.QueryBuilder {
-	return v.Add(NewSimpleQB(".properties()"))
+// Properties adds .properties() or .properties("<prop1 name>","<prop2 name>",...)
+func (v *vertex) Properties(keys ...string) interfaces.Property {
+
+	query := NewSimpleQB(".properties()")
+	if len(keys) > 0 {
+		quotedKeys := make([]string, 0, len(keys))
+		for _, key := range keys {
+			quotedKeys = append(quotedKeys, fmt.Sprintf(`"%s"`, key))
+		}
+		keyList := strings.Join(quotedKeys, `,`)
+
+		query = NewSimpleQB(".properties(%s)", keyList)
+	}
+
+	v.Add(query)
+	return NewPropertyV(v)
 }
 
 // Id adds .id()
@@ -160,7 +174,7 @@ func toKeyValueString(key, value interface{}) (string, error) {
 		return fmt.Sprintf("(\"%s\",\"%s\")", key, Escape(casted)), nil
 	case bool:
 		return fmt.Sprintf("(\"%s\",%t)", key, casted), nil
-	case int:
+	case int, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return fmt.Sprintf("(\"%s\",%d)", key, casted), nil
 	case float64:
 		return fmt.Sprintf("(\"%s\",%f)", key, casted), nil

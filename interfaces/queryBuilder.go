@@ -46,9 +46,9 @@ type Vertex interface {
 
 	// Properties adds .properties(), to the query. The query call returns all properties of the vertex.
 	// The method can also be used to return only specific properties identified by their name.
-	// Then .properties("<prop name>") will be added to the query.
+	// Then .properties("<prop1 name>","<prop2 name>",...) will be added to the query.
 	//	v.Properties("prop1","prop2")
-	Properties(key ...string) Vertex
+	Properties(key ...string) Property
 
 	// Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
 	// e.g. .has("temperature",23.02) or .has("available",true)
