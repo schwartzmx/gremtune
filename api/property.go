@@ -37,7 +37,7 @@ func (p *property) Drop() interfaces.QueryBuilder {
 	return p.Add(NewSimpleQB(".drop()"))
 }
 
-// Profile adds ..executionProfile(), to the query. The query call will return profiling information of the executed query
+// Profile adds .executionProfile(), to the query. The query call will return profiling information of the executed query
 func (p *property) Profile() interfaces.QueryBuilder {
 	if !gUSE_COSMOS_DB_QUERY_LANGUAGE {
 		return p.Add(NewSimpleQB(".profile()"))
