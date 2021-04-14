@@ -120,6 +120,10 @@ type Property interface {
 	Dropper
 	Profiler
 	Counter
+
+	// Add can be used to add a custom QueryBuilder
+	// e.g. g.V().properties("prop1").Add(NewSimpleQB(".myCustomCall('%s')",label))
+	Add(builder QueryBuilder) Property
 }
 
 type Dropper interface {

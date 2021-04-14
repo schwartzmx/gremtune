@@ -51,9 +51,16 @@ func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {
 
 // Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
 // e.g. .has("temperature",23.02) or .has("available",true)
-func (v *vertex) Has(key, value interface{}) interfaces.Vertex {
+// The method can also be used to return vertices that have a certain property.
+// Then .has("<prop name>") will be added to the query.
+//	v.Has("prop1")
+func (v *vertex) Has(key string, value ...interface{}) interfaces.Vertex {
 
-	keyVal, err := toKeyValueString(key, value)
+	if len(value) == 0 {
+		return v.Add(NewSimpleQB(".has(\"%s\")", key))
+	}
+
+	keyVal, err := toKeyValueString(key, value[0])
 	if err != nil {
 		panic(errors.Wrapf(err, "cast has value %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", value))
 	}
