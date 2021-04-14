@@ -42,6 +42,11 @@ func NewVertexE(e interfaces.Edge) interfaces.Vertex {
 	}
 }
 
+// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
+func (v *vertex) Limit(maxElements int) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".limit(%d)", maxElements))
+}
+
 // Add can be used to add a custom QueryBuilder
 // e.g. g.V().Add(NewSimpleQB(".myCustomCall("%s")",label))
 func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {

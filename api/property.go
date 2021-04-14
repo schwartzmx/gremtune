@@ -49,3 +49,8 @@ func (p *property) Profile() interfaces.QueryBuilder {
 func (p *property) Count() interfaces.QueryBuilder {
 	return p.Add(NewSimpleQB(".count()"))
 }
+
+// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
+func (p *property) Limit(maxElements int) interfaces.Property {
+	return p.Add(NewSimpleQB(".limit(%d)", maxElements))
+}

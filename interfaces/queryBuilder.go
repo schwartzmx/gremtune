@@ -85,6 +85,9 @@ type Vertex interface {
 
 	// InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all incoming edges of the Vertex
 	InE(labels ...string) Edge
+
+	// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
+	Limit(maxElements int) Vertex
 }
 
 type Edge interface {
@@ -115,6 +118,9 @@ type Edge interface {
 	// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all edges
 	// with the given id.
 	HasId(id string) Edge
+
+	// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
+	Limit(maxElements int) Edge
 }
 
 type Property interface {
@@ -126,6 +132,9 @@ type Property interface {
 	// Add can be used to add a custom QueryBuilder
 	// e.g. g.V().properties("prop1").Add(NewSimpleQB(".myCustomCall('%s')",label))
 	Add(builder QueryBuilder) Property
+
+	// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
+	Limit(maxElements int) Property
 }
 
 type Dropper interface {

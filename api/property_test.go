@@ -120,3 +120,24 @@ func TestPropertyCount(t *testing.T) {
 	assert.NotNil(t, qb)
 	assert.Equal(t, fmt.Sprintf("%s.count()", graphName), qb.String())
 }
+
+func TestPropertyLimit(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+	p := NewPropertyV(v)
+	require.NotNil(t, p)
+
+	limit := 1234
+
+	// WHEN
+	edge := p.Limit(limit)
+
+	// THEN
+	assert.NotNil(t, edge)
+	assert.Equal(t, fmt.Sprintf(`%s.limit(%d)`, graphName, limit), p.String())
+}

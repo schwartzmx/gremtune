@@ -41,6 +41,11 @@ func (e *edge) Add(builder interfaces.QueryBuilder) interfaces.Edge {
 	return e
 }
 
+// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
+func (e *edge) Limit(maxElements int) interfaces.Edge {
+	return e.Add(NewSimpleQB(".limit(%d)", maxElements))
+}
+
 // To adds .to(<vertex>), to the query. The query call will be the second step to add an edge
 func (e *edge) To(v interfaces.Vertex) interfaces.Edge {
 	return e.Add(NewSimpleQB(".to(%s)", v))
