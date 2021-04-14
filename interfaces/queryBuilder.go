@@ -115,6 +115,8 @@ type Edge interface {
 	// HasId adds .hasId('<id>'), e.g. .hasId('8aaaa410-dae1-4f33-8dd7-0217e69df10c'), to the query. The query call returns all edges
 	// with the given id.
 	HasId(id string) Edge
+}
+
 type Property interface {
 	QueryBuilder
 	Dropper
