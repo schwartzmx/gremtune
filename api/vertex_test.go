@@ -661,3 +661,22 @@ func TestHasId(t *testing.T) {
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.V().hasId(\"%s\")", graphName, id), v.String())
 }
+
+func TestVertexLimit(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	limit := 1234
+
+	// WHEN
+	edge := v.Limit(limit)
+
+	// THEN
+	assert.NotNil(t, edge)
+	assert.Equal(t, fmt.Sprintf(`%s.V().limit(%d)`, graphName, limit), v.String())
+}

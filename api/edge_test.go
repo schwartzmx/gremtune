@@ -262,3 +262,21 @@ func TestEdgeId(t *testing.T) {
 	assert.NotNil(t, qb)
 	assert.Equal(t, fmt.Sprintf("%s.id()", graphName), qb.String())
 }
+
+func TestEdgeLimit(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	limit := 1234
+
+	// WHEN
+	edge := e.Limit(limit)
+
+	// THEN
+	assert.NotNil(t, edge)
+	assert.Equal(t, fmt.Sprintf(`%s.limit(%d)`, graphName, limit), e.String())
+}
