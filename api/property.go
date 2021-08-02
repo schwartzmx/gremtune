@@ -54,3 +54,9 @@ func (p *property) Count() interfaces.QueryBuilder {
 func (p *property) Limit(maxElements int) interfaces.Property {
 	return p.Add(NewSimpleQB(".limit(%d)", maxElements))
 }
+
+// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
+func (p *property) As(labels ...string) interfaces.Property {
+	query := multiParamQuery(".as", labels...)
+	return p.Add(query)
+}

@@ -41,6 +41,12 @@ func (e *edge) Add(builder interfaces.QueryBuilder) interfaces.Edge {
 	return e
 }
 
+// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
+func (e *edge) As(labels ...string) interfaces.Edge {
+	query := multiParamQuery(".as", labels...)
+	return e.Add(query)
+}
+
 // Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
 func (e *edge) Limit(maxElements int) interfaces.Edge {
 	return e.Add(NewSimpleQB(".limit(%d)", maxElements))

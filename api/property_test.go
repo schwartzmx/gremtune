@@ -141,3 +141,44 @@ func TestPropertyLimit(t *testing.T) {
 	assert.NotNil(t, edge)
 	assert.Equal(t, fmt.Sprintf(`%s.limit(%d)`, graphName, limit), p.String())
 }
+
+func TestPropertyAs(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+	p := NewPropertyV(v)
+	require.NotNil(t, p)
+	label := "label1"
+
+	// WHEN
+	p = p.As(label)
+
+	// THEN
+	assert.NotNil(t, p)
+	assert.Equal(t, fmt.Sprintf("%s.as(\"%s\")", graphName, label), p.String())
+}
+
+func TestPropertyAsMulti(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := NewVertexG(g)
+	require.NotNil(t, v)
+	p := NewPropertyV(v)
+	require.NotNil(t, p)
+	l1 := "label1"
+	l2 := "label2"
+
+	// WHEN
+	p = p.As(l1, l2)
+
+	// THEN
+	assert.NotNil(t, p)
+	assert.Equal(t, fmt.Sprintf("%s.as(\"%s\",\"%s\")", graphName, l1, l2), p.String())
+}

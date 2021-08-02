@@ -88,6 +88,9 @@ type Vertex interface {
 
 	// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
 	Limit(maxElements int) Vertex
+
+	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
+	As(labels ...string) Vertex
 }
 
 type Edge interface {
@@ -121,6 +124,9 @@ type Edge interface {
 
 	// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
 	Limit(maxElements int) Edge
+
+	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
+	As(labels ...string) Edge
 }
 
 type Property interface {
@@ -135,6 +141,9 @@ type Property interface {
 
 	// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
 	Limit(maxElements int) Property
+
+	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
+	As(labels ...string) Property
 }
 
 type Dropper interface {
