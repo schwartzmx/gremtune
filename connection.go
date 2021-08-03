@@ -2,7 +2,6 @@ package gremcos
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -134,10 +133,11 @@ func extractConnectionError(resp *http.Response) error {
 		return errMinimal
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	data := ""
+	/*, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return errMinimal
-	}
+	}*/
 
 	dataStr := string(data)
 	if dataStr == "" {
