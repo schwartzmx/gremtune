@@ -1,7 +1,9 @@
 package gremcos
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -330,4 +332,17 @@ func newMockedDialerFactory(websocketConnection interfaces.WebsocketConnection, 
 	return func(wBufSize, rBifSize int, timeout time.Duration) websocketDialer {
 		return websocketFuncSuccess
 	}
+}
+
+func TestExtractConnectionError(t *testing.T) {
+	assert.Nil(t, extractConnectionError(nil))
+
+	resp := &http.Response{}
+	assert.Error(t, extractConnectionError(resp))
+
+	resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("")))
+	assert.Error(t, extractConnectionError(resp))
+
+	resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("hello")))
+	assert.Error(t, extractConnectionError(resp))
 }
