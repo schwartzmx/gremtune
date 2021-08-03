@@ -10,6 +10,7 @@ import (
 func (c *client) handleResponse(msg []byte) error {
 	resp, err := marshalResponse(msg)
 
+	// ignore the error here in case the response status code tells that an authentication is needed
 	if resp.Status.Code == interfaces.StatusAuthenticate { //Server request authentication
 		return c.authenticate(resp.RequestID)
 	}
