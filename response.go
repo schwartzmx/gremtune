@@ -128,6 +128,13 @@ func (c *client) retrieveResponseAsync(id string, responseChannel chan interface
 	close(responseChannel)
 }
 
+func emptyIfNilOrError(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}
+
 // retrieveResponse retrieves the response saved by saveResponse.
 func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 
@@ -167,7 +174,8 @@ func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 
 	dataI, ok := c.results.Load(id)
 	if !ok {
-		return nil, fmt.Errorf("No result for response with id %s found", id)
+		lastErr := c.LastError() // add more information to find out why there was no result
+		return nil, fmt.Errorf("no result for response with id %s found, err='%s'", id, emptyIfNilOrError(lastErr))
 	}
 
 	// cast the given data into an array of Responses
