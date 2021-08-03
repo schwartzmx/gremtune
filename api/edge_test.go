@@ -280,3 +280,40 @@ func TestEdgeLimit(t *testing.T) {
 	assert.NotNil(t, edge)
 	assert.Equal(t, fmt.Sprintf(`%s.limit(%d)`, graphName, limit), e.String())
 }
+
+func TestEdgeAs(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	label := "label"
+
+	// WHEN
+	e = e.As(label)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.as(\"%s\")", graphName, label), e.String())
+}
+
+func TestEdgeAsMulti(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	l1 := "label1"
+	l2 := "label2"
+
+	// WHEN
+	e = e.As(l1, l2)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.as(\"%s\",\"%s\")", graphName, l1, l2), e.String())
+}

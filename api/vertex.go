@@ -47,6 +47,12 @@ func (v *vertex) Limit(maxElements int) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".limit(%d)", maxElements))
 }
 
+// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
+func (v *vertex) As(labels ...string) interfaces.Vertex {
+	query := multiParamQuery(".as", labels...)
+	return v.Add(query)
+}
+
 // Add can be used to add a custom QueryBuilder
 // e.g. g.V().Add(NewSimpleQB(".myCustomCall("%s")",label))
 func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {

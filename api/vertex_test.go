@@ -680,3 +680,40 @@ func TestVertexLimit(t *testing.T) {
 	assert.NotNil(t, edge)
 	assert.Equal(t, fmt.Sprintf(`%s.V().limit(%d)`, graphName, limit), v.String())
 }
+
+func TestVertexAs(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	label := "label1"
+
+	// WHEN
+	v = v.As(label)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().as(\"%s\")", graphName, label), v.String())
+}
+
+func TestVertexAsMulti(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	l1 := "label1"
+	l2 := "label2"
+
+	// WHEN
+	v = v.As(l1, l2)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().as(\"%s\",\"%s\")", graphName, l1, l2), v.String())
+}

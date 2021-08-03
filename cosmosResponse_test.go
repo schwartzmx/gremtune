@@ -146,7 +146,7 @@ func TestParseAttributeMapFail(t *testing.T) {
 	}
 
 	// WHEN
-	responseInfo, err := parseAttributeMap(attributeMap)
+	_, err := parseAttributeMap(attributeMap)
 
 	// THEN
 	require.Error(t, err)
@@ -163,7 +163,7 @@ func TestParseAttributeMapFail(t *testing.T) {
 	}
 
 	// WHEN
-	responseInfo, err = parseAttributeMap(attributeMap)
+	responseInfo, err := parseAttributeMap(attributeMap)
 
 	// THEN
 	require.NoError(t, err)
