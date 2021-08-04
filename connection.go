@@ -2,6 +2,7 @@ package gremcos
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -98,16 +99,17 @@ func (ws *websocket) Connect() error {
 	if err != nil {
 		ws.setConnection(nil)
 
-		errMsg := fmt.Sprintf("Dial failed: %s. Probably '/gremlin' has to be added to the used hostname.", err)
+		errMsg := fmt.Sprintf("dialing '%s' failed with %s. Probably '/gremlin' has to be added to the used hostname.", ws.host, err)
 		// try to get some additional information out of the response
-		if response != nil {
-			errMsg = fmt.Sprintf("%s - Response from Server %d", errMsg, response.StatusCode)
+		errMsgAdditional := ""
+		if err = extractConnectionError(response); err != nil {
+			errMsgAdditional = fmt.Sprintf(" Details: %s", err.Error())
 		}
 
 		// As of 3.2.2 the URL has changed.
 		// https://groups.google.com/forum/#!msg/gremlin-users/x4hiHsmTsHM/Xe4GcPtRCAAJ
 		// Probably '/gremlin' has to be added to the used hostname
-		return fmt.Errorf("%s", errMsg)
+		return fmt.Errorf("%s%s", errMsg, errMsgAdditional)
 	}
 
 	// Install the handler for pong messages from the peer.
@@ -120,6 +122,28 @@ func (ws *websocket) Connect() error {
 
 	ws.setConnection(conn)
 	return nil
+}
+
+func extractConnectionError(resp *http.Response) error {
+	if resp == nil {
+		return nil
+	}
+	errMinimal := fmt.Errorf("%s", resp.Status)
+
+	if resp.Body == nil {
+		return errMinimal
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errMinimal
+	}
+
+	dataStr := string(data)
+	if dataStr == "" {
+		return errMinimal
+	}
+	return fmt.Errorf("%s: %s", resp.Status, dataStr)
 }
 
 func (ws *websocket) setConnection(connection interfaces.WebsocketConnection) {

@@ -1,6 +1,7 @@
 package gremcos
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -300,4 +301,10 @@ func TestResponseErrorDetection(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestEmptyIfNilOrError(t *testing.T) {
+
+	assert.Empty(t, emptyIfNilOrError(nil))
+	assert.Equal(t, "failure", emptyIfNilOrError(fmt.Errorf("failure")))
 }

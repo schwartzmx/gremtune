@@ -360,7 +360,7 @@ func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
 	errorChannel := make(chan error, 1)
 
 	// WHEN
-	mockedDialer.EXPECT().Read().Return(-1, nil, nil).AnyTimes()
+	mockedDialer.EXPECT().Read().Return(-1, nil, fmt.Errorf("failure")).AnyTimes()
 	mockedDialer.EXPECT().Close().Return(nil).AnyTimes()
 
 	client.wg.Add(1)

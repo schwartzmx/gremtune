@@ -12,9 +12,20 @@ import (
 	"github.com/supplyon/gremcos/interfaces"
 )
 
-// This is not really an error since this happens usually when the socket is closed by the peer.
+// socketClosedByServerError is not really an error since this happens usually when the socket is closed by the peer.
 // But in order to support the workflow of message processing as implemented in gremcos we need a error type here.
-var socketClosedEvent = fmt.Errorf("Received msgType == -1 this is no frame --> close the readworker")
+type socketClosedByServerError struct {
+	err error
+}
+
+func (socketClosedErr socketClosedByServerError) Error() string {
+	detailErrMsg := ""
+	if socketClosedErr.err != nil {
+		detailErrMsg = socketClosedErr.err.Error()
+	}
+
+	return fmt.Sprintf("received msgType == -1 this is no frame, closing the readworker %s", detailErrMsg)
+}
 
 // client is a container for the gremcos client.
 type client struct {
@@ -359,8 +370,9 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 	for {
 		msgType, msg, err := c.conn.Read()
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
-			errs <- socketClosedEvent
-			c.setLastErr(socketClosedEvent)
+			closedErr := socketClosedByServerError{err: err}
+			errs <- closedErr
+			c.setLastErr(closedErr)
 
 			// to return at this point is save since we call workerSaveExit() to clean up everything
 			// when the function is left

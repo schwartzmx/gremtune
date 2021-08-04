@@ -201,7 +201,7 @@ func (p *pool) purge() {
 		if err := idleConnection.pc.client.LastError(); err != nil {
 
 			// only log the error in case it is not the socket closed event
-			if err.Error() != socketClosedEvent.Error() {
+			if _, ok := err.(socketClosedByServerError); !ok {
 				p.logger.Info().Err(err).Msgf("Remove connection from pool due to an error [%s]", err.Error())
 			}
 
