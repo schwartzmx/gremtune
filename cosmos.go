@@ -39,9 +39,7 @@ type cosmosImpl struct {
 
 	errorChannel chan error
 
-	host     string
-	username string
-	password string
+	host string
 
 	// pool the connection pool
 	pool                    interfaces.QueryExecutor
@@ -56,6 +54,8 @@ type cosmosImpl struct {
 	metrics *Metrics
 
 	wg sync.WaitGroup
+
+	credentialProvider CredentialProvider
 }
 
 type websocketGeneratorFun func(host string, options ...optionWebsocket) (interfaces.Dialer, error)
@@ -63,11 +63,30 @@ type websocketGeneratorFun func(host string, options ...optionWebsocket) (interf
 // Option is the struct for defining optional parameters for Cosmos
 type Option func(*cosmosImpl)
 
-// WithAuth sets credentials for an authenticated connection
+// WithAuth sets credentials for an authenticated connection using static credentials (primary-/ secondary cosmos key as password)
 func WithAuth(username string, password string) Option {
 	return func(c *cosmosImpl) {
-		c.username = username
-		c.password = password
+		c.credentialProvider = StaticCredentialProvider{
+			UsernameStatic: username,
+			PasswordStatic: password,
+		}
+	}
+}
+
+// WithResourceTokenAuth sets credential provider that is used to authenticate the requests to cosmos.
+// With this approach dynamic credentials (cosmos resource tokens) can be used for authentication.
+// To do this you have to provide a CredentialProvider implementation that takes care for providing a valid (not yet expired) resource token
+//	myResourceTokenProvider := MyDynamicCredentialProvider{}
+//	New("wss://example.com", WithResourceTokenAuth(myResourceTokenProvider))
+//
+// If you want to use static credentials (primary-/ secondary cosmos key as password) instead you can either use "WithAuth".
+//	New("wss://example.com", WithAuth("username","primary-key"))
+// Or you use the default implementation for a static credentials provider "StaticCredentialProvider"
+//	staticCredProvider := StaticCredentialProvider{UsernameStatic: "username", PasswordStatic: "primary-key"}
+//	New("wss://example.com", WithResourceTokenAuth(staticCredProvider))
+func WithResourceTokenAuth(credentialProvider CredentialProvider) Option {
+	return func(c *cosmosImpl) {
+		c.credentialProvider = credentialProvider
 	}
 }
 
@@ -128,6 +147,7 @@ func New(host string, options ...Option) (Cosmos, error) {
 		connectionIdleTimeout:   time.Second * 30,
 		metrics:                 nil,
 		websocketGenerator:      NewWebsocket,
+		credentialProvider:      noCredentials{},
 	}
 
 	for _, opt := range options {
@@ -175,7 +195,7 @@ func (c *cosmosImpl) dial() (interfaces.QueryExecutor, error) {
 		return nil, err
 	}
 
-	return Dial(dialer, c.errorChannel, SetAuth(c.username, c.password), PingInterval(time.Second*30))
+	return Dial(dialer, c.errorChannel, SetAuth(c.credentialProvider), PingInterval(time.Second*30))
 }
 
 func (c *cosmosImpl) ExecuteQuery(query interfaces.QueryBuilder) ([]interfaces.Response, error) {
@@ -217,7 +237,7 @@ func (c *cosmosImpl) Stop() error {
 }
 
 func (c *cosmosImpl) String() string {
-	return fmt.Sprintf("CosmosDB (connected=%t, target=%s, user=%s)", c.IsConnected(), c.host, c.username)
+	return fmt.Sprintf("CosmosDB (connected=%t, target=%s, user=%s)", c.IsConnected(), c.host, c.credentialProvider.Username())
 }
 
 // IsHealthy returns nil if the Cosmos DB connection is alive, otherwise an error is returned
