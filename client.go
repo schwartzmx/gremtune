@@ -56,8 +56,7 @@ type client struct {
 	// stores the most recent error
 	lastError atomic.Value
 
-	// auth auth information like username and password
-	auth auth
+	credentialProvider CredentialProvider
 
 	// pingInterval is the interval that is used to check if the connection
 	// is still alive. The interval to send the ping frame to the peer.
@@ -74,19 +73,13 @@ type client struct {
 	once sync.Once
 }
 
-// auth is the container for authentication data of Client
-type auth struct {
-	username string
-	password string
-}
-
 // clientOption is the struct for defining optional parameters for the Client
 type clientOption func(*client)
 
-// SetAuth sets credentials for an authenticated connection
-func SetAuth(username string, password string) clientOption {
+// SetAuth sets credentials provider for an authenticated connection
+func SetAuth(credentialProvider CredentialProvider) clientOption {
 	return func(c *client) {
-		c.auth = auth{username: username, password: password}
+		c.credentialProvider = credentialProvider
 	}
 }
 
@@ -106,6 +99,7 @@ func newClient(dialer interfaces.Dialer, options ...clientOption) *client {
 		responseStatusNotifier: &sync.Map{},
 		pingInterval:           60 * time.Second,
 		quitChannel:            make(chan struct{}),
+		credentialProvider:     noCredentials{},
 	}
 
 	for _, opt := range options {
@@ -217,23 +211,26 @@ func (c *client) executeAsync(query string, bindings, rebindings *map[string]str
 	return
 }
 
-func validateCredentials(auth auth) error {
-	if len(auth.username) == 0 {
+func validateCredentials(username string, password string) error {
+	if len(username) == 0 {
 		return fmt.Errorf("Username is missing")
 	}
 
-	if len(auth.password) == 0 {
+	if len(password) == 0 {
 		return fmt.Errorf("Password is missing")
 	}
 	return nil
 }
 
 func (c *client) authenticate(requestID string) error {
-	if err := validateCredentials(c.auth); err != nil {
+	username := c.credentialProvider.Username()
+	password := c.credentialProvider.Password()
+
+	if err := validateCredentials(username, password); err != nil {
 		return err
 	}
 
-	req, err := prepareAuthRequest(requestID, c.auth.username, c.auth.password)
+	req, err := prepareAuthRequest(requestID, username, password)
 	if err != nil {
 		return err
 	}

@@ -106,8 +106,9 @@ func TestNew(t *testing.T) {
 	cImpl := toCosmosImpl(t, cosmos)
 	assert.Equal(t, idleTimeout, cImpl.connectionIdleTimeout)
 	assert.Equal(t, maxActiveConnections, cImpl.numMaxActiveConnections)
-	assert.Equal(t, username, cImpl.username)
-	assert.Equal(t, password, cImpl.password)
+	require.NotNil(t, cImpl.credentialProvider)
+	assert.Equal(t, username, cImpl.credentialProvider.Username())
+	assert.Equal(t, password, cImpl.credentialProvider.Password())
 }
 
 func TestStop(t *testing.T) {
@@ -259,4 +260,30 @@ func TestUpdateMetricsFull(t *testing.T) {
 
 	// THEN
 	// expect the calls on the metrics specified above
+}
+
+func TestWithResourceTokenAuth(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics, _ := NewMockedMetrics(mockCtrl)
+	username := "abcd"
+	password := "xyz"
+
+	// WHEN
+	cosmos, err := New("ws://host",
+		WithResourceTokenAuth(
+			StaticCredentialProvider{
+				UsernameStatic: username,
+				PasswordStatic: password,
+			}),
+		withMetrics(metrics),
+	)
+
+	// THEN
+	require.NoError(t, err)
+	cImpl := toCosmosImpl(t, cosmos)
+	require.NotNil(t, cImpl.credentialProvider)
+	assert.Equal(t, username, cImpl.credentialProvider.Username())
+	assert.Equal(t, password, cImpl.credentialProvider.Password())
 }
