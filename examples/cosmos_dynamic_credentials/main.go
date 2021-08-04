@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
@@ -12,32 +13,64 @@ import (
 	"github.com/supplyon/gremcos/api"
 )
 
-func main() {
+type myDynamicCredentialProvider struct {
+	credentialFile   string
+	UsernameFromFile string `json:"username"`
+	PasswordFromFile string `json:"password"`
+}
 
+func (dynCred *myDynamicCredentialProvider) updateCredentials() error {
+	file, err := os.Open(dynCred.credentialFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err := json.NewDecoder(file).Decode(&dynCred); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (dynCred *myDynamicCredentialProvider) Username() string {
+	if err := dynCred.updateCredentials(); err != nil {
+		log.Fatalf("Unable to read credentials from file '%s': %s", dynCred.credentialFile, err)
+	}
+
+	if len(dynCred.UsernameFromFile) == 0 {
+		log.Fatal("Username not set. Use export CDB_USERNAME=/dbs/<cosmosdb name>/colls/<graph name> to specify it")
+	}
+	return dynCred.UsernameFromFile
+}
+
+func (dynCred *myDynamicCredentialProvider) Password() string {
+	if err := dynCred.updateCredentials(); err != nil {
+		log.Fatalf("Unable to read credentials from file '%s': %s", dynCred.credentialFile, err)
+	}
+
+	if len(dynCred.PasswordFromFile) == 0 {
+		log.Fatal("Password not set.")
+	}
+	return dynCred.PasswordFromFile
+}
+
+func main() {
 	host := os.Getenv("CDB_HOST")
-	username := os.Getenv("CDB_USERNAME")
-	password := os.Getenv("CDB_KEY")
 	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat}).With().Timestamp().Logger()
 
 	if len(host) == 0 {
 		logger.Fatal().Msg("Host not set. Use export CDB_HOST=<CosmosDB Gremlin Endpoint> to specify it")
 	}
-
-	if len(username) == 0 {
-		logger.Fatal().Msg("Username not set. Use export CDB_USERNAME=/dbs/<cosmosdb name>/colls/<graph name> to specify it")
-	}
-
-	if len(password) == 0 {
-		logger.Fatal().Msg("Key not set. Use export CDB_KEY=<key> to specify it")
-	}
-
+	credentialFile := "./examples/cosmos_dynamic_credentials/credentials.json"
 	log.Println("Connecting using:")
 	log.Printf("\thost: %s\n", host)
-	log.Printf("\tusername: %s\n", username)
-	log.Printf("\tpassword is set %v\n", len(password) > 0)
+	log.Printf("\tusername: Will be provided by a dynamic credential provder which reads it from the file '%s'\n", credentialFile)
+	log.Printf("\tpassword: Will be provided by a dynamic credential provder which reads it from the file '%s'\n", credentialFile)
 
+	credProvider := myDynamicCredentialProvider{credentialFile: credentialFile}
 	cosmos, err := gremcos.New(host,
-		gremcos.WithAuth(username, password),
+		gremcos.WithResourceTokenAuth(&credProvider),
 		gremcos.WithLogger(logger),
 		gremcos.NumMaxActiveConnections(10),
 		gremcos.ConnectionIdleTimeout(time.Second*30),
