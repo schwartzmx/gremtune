@@ -76,7 +76,10 @@ func TestAuthRequested(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
-	c := newClient(mockedDialer, SetAuth("username", "password"))
+	c := newClient(mockedDialer, SetAuth(StaticCredentialProvider{
+		UsernameStatic: "username",
+		PasswordStatic: "password",
+	}))
 
 	// WHEN
 	err := c.handleResponse(dummyNeedAuthenticationResponse)

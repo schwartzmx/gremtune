@@ -126,9 +126,9 @@ func TestExecuteRequestFail(t *testing.T) {
 }
 
 func TestValidateCredentials(t *testing.T) {
-	assert.Error(t, validateCredentials(auth{}))
-	assert.Error(t, validateCredentials(auth{username: "Hans"}))
-	assert.NoError(t, validateCredentials(auth{username: "Hans", password: "PW"}))
+	assert.Error(t, validateCredentials("", ""))
+	assert.Error(t, validateCredentials("Hans", ""))
+	assert.NoError(t, validateCredentials("Hans", "PW"))
 }
 
 func TestNewClient(t *testing.T) {
