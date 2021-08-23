@@ -416,3 +416,60 @@ func TestForceCloseOnClosedChannelPanic(t *testing.T) {
 	// wait until the execution has been completed
 	wg.Wait()
 }
+
+type credProvider struct {
+	uname string
+	pwd   string
+}
+
+func (cp credProvider) Password() (string, error) {
+	if cp.pwd == "err" {
+		return "", fmt.Errorf("password is missing")
+	}
+	return cp.pwd, nil
+}
+
+func (cp credProvider) Username() (string, error) {
+	if cp.uname == "err" {
+		return "", fmt.Errorf("username is missing")
+	}
+	return cp.uname, nil
+}
+
+func TestAuthenticate(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	client := newClient(mockedDialer)
+	client.credentialProvider = credProvider{uname: "username", pwd: "password"}
+
+	// WHEN
+	err := client.authenticate("reqID")
+
+	// THEN
+	assert.NoError(t, err)
+}
+
+func TestAuthenticate_Fail(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	client := newClient(mockedDialer)
+
+	// WHEN + THEN uname returned error
+	client.credentialProvider = credProvider{uname: "err", pwd: "err"}
+	err := client.authenticate("reqID")
+	assert.Error(t, err)
+
+	// WHEN + THEN pwd returned error
+	client.credentialProvider = credProvider{uname: "username", pwd: "err"}
+	err = client.authenticate("reqID")
+	assert.Error(t, err)
+
+	// WHEN + THEN uname missing
+	client.credentialProvider = credProvider{uname: ""}
+	err = client.authenticate("reqID")
+	assert.Error(t, err)
+}

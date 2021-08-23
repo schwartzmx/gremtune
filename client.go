@@ -237,10 +237,7 @@ func (c *client) authenticate(requestID string) error {
 		return err
 	}
 
-	req, err := prepareAuthRequest(requestID, username, password)
-	if err != nil {
-		return err
-	}
+	req := prepareAuthRequest(requestID, username, password)
 
 	msg, err := packageRequest(req)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
 )
 
 // MimeType used for communication with the gremlin server.
@@ -60,7 +61,7 @@ func prepareRequestWithBindings(query string, bindings, rebindings map[string]st
 }
 
 //prepareAuthRequest creates a ws request for Gremlin Server
-func prepareAuthRequest(requestID string, username string, password string) (request, error) {
+func prepareAuthRequest(requestID string, username string, password string) request {
 	req := request{}
 	req.RequestID = requestID
 	req.Op = "authentication"
@@ -78,14 +79,14 @@ func prepareAuthRequest(requestID string, username string, password string) (req
 	req.Args = make(map[string]interface{})
 	req.Args["sasl"] = base64.StdEncoding.EncodeToString(simpleAuth)
 
-	return req, nil
+	return req
 }
 
 // formatMessage takes a request type and formats it into being able to be delivered to Gremlin Server
 func packageRequest(req request) ([]byte, error) {
 	j, err := json.Marshal(req) // Formats request into byte format
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "marshalling request")
 	}
 	lenMimeType := byte(len(MimeType))
 
