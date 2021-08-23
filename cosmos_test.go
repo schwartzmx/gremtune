@@ -2,10 +2,12 @@ package gremcos
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/supplyon/gremcos/interfaces"
@@ -296,4 +298,48 @@ func TestWithResourceTokenAuth(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, username, uname)
 	assert.Equal(t, password, pwd)
+}
+
+func TestString(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics, _ := NewMockedMetrics(mockCtrl)
+	username := "abcd"
+	password := "xyz"
+
+	// WHEN
+	cosmos, err := New("ws://host",
+		WithResourceTokenAuth(
+			StaticCredentialProvider{
+				UsernameStatic: username,
+				PasswordStatic: password,
+			}),
+		withMetrics(metrics),
+	)
+
+	// THEN
+	require.NoError(t, err)
+	cImpl := toCosmosImpl(t, cosmos)
+	require.NotNil(t, cImpl.credentialProvider)
+
+	assert.Equal(t, "CosmosDB (connected=false, target=ws://host, user=abcd)", cImpl.String())
+}
+
+func TestWithLogger(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics, _ := NewMockedMetrics(mockCtrl)
+	log := zerolog.New(os.Stdout).Level(zerolog.DebugLevel)
+
+	// WHEN
+	cosmos, err := New("ws://host", WithLogger(log), withMetrics(metrics))
+	require.NoError(t, err)
+
+	// THEN
+	cImpl := toCosmosImpl(t, cosmos)
+	require.NotNil(t, cImpl.credentialProvider)
+	assert.NotEqual(t, zerolog.Nop(), cImpl.logger)
+	assert.Equal(t, zerolog.DebugLevel, cImpl.logger.GetLevel())
 }
