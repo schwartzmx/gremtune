@@ -11,13 +11,22 @@ func TestStaticCredentialProvider(t *testing.T) {
 	password := "password"
 	provider := StaticCredentialProvider{UsernameStatic: username, PasswordStatic: password}
 
-	assert.Equal(t, username, provider.Username())
-	assert.Equal(t, password, provider.Password())
+	uname, err := provider.Username()
+	assert.NoError(t, err)
+	assert.Equal(t, username, uname)
+	pwd, err := provider.Password()
+	assert.NoError(t, err)
+	assert.Equal(t, password, pwd)
 }
 
 func TestNoCredentials(t *testing.T) {
 	provider := noCredentials{}
 
-	assert.Empty(t, provider.Username())
-	assert.Empty(t, provider.Password())
+	uname, err := provider.Username()
+	assert.NoError(t, err)
+	pwd, err := provider.Password()
+	assert.NoError(t, err)
+
+	assert.Empty(t, pwd)
+	assert.Empty(t, uname)
 }

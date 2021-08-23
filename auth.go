@@ -4,8 +4,8 @@ package gremcos
 // aka cosmos resource tokens you have to implement this interface and ensure in this implementation that always a
 // valid resource token is returned by Password().
 type CredentialProvider interface {
-	Username() string
-	Password() string
+	Username() (string, error)
+	Password() (string, error)
 }
 
 // StaticCredentialProvider is a default implementation of the CredentialProvider interface.
@@ -15,12 +15,12 @@ type StaticCredentialProvider struct {
 	PasswordStatic string
 }
 
-func (c StaticCredentialProvider) Username() string {
-	return c.UsernameStatic
+func (c StaticCredentialProvider) Username() (string, error) {
+	return c.UsernameStatic, nil
 }
 
-func (c StaticCredentialProvider) Password() string {
-	return c.PasswordStatic
+func (c StaticCredentialProvider) Password() (string, error) {
+	return c.PasswordStatic, nil
 }
 
 // noCredentials implementation of the CredentialProvider interface which provides no credentials.
@@ -28,10 +28,10 @@ func (c StaticCredentialProvider) Password() string {
 type noCredentials struct {
 }
 
-func (c noCredentials) Username() string {
-	return ""
+func (c noCredentials) Username() (string, error) {
+	return "", nil
 }
 
-func (c noCredentials) Password() string {
-	return ""
+func (c noCredentials) Password() (string, error) {
+	return "", nil
 }

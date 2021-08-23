@@ -237,7 +237,11 @@ func (c *cosmosImpl) Stop() error {
 }
 
 func (c *cosmosImpl) String() string {
-	return fmt.Sprintf("CosmosDB (connected=%t, target=%s, user=%s)", c.IsConnected(), c.host, c.credentialProvider.Username())
+	username, err := c.credentialProvider.Username()
+	if err != nil {
+		username = fmt.Sprintf("failed to obtain username: %v", err)
+	}
+	return fmt.Sprintf("CosmosDB (connected=%t, target=%s, user=%s)", c.IsConnected(), c.host, username)
 }
 
 // IsHealthy returns nil if the Cosmos DB connection is alive, otherwise an error is returned

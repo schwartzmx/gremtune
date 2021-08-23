@@ -107,8 +107,13 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, idleTimeout, cImpl.connectionIdleTimeout)
 	assert.Equal(t, maxActiveConnections, cImpl.numMaxActiveConnections)
 	require.NotNil(t, cImpl.credentialProvider)
-	assert.Equal(t, username, cImpl.credentialProvider.Username())
-	assert.Equal(t, password, cImpl.credentialProvider.Password())
+
+	uname, err := cImpl.credentialProvider.Username()
+	assert.NoError(t, err)
+	pwd, err := cImpl.credentialProvider.Password()
+	assert.NoError(t, err)
+	assert.Equal(t, username, uname)
+	assert.Equal(t, password, pwd)
 }
 
 func TestStop(t *testing.T) {
@@ -284,6 +289,11 @@ func TestWithResourceTokenAuth(t *testing.T) {
 	require.NoError(t, err)
 	cImpl := toCosmosImpl(t, cosmos)
 	require.NotNil(t, cImpl.credentialProvider)
-	assert.Equal(t, username, cImpl.credentialProvider.Username())
-	assert.Equal(t, password, cImpl.credentialProvider.Password())
+
+	uname, err := cImpl.credentialProvider.Username()
+	assert.NoError(t, err)
+	pwd, err := cImpl.credentialProvider.Password()
+	assert.NoError(t, err)
+	assert.Equal(t, username, uname)
+	assert.Equal(t, password, pwd)
 }
