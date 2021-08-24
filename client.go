@@ -132,14 +132,32 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOpti
 	return client, nil
 }
 
+// errContainer allows to store different error types inside a atomic.Value
+type errContainer struct {
+	err error
+}
+
 func (c *client) setLastErr(err error) {
 	if err == nil {
 		return
 	}
 
-	// ensure that the same concrete type is stored
-	err = errors.New(err.Error())
-	c.lastError.Store(err)
+	previousErr := c.lastError.Load()
+	if previousErr != nil {
+		errCont := toErrContainer(previousErr)
+		err = errors.Wrapf(err, "previous error: %s", errCont.err)
+	}
+
+	c.lastError.Store(errContainer{err: err})
+}
+
+// toErrContainer converts the given interface type to an errContainer and panics if the type does not match
+func toErrContainer(err interface{}) errContainer {
+	errCont, ok := err.(errContainer)
+	if !ok {
+		panic(fmt.Sprintf("error of wrong type (%T) detected as last error", err))
+	}
+	return errCont
 }
 
 func (c *client) LastError() error {
@@ -147,7 +165,9 @@ func (c *client) LastError() error {
 	if err == nil {
 		return nil
 	}
-	return err.(error)
+
+	errCont := toErrContainer(err)
+	return errCont.err
 }
 
 func (c *client) IsConnected() bool {
@@ -393,6 +413,10 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 		if errorToPost != nil {
 			errs <- errorToPost
 			c.setLastErr(errorToPost)
+
+			// to return at this point is save since we call workerSaveExit() to clean up everything
+			// when the function is left
+			return
 		}
 
 		select {
