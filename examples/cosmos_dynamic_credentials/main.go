@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	gremcos "github.com/supplyon/gremcos"
 	"github.com/supplyon/gremcos/api"
@@ -33,26 +35,26 @@ func (dynCred *myDynamicCredentialProvider) updateCredentials() error {
 	return nil
 }
 
-func (dynCred *myDynamicCredentialProvider) Username() string {
+func (dynCred *myDynamicCredentialProvider) Username() (string, error) {
 	if err := dynCred.updateCredentials(); err != nil {
-		log.Fatalf("Unable to read credentials from file '%s': %s", dynCred.credentialFile, err)
+		return "", errors.Wrapf(err, "reading credentials from '%s'", dynCred.credentialFile)
 	}
 
 	if len(dynCred.UsernameFromFile) == 0 {
-		log.Fatal("Username not set. Use export CDB_USERNAME=/dbs/<cosmosdb name>/colls/<graph name> to specify it")
+		return "", fmt.Errorf("username not set, use export CDB_USERNAME=/dbs/<cosmosdb name>/colls/<graph name> to specify it")
 	}
-	return dynCred.UsernameFromFile
+	return dynCred.UsernameFromFile, nil
 }
 
-func (dynCred *myDynamicCredentialProvider) Password() string {
+func (dynCred *myDynamicCredentialProvider) Password() (string, error) {
 	if err := dynCred.updateCredentials(); err != nil {
-		log.Fatalf("Unable to read credentials from file '%s': %s", dynCred.credentialFile, err)
+		return "", errors.Wrapf(err, "reading credentials from '%s'", dynCred.credentialFile)
 	}
 
 	if len(dynCred.PasswordFromFile) == 0 {
-		log.Fatal("Password not set.")
+		return "", fmt.Errorf("password not set")
 	}
-	return dynCred.PasswordFromFile
+	return dynCred.PasswordFromFile, nil
 }
 
 func main() {

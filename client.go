@@ -223,17 +223,21 @@ func validateCredentials(username string, password string) error {
 }
 
 func (c *client) authenticate(requestID string) error {
-	username := c.credentialProvider.Username()
-	password := c.credentialProvider.Password()
+	username, err := c.credentialProvider.Username()
+	if err != nil {
+		return errors.Wrap(err, "obtaining username")
+	}
+
+	password, err := c.credentialProvider.Password()
+	if err != nil {
+		return errors.Wrap(err, "obtaining password")
+	}
 
 	if err := validateCredentials(username, password); err != nil {
 		return err
 	}
 
-	req, err := prepareAuthRequest(requestID, username, password)
-	if err != nil {
-		return err
-	}
+	req := prepareAuthRequest(requestID, username, password)
 
 	msg, err := packageRequest(req)
 	if err != nil {

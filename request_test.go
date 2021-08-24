@@ -100,7 +100,7 @@ func TestAuthRequestDispatch(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	id := "1d6d02bd-8e56-421d-9438-3bd6d0079ff1"
-	testRequest, _ := prepareAuthRequest(id, "test", "root")
+	testRequest := prepareAuthRequest(id, "test", "root")
 
 	c := newClient(mockedDialer)
 	msg, err := packageRequest(testRequest)
@@ -118,8 +118,7 @@ func TestAuthRequestDispatch(t *testing.T) {
 // TestAuthRequestPreparation tests the ability to create successful authentication request
 func TestAuthRequestPreparation(t *testing.T) {
 	id := "1d6d02bd-8e56-421d-9438-3bd6d0079ff1"
-	testRequest, err := prepareAuthRequest(id, "test", "root")
-	require.NoError(t, err)
+	testRequest := prepareAuthRequest(id, "test", "root")
 
 	assert.Equal(t, testRequest.RequestID, id)
 	assert.Equal(t, "trasversal", testRequest.Processor)

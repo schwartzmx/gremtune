@@ -95,8 +95,7 @@ func TestPrepareAuthenRequest(t *testing.T) {
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	c := newClient(mockedDialer)
 
-	req, err := prepareAuthRequest(dummyNeedAuthenticationResponseMarshalled.RequestID, "test", "test")
-	require.NoError(t, err)
+	req := prepareAuthRequest(dummyNeedAuthenticationResponseMarshalled.RequestID, "test", "test")
 
 	sampleAuthRequest, err := packageRequest(req)
 	require.NoError(t, err)
