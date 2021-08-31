@@ -40,7 +40,7 @@ func prepareRequest(query string) (request, string, error) {
 }
 
 // prepareRequest packages a query and binding into the format that Gremlin Server accepts
-func prepareRequestWithBindings(query string, bindings, rebindings map[string]string) (request, string, error) {
+func prepareRequestWithBindings(query string, bindings, rebindings map[string]interface{}) (request, string, error) {
 	uuID, err := uuid.NewV4()
 	if err != nil {
 		return request{}, "", err
