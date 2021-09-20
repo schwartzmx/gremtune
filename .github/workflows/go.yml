@@ -52,3 +52,14 @@ jobs:
           sleep 5
           make test.integration
           make infra.down
+
+  sonar:
+    if: ${{ github.event.pull_request.head.repo.full_name == 'supplyon/gremcos' }} 
+    name: Sonar
+    runs-on: ubuntu-latest
+    steps:
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
