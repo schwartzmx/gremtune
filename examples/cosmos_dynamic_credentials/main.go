@@ -117,6 +117,7 @@ func processLoop(cosmos gremcos.Cosmos, logger zerolog.Logger, exitChannel chan<
 			stopProcessing = true
 		case <-queryTicker.C:
 			queryCosmos(cosmos, logger)
+			queryCosmosWithBindings(cosmos, logger)
 		case <-healthCheckTicker.C:
 			err := cosmos.IsHealthy()
 			logEvent := logger.Debug()
@@ -139,6 +140,47 @@ func queryCosmos(cosmos gremcos.Cosmos, logger zerolog.Logger) {
 	logger.Info().Msgf("Query: %s", query)
 
 	res, err := cosmos.ExecuteQuery(query)
+
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
+		return
+	}
+
+	responses := api.ResponseArray(res)
+	values, err := responses.ToValues()
+	if err == nil {
+		logger.Info().Msgf("Received Values: %v", values)
+	}
+	properties, err := responses.ToProperties()
+	if err == nil {
+		logger.Info().Msgf("Received Properties: %v", properties)
+	}
+	vertices, err := responses.ToVertices()
+	if err == nil {
+		logger.Info().Msgf("Received Vertices: %v", vertices)
+	}
+	edges, err := responses.ToEdges()
+	if err == nil {
+		logger.Info().Msgf("Received Edges: %v", edges)
+	}
+}
+
+func queryCosmosWithBindings(cosmos gremcos.Cosmos, logger zerolog.Logger) {
+
+	// adds an edge from vertex with property name:jan to vertex with property name:hans
+	// jan <-likes- hans
+	nameFrom := "jan"
+	nameTo := "hans"
+	relationship := "likes"
+
+	query := api.NewSimpleQB(`g.V().has("name", nameFrom).addE(relationship).from(g.V().has("name", nameTo))`)
+	logger.Info().Msgf("Query: %s", query)
+
+	res, err := cosmos.ExecuteWithBindings(query.String(), map[string]interface{}{
+		"nameFrom":     nameFrom,
+		"nameTo":       nameTo,
+		"relationship": relationship,
+	}, nil)
 
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to execute a gremlin command")
