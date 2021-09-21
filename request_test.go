@@ -13,8 +13,8 @@ import (
 // TestRequestPreparation tests the ability to package a query and a set of bindings into a request struct for further manipulation
 func TestRequestPreparation(t *testing.T) {
 	query := "g.V(x)"
-	bindings := map[string]string{"x": "10"}
-	rebindings := map[string]string{}
+	bindings := map[string]interface{}{"x": "10"}
+	rebindings := map[string]interface{}{}
 	req, id, err := prepareRequestWithBindings(query, bindings, rebindings)
 	require.NoError(t, err)
 

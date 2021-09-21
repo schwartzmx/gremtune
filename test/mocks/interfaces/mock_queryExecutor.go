@@ -93,7 +93,7 @@ func (mr *MockQueryExecutorMockRecorder) ExecuteFile(path interface{}) *gomock.C
 }
 
 // ExecuteFileWithBindings mocks base method.
-func (m *MockQueryExecutor) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) ([]interfaces.Response, error) {
+func (m *MockQueryExecutor) ExecuteFileWithBindings(path string, bindings, rebindings map[string]interface{}) ([]interfaces.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteFileWithBindings", path, bindings, rebindings)
 	ret0, _ := ret[0].([]interfaces.Response)
@@ -108,7 +108,7 @@ func (mr *MockQueryExecutorMockRecorder) ExecuteFileWithBindings(path, bindings,
 }
 
 // ExecuteWithBindings mocks base method.
-func (m *MockQueryExecutor) ExecuteWithBindings(query string, bindings, rebindings map[string]string) ([]interfaces.Response, error) {
+func (m *MockQueryExecutor) ExecuteWithBindings(query string, bindings, rebindings map[string]interface{}) ([]interfaces.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteWithBindings", query, bindings, rebindings)
 	ret0, _ := ret[0].([]interfaces.Response)

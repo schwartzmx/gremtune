@@ -78,6 +78,21 @@ func (mr *MockCosmosMockRecorder) ExecuteQuery(query interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteQuery", reflect.TypeOf((*MockCosmos)(nil).ExecuteQuery), query)
 }
 
+// ExecuteWithBindings mocks base method.
+func (m *MockCosmos) ExecuteWithBindings(path string, bindings, rebindings map[string]interface{}) ([]interfaces.Response, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExecuteWithBindings", path, bindings, rebindings)
+	ret0, _ := ret[0].([]interfaces.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExecuteWithBindings indicates an expected call of ExecuteWithBindings.
+func (mr *MockCosmosMockRecorder) ExecuteWithBindings(path, bindings, rebindings interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteWithBindings", reflect.TypeOf((*MockCosmos)(nil).ExecuteWithBindings), path, bindings, rebindings)
+}
+
 // IsConnected mocks base method.
 func (m *MockCosmos) IsConnected() bool {
 	m.ctrl.T.Helper()
