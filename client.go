@@ -174,7 +174,7 @@ func (c *client) IsConnected() bool {
 	return c.conn.IsConnected()
 }
 
-func (c *client) executeRequest(query string, bindings, rebindings *map[string]string) ([]interfaces.Response, error) {
+func (c *client) executeRequest(query string, bindings, rebindings *map[string]interface{}) ([]interfaces.Response, error) {
 	var req request
 	var id string
 	var err error
@@ -207,7 +207,7 @@ func (c *client) executeRequest(query string, bindings, rebindings *map[string]s
 	return resp, err
 }
 
-func (c *client) executeAsync(query string, bindings, rebindings *map[string]string, responseChannel chan interfaces.AsyncResponse) (err error) {
+func (c *client) executeAsync(query string, bindings, rebindings *map[string]interface{}, responseChannel chan interfaces.AsyncResponse) (err error) {
 	var req request
 	var id string
 	if bindings != nil && rebindings != nil {
@@ -270,7 +270,7 @@ func (c *client) authenticate(requestID string) error {
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (c *client) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+func (c *client) ExecuteWithBindings(query string, bindings, rebindings map[string]interface{}) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}
@@ -297,7 +297,7 @@ func (c *client) ExecuteAsync(query string, responseChannel chan interfaces.Asyn
 }
 
 // ExecuteFileWithBindings takes a file path to a Gremlin script, sends it to Gremlin Server with bindings, and returns the result.
-func (c *client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+func (c *client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]interface{}) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
 		return resp, fmt.Errorf("Can't write - no connection")
 	}

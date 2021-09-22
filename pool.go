@@ -275,7 +275,7 @@ func (p *pool) Close() error {
 }
 
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
-func (p *pool) ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+func (p *pool) ExecuteWithBindings(query string, bindings, rebindings map[string]interface{}) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
 		return nil, err
@@ -318,7 +318,7 @@ func (p *pool) ExecuteFile(path string) (resp []interfaces.Response, err error) 
 	return pc.client.ExecuteFile(path)
 }
 
-func (p *pool) ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []interfaces.Response, err error) {
+func (p *pool) ExecuteFileWithBindings(path string, bindings, rebindings map[string]interface{}) (resp []interfaces.Response, err error) {
 	pc, err := p.Get()
 	if err != nil {
 		return nil, err

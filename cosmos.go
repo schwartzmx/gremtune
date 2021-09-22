@@ -20,6 +20,9 @@ type Cosmos interface {
 	// ExecuteAsync can be used to issue a query and streaming in the responses as they are available / are provided by the CosmosDB
 	ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error)
 
+	// ExecuteWithBindings can be used to execute a raw query (string) with optional bindings/rebindings. This can be used to issue queries that are not yet supported by the QueryBuilder.
+	ExecuteWithBindings(path string, bindings, rebindings map[string]interface{}) (resp []interfaces.Response, err error)
+
 	// IsConnected returns true in case the connection to the CosmosDB is up, false otherwise.
 	IsConnected() bool
 
@@ -208,6 +211,19 @@ func (c *cosmosImpl) ExecuteQuery(query interfaces.QueryBuilder) ([]interfaces.R
 func (c *cosmosImpl) Execute(query string) ([]interfaces.Response, error) {
 
 	responses, err := c.pool.Execute(query)
+
+	// try to investigate the responses and to find out if we can find more specific error information
+	if respErr := extractFirstError(responses); respErr != nil {
+		err = respErr
+	}
+
+	updateRequestMetrics(responses, c.metrics)
+	return responses, err
+}
+
+func (c *cosmosImpl) ExecuteWithBindings(query string, bindings, rebindings map[string]interface{}) ([]interfaces.Response, error) {
+
+	responses, err := c.pool.ExecuteWithBindings(query, bindings, rebindings)
 
 	// try to investigate the responses and to find out if we can find more specific error information
 	if respErr := extractFirstError(responses); respErr != nil {

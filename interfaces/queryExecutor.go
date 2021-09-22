@@ -11,9 +11,9 @@ type QueryExecutor interface {
 	LastError() error
 	Execute(query string) (resp []Response, err error)
 	ExecuteAsync(query string, responseChannel chan AsyncResponse) (err error)
-	ExecuteFileWithBindings(path string, bindings, rebindings map[string]string) (resp []Response, err error)
+	ExecuteFileWithBindings(path string, bindings, rebindings map[string]interface{}) (resp []Response, err error)
 	ExecuteFile(path string) (resp []Response, err error)
-	ExecuteWithBindings(query string, bindings, rebindings map[string]string) (resp []Response, err error)
+	ExecuteWithBindings(query string, bindings, rebindings map[string]interface{}) (resp []Response, err error)
 	Ping() error
 }
 

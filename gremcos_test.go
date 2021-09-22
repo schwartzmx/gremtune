@@ -153,8 +153,8 @@ func (s *SuiteIntegrationTests) TestExecuteWithBindings_IT() {
 	seedData(s.T(), s.client)
 	r, err := s.client.ExecuteWithBindings(
 		`g.V().has("user_id",x).label()`,
-		map[string]string{"x": "1234"},
-		map[string]string{},
+		map[string]interface{}{"x": "1234"},
+		map[string]interface{}{},
 	)
 	s.Require().NoError(err, "Unexpected error from server")
 
@@ -188,8 +188,8 @@ func (s *SuiteIntegrationTests) TestExecuteFileWithBindings_IT() {
 
 	r, err := s.client.ExecuteFileWithBindings(
 		"scripts/test-wbindings.groovy",
-		map[string]string{"x": "2145"},
-		map[string]string{},
+		map[string]interface{}{"x": "2145"},
+		map[string]interface{}{},
 	)
 	s.Require().NoError(err, "Unexpected error from server")
 	s.T().Logf("ExecuteFileWithBindings get vertex, response: %s \n err: %s", r[0].Result.Data, err)
