@@ -19,14 +19,14 @@ type Metrics struct {
 	serverTimePerQueryResponseAvgMS  m.Gauge
 }
 
-var once sync.Once
+var metricsOnce sync.Once
 
 // Singleton to avoid initializing the metrics multiple times, which would cause a panic
 var instance *Metrics
 
 // NewMetrics returns the metrics collection
 func NewMetrics(namespace string) *Metrics {
-	once.Do(func() {
+	metricsOnce.Do(func() {
 		statusCode := []string{"code"}
 		statusCodeTotal := m.NewWrappedCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
