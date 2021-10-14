@@ -60,6 +60,21 @@ func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {
 	return v
 }
 
+// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
+func (v *vertex) Coalesce(qb1 interfaces.QueryBuilder, qb2 interfaces.QueryBuilder) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".coalesce(%s,%s)", qb1, qb2))
+}
+
+// Fold adds .fold() to the query.
+func (v *vertex) Fold() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".fold()"))
+}
+
+//  Not adds .not(<traversal>) to the query.
+func (v *vertex) Not(not interfaces.QueryBuilder) interfaces.Vertex {
+	return v.Add(not)
+}
+
 // Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
 // e.g. .has("temperature",23.02) or .has("available",true)
 // The method can also be used to return vertices that have a certain property.

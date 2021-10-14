@@ -34,6 +34,21 @@ func (e *edge) String() string {
 	return queryString
 }
 
+// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
+func (e *edge) Coalesce(qb1 interfaces.QueryBuilder, qb2 interfaces.QueryBuilder) interfaces.Edge {
+	return e.Add(NewSimpleQB(".coalesce(%s,%s)", qb1, qb2))
+}
+
+// Fold adds .fold() to the query.
+func (e *edge) Fold() interfaces.Edge {
+	return e.Add(NewSimpleQB(".fold()"))
+}
+
+//  Not adds .not(<traversal>) to the query.
+func (e *edge) Not(not interfaces.QueryBuilder) interfaces.Edge {
+	return e.Add(not)
+}
+
 // Add can be used to add a custom QueryBuilder
 // e.g. g.V().Add(NewSimpleQB(".myCustomCall("%s")",label))
 func (e *edge) Add(builder interfaces.QueryBuilder) interfaces.Edge {

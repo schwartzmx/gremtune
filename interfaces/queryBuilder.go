@@ -91,6 +91,15 @@ type Vertex interface {
 
 	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
 	As(labels ...string) Vertex
+
+	// Not adds .not(<traversal>) to the query.
+	Not(builder QueryBuilder) Vertex
+
+	// Fold adds .fold() to the query.
+	Fold() Vertex
+
+	// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
+	Coalesce(qb1 QueryBuilder, qb2 QueryBuilder) Vertex
 }
 
 type Edge interface {
@@ -108,6 +117,7 @@ type Edge interface {
 	OutV() Vertex
 	// InV adds .inV(), to the query. The query call will return the vertices on the incoming side of this edge
 	InV() Vertex
+
 	// Add can be used to add a custom QueryBuilder
 	// e.g. g.V().Add(NewSimpleQB(".myCustomCall('%s')",label))
 	Add(builder QueryBuilder) Edge
@@ -127,6 +137,15 @@ type Edge interface {
 
 	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
 	As(labels ...string) Edge
+
+	// Not adds .not(<traversal>) to the query.
+	Not(builder QueryBuilder) Edge
+
+	// Fold adds .fold() to the query.
+	Fold() Edge
+
+	// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
+	Coalesce(qb1 QueryBuilder, qb2 QueryBuilder) Edge
 }
 
 type Property interface {
@@ -159,4 +178,18 @@ type Profiler interface {
 type Counter interface {
 	// Count adds .count(), to the query. The query call will return the number of entities found in the query.
 	Count() QueryBuilder
+}
+
+type AnonymousTraverser interface {
+	QueryBuilder
+
+	// Add can be used to add a custom QueryBuilder
+	// e.g. at.Add(NewSimpleQB(".myCustomCall('%s')",label))
+	Add(builder QueryBuilder) AnonymousTraverser
+
+	// OutE adds .outE([<label_1>,<label_2>,..,<label_n>]), to the query.
+	OutE(labels ...string) Edge
+
+	// InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query.
+	InE(labels ...string) Edge
 }
