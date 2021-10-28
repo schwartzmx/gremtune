@@ -40,8 +40,7 @@ report.lint: ## Runs the linter to check for coding-style issues and generates t
 
 gen-mocks: sep ## Generates test doubles (mocks).
 	@echo "--> generate mocks (github.com/golang/mock/gomock is required for this)"
-	@go get github.com/golang/mock/gomock
-	@go install github.com/golang/mock/mockgen
+	@go install github.com/golang/mock/mockgen@latest
 	@mockgen -source=interfaces/websocketConnection.go -destination test/mocks/interfaces/mock_websocketConnection.go
 	@mockgen -source=interfaces/dialer.go -destination test/mocks/interfaces/mock_dialer.go
 	@mockgen -source=interfaces/queryExecutor.go -destination test/mocks/interfaces/mock_queryExecutor.go
