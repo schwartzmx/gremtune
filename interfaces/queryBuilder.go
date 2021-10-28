@@ -91,6 +91,21 @@ type Vertex interface {
 
 	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
 	As(labels ...string) Vertex
+
+	// Select adds .select([<label_1>,<label_2>,..,<label_n>]), to the query to select previous results using their label
+	Select(labels ...string) Vertex
+
+	// Not adds .not(<traversal>) to the query.
+	Not(builder QueryBuilder) Vertex
+
+	// Fold adds .fold() to the query.
+	Fold() Vertex
+
+	// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
+	Coalesce(qb1 QueryBuilder, qb2 QueryBuilder) Vertex
+
+	// AddV adds .addV('<label>'), e.g. .addV('user'), to the query. The query call adds a vertex with the given label and returns that vertex.
+	AddV(label string) Vertex
 }
 
 type Edge interface {
@@ -99,15 +114,25 @@ type Edge interface {
 	Profiler
 	Counter
 
+	// Property adds .property("<key>","<value>"), e.g. .property("name","hans") depending on the given type the quotes for the value are omitted.
+	// e.g. .property("temperature",23.02) or .property("available",true)
+	Property(key, value interface{}) Edge
+
 	// To adds .to(<vertex>), to the query. The query call will be the second step to add an edge
 	To(v Vertex) Edge
 	// From adds .from(<vertex>), to the query. The query call will be the second step to add an edge
 	From(v Vertex) Edge
 
+	// ToLbl adds .to(<label>), to the query. The query call will be the second step to add an edge
+	ToLbl(label string) Edge
+	// From adds .from(<label>), to the query. The query call will be the second step to add an edge
+	FromLbl(label string) Edge
+
 	// OutV adds .outV(), to the query. The query call will return the vertices on the outgoing side of this edge
 	OutV() Vertex
 	// InV adds .inV(), to the query. The query call will return the vertices on the incoming side of this edge
 	InV() Vertex
+
 	// Add can be used to add a custom QueryBuilder
 	// e.g. g.V().Add(NewSimpleQB(".myCustomCall('%s')",label))
 	Add(builder QueryBuilder) Edge
@@ -127,6 +152,18 @@ type Edge interface {
 
 	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
 	As(labels ...string) Edge
+
+	// Select adds .select([<label_1>,<label_2>,..,<label_n>]), to the query to select previous results using their label
+	Select(labels ...string) Edge
+
+	// Not adds .not(<traversal>) to the query.
+	Not(builder QueryBuilder) Edge
+
+	// Fold adds .fold() to the query.
+	Fold() Edge
+
+	// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
+	Coalesce(qb1 QueryBuilder, qb2 QueryBuilder) Edge
 }
 
 type Property interface {
