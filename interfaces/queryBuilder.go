@@ -197,17 +197,3 @@ type Counter interface {
 	// Count adds .count(), to the query. The query call will return the number of entities found in the query.
 	Count() QueryBuilder
 }
-
-type AnonymousTraverser interface {
-	QueryBuilder
-
-	// Add can be used to add a custom QueryBuilder
-	// e.g. at.Add(NewSimpleQB(".myCustomCall('%s')",label))
-	Add(builder QueryBuilder) AnonymousTraverser
-
-	// OutE adds .outE([<label_1>,<label_2>,..,<label_n>]), to the query.
-	OutE(labels ...string) Edge
-
-	// InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query.
-	InE(labels ...string) Edge
-}

@@ -2,6 +2,7 @@ package api
 
 import "github.com/supplyon/gremcos/interfaces"
 
+// InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all incoming edges of the Vertex
 func InE(labels ...string) interfaces.Edge {
 	query := multiParamQuery("__.inE", labels...)
 	return &edge{
@@ -9,6 +10,7 @@ func InE(labels ...string) interfaces.Edge {
 	}
 }
 
+// OutE adds .outE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all outgoing edges of the Vertex
 func OutE(labels ...string) interfaces.Edge {
 	query := multiParamQuery("__.outE", labels...)
 	return &edge{
@@ -16,6 +18,7 @@ func OutE(labels ...string) interfaces.Edge {
 	}
 }
 
+// Unfold adds .unfold() to the query.
 func Unfold() interfaces.QueryBuilder {
 	query := NewSimpleQB("__.unfold()")
 	return &edge{
@@ -23,6 +26,7 @@ func Unfold() interfaces.QueryBuilder {
 	}
 }
 
+// AddV adds .addV('<label>'), e.g. .addV('user'), to the query. The query call adds a vertex with the given label and returns that vertex.
 func AddV(label string) interfaces.Vertex {
 	query := NewSimpleQB("__.addV(\"%s\")", label)
 	return &vertex{
@@ -30,6 +34,7 @@ func AddV(label string) interfaces.Vertex {
 	}
 }
 
+// Constant adds .constant() to the query.
 func Constant(c string) interfaces.QueryBuilder {
-	return NewSimpleQB("constant('%s')", c)
+	return NewSimpleQB("__.constant(\"%s\")", c)
 }

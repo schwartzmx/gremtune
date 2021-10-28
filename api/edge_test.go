@@ -8,6 +8,125 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCoalesceE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	q1 := NewSimpleQB("g.V()")
+	q2 := NewSimpleQB("g.V().count()")
+
+	// WHEN
+	result := e.Coalesce(q1, q2)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.coalesce(%s,%s)", graphName, q1, q2), result.String())
+}
+
+func TestFoldE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	// WHEN
+	result := e.Fold()
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.fold()", graphName), result.String())
+}
+
+func TestSelectE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	label1 := "l1"
+	label2 := "l2"
+
+	// WHEN
+	result := e.Select(label1, label2)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.select(\"%s\",\"%s\")", graphName, label1, label2), result.String())
+}
+
+func TestNotE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	q1 := NewSimpleQB("g.V()")
+
+	// WHEN
+	result := e.Not(q1)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.not(%s)", graphName, q1), result.String())
+}
+
+func TestToLblE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	label := "l1"
+
+	// WHEN
+	result := e.ToLbl(label)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.to(\"%s\")", graphName, label), result.String())
+}
+
+func TestFromLblE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	label := "l1"
+
+	// WHEN
+	result := e.FromLbl(label)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.from(\"%s\")", graphName, label), result.String())
+}
+
+func TestPropertyE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	key := "temperature"
+	value := 23.4
+
+	// WHEN
+	result := e.Property(key, value)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.property(\"%s\",%f)", graphName, key, value), result.String())
+}
 func TestNewEdgeG(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
@@ -39,7 +158,6 @@ func TestNewEdgeV(t *testing.T) {
 }
 
 func TestAdd(t *testing.T) {
-
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)

@@ -47,7 +47,7 @@ func (e *edge) Fold() interfaces.Edge {
 
 //  Not adds .not(<traversal>) to the query.
 func (e *edge) Not(not interfaces.QueryBuilder) interfaces.Edge {
-	return e.Add(not)
+	return e.Add(NewSimpleQB(".not(%s)", not))
 }
 
 // Add can be used to add a custom QueryBuilder

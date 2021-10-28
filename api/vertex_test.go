@@ -9,6 +9,75 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCoalesceV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	q1 := NewSimpleQB("g.V()")
+	q2 := NewSimpleQB("g.V().count()")
+
+	// WHEN
+	result := v.Coalesce(q1, q2)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().coalesce(%s,%s)", graphName, q1, q2), result.String())
+}
+
+func TestFoldV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	result := v.Fold()
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().fold()", graphName), result.String())
+}
+
+func TestSelectV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	label1 := "l1"
+	label2 := "l2"
+
+	// WHEN
+	result := v.Select(label1, label2)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().select(\"%s\",\"%s\")", graphName, label1, label2), result.String())
+}
+
+func TestNotV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	q1 := NewSimpleQB("g.V()")
+
+	// WHEN
+	result := v.Not(q1)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().not(%s)", graphName, q1), result.String())
+}
+
 func TestNewVertexG(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
