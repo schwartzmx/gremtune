@@ -24,15 +24,12 @@ func Unfold() interfaces.QueryBuilder {
 }
 
 func AddV(label string) interfaces.Vertex {
-	query := NewSimpleQB(".addV(\"%s\")", label)
+	query := NewSimpleQB("__.addV(\"%s\")", label)
 	return &vertex{
 		builders: []interfaces.QueryBuilder{query},
 	}
 }
 
-func Unfold() interfaces.QueryBuilder {
-	query := NewSimpleQB("__.unfold()")
-	return &edge{
-		builders: []interfaces.QueryBuilder{query},
-	}
+func Constant(c string) interfaces.QueryBuilder {
+	return NewSimpleQB("constant('%s')", c)
 }

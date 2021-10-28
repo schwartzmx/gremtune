@@ -53,6 +53,17 @@ func (v *vertex) As(labels ...string) interfaces.Vertex {
 	return v.Add(query)
 }
 
+// Select adds .select([<label_1>,<label_2>,..,<label_n>]), to the query to select previous results using their label
+func (v *vertex) Select(labels ...string) interfaces.Vertex {
+	query := multiParamQuery(".select", labels...)
+	return v.Add(query)
+}
+
+// AddV adds .addV("<label>"), e.g. .addV("user")
+func (v *vertex) AddV(label string) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".addV(\"%s\")", label))
+}
+
 // Add can be used to add a custom QueryBuilder
 // e.g. g.V().Add(NewSimpleQB(".myCustomCall("%s")",label))
 func (v *vertex) Add(builder interfaces.QueryBuilder) interfaces.Vertex {
@@ -72,7 +83,7 @@ func (v *vertex) Fold() interfaces.Vertex {
 
 //  Not adds .not(<traversal>) to the query.
 func (v *vertex) Not(not interfaces.QueryBuilder) interfaces.Vertex {
-	return v.Add(not)
+	return v.Add(NewSimpleQB(".not(%s)", not))
 }
 
 // Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
