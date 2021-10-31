@@ -106,6 +106,9 @@ type Vertex interface {
 
 	// AddV adds .addV('<label>'), e.g. .addV('user'), to the query. The query call adds a vertex with the given label and returns that vertex.
 	AddV(label string) Vertex
+
+	// V adds .V() to the query. The query call returns all vertices.
+	V() Vertex
 }
 
 type Edge interface {

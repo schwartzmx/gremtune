@@ -9,6 +9,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestVV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	result := v.HasLabel("Label").As("label").V()
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().hasLabel(\"Label\").as(\"label\").V()", graphName), result.String())
+}
+
 func TestCoalesceV(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
