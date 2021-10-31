@@ -157,7 +157,7 @@ type Edge interface {
 	As(labels ...string) Edge
 
 	// Select adds .select([<label_1>,<label_2>,..,<label_n>]), to the query to select previous results using their label
-	Select(labels ...string) Edge
+	Select(labels ...string) Vertex
 
 	// Not adds .not(<traversal>) to the query.
 	Not(builder QueryBuilder) Edge

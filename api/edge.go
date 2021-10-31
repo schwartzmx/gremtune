@@ -64,9 +64,10 @@ func (e *edge) As(labels ...string) interfaces.Edge {
 }
 
 // Select adds .select([<label_1>,<label_2>,..,<label_n>]), to the query to select previous results using their label
-func (e *edge) Select(labels ...string) interfaces.Edge {
+func (e *edge) Select(labels ...string) interfaces.Vertex {
 	query := multiParamQuery(".select", labels...)
-	return e.Add(query)
+	e.Add(query)
+	return NewVertexE(e)
 }
 
 // Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
