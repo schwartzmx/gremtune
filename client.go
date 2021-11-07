@@ -120,7 +120,7 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOpti
 
 	err := client.conn.Connect()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "dialer connecting")
 	}
 
 	// Start all worker (run async)
