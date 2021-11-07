@@ -245,7 +245,7 @@ func (ws *websocket) Ping() error {
 	}
 
 	if err != nil {
-		return ErrConnectivity{Wrapped: err}
+		return Error{Wrapped: err, Category: ErrorCategoryConnectivity}
 	}
 
 	return nil
