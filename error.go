@@ -37,10 +37,7 @@ func IsNetworkErr(err error) bool {
 
 	errConn := Error{}
 	if errors.As(err, &errConn) {
-		if errConn.Category != ErrorCategoryConnectivity {
-			return false
-		}
-		return true
+		return errConn.Category == ErrorCategoryConnectivity
 	}
 
 	if isNetError(err) {
