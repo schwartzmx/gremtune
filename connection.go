@@ -162,7 +162,7 @@ func (ws *websocket) IsConnected() bool {
 // Write writes the given data chunk on the socket
 func (ws *websocket) Write(msg []byte) error {
 	if !ws.IsConnected() {
-		return fmt.Errorf("Not connected")
+		return ErrNoConnection
 	}
 
 	// ensure that we have the connection during the whole read operation
@@ -186,7 +186,7 @@ func (ws *websocket) Write(msg []byte) error {
 // - gorilla.PongMessage
 func (ws *websocket) Read() (messageType int, msg []byte, err error) {
 	if !ws.IsConnected() {
-		return 0, nil, fmt.Errorf("Not connected")
+		return 0, nil, ErrNoConnection
 	}
 
 	// ensure that we have the connection during the whole read operation
@@ -228,7 +228,7 @@ func (ws *websocket) Close() error {
 // Otherwise the socket will be closed by the peer.
 func (ws *websocket) Ping() error {
 	if !ws.IsConnected() {
-		return fmt.Errorf("Not connected")
+		return ErrNoConnection
 	}
 
 	// ensure that we have the connection during the whole read operation
@@ -243,5 +243,10 @@ func (ws *websocket) Ping() error {
 	if disconnected {
 		ws.setConnection(nil)
 	}
-	return err
+
+	if err != nil {
+		return Error{Wrapped: err, Category: ErrorCategoryConnectivity}
+	}
+
+	return nil
 }

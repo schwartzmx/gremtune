@@ -120,7 +120,7 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOpti
 
 	err := client.conn.Connect()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "dialer connecting")
 	}
 
 	// Start all worker (run async)
@@ -272,7 +272,7 @@ func (c *client) authenticate(requestID string) error {
 // ExecuteWithBindings formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
 func (c *client) ExecuteWithBindings(query string, bindings, rebindings map[string]interface{}) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
-		return resp, fmt.Errorf("Can't write - no connection")
+		return resp, ErrNoConnection
 	}
 	resp, err = c.executeRequest(query, &bindings, &rebindings)
 	return
@@ -281,7 +281,7 @@ func (c *client) ExecuteWithBindings(query string, bindings, rebindings map[stri
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and returns the result.
 func (c *client) Execute(query string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
-		return resp, fmt.Errorf("Can't write - no connection")
+		return resp, ErrNoConnection
 	}
 	resp, err = c.executeRequest(query, nil, nil)
 	return
@@ -290,7 +290,7 @@ func (c *client) Execute(query string) (resp []interfaces.Response, err error) {
 // Execute formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
 func (c *client) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
 	if !c.conn.IsConnected() {
-		return fmt.Errorf("Can't write - no connection")
+		return ErrNoConnection
 	}
 	err = c.executeAsync(query, nil, nil, responseChannel)
 	return
@@ -299,7 +299,7 @@ func (c *client) ExecuteAsync(query string, responseChannel chan interfaces.Asyn
 // ExecuteFileWithBindings takes a file path to a Gremlin script, sends it to Gremlin Server with bindings, and returns the result.
 func (c *client) ExecuteFileWithBindings(path string, bindings, rebindings map[string]interface{}) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
-		return resp, fmt.Errorf("Can't write - no connection")
+		return resp, ErrNoConnection
 	}
 	d, err := ioutil.ReadFile(path) // Read script from file
 	if err != nil {
@@ -314,7 +314,7 @@ func (c *client) ExecuteFileWithBindings(path string, bindings, rebindings map[s
 // ExecuteFile takes a file path to a Gremlin script, sends it to Gremlin Server, and returns the result.
 func (c *client) ExecuteFile(path string) (resp []interfaces.Response, err error) {
 	if !c.conn.IsConnected() {
-		return resp, fmt.Errorf("Can't write - no connection")
+		return resp, ErrNoConnection
 	}
 	d, err := ioutil.ReadFile(path) // Read script from file
 	if err != nil {

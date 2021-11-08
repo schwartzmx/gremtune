@@ -202,7 +202,7 @@ func (p *pool) purge() {
 
 			// only log the error in case it is not the socket closed event
 			if _, ok := err.(socketClosedByServerError); !ok {
-				p.logger.Info().Err(err).Msgf("Remove connection from pool due to an error [%s]", err.Error())
+				p.logger.Info().Err(err).Msgf("(during purge) Remove connection from pool due to an error [%s]", err.Error())
 			}
 
 			// Force underlying connection closed
@@ -212,18 +212,18 @@ func (p *pool) purge() {
 
 		// If the client is not connected any more then exclude it from the pool
 		if !idleConnection.pc.client.IsConnected() {
-			p.logger.Info().Msg("Remove connection from pool which is not connected")
+			p.logger.Info().Msg("(during purge) Remove connection from pool which is not connected")
 			continue
 		}
 
 		deadline := idleConnection.idleSince.Add(timeout)
 		if deadline.After(now) {
-			p.logger.Debug().Time("deadline", deadline).Msg("Keep connection which is not expired")
+			p.logger.Debug().Time("deadline", deadline).Msg("(during purge) Keep connection which is not expired")
 
 			// not expired -> keep it in the idle connection list
 			idleConnectionsAfterPurge = append(idleConnectionsAfterPurge, idleConnection)
 		} else {
-			p.logger.Info().Time("deadline", deadline).Msg("Remove connection from pool which is expired")
+			p.logger.Info().Time("deadline", deadline).Msg("(during purge) Remove connection from pool which is expired")
 
 			// expired -> don't add it to the idle connection list
 			// Force underlying connection closed

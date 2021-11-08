@@ -258,55 +258,7 @@ func TestAsyncResponseRetrieval(t *testing.T) {
 	assert.Equal(t, expectedAsync, resp)
 }
 
-var codes = []struct {
-	code int
-}{
-	{200},
-	{204},
-	{206},
-	{401},
-	{407},
-	{498},
-	{499},
-	{500},
-	{597},
-	{598},
-	{599},
-	{3434}, // Testing unknown error code
-}
-
-// Tests detection of errors and if an error is generated for a specific error code
-func TestResponseErrorDetection(t *testing.T) {
-	for _, co := range codes {
-		dummyResponse := interfaces.Response{
-			RequestID: "",
-			Status:    interfaces.Status{Code: co.code},
-			Result:    interfaces.Result{},
-		}
-		err := extractError(dummyResponse)
-		switch {
-		case co.code == 200:
-			if err != nil {
-				t.Log("Successful response returned error.")
-			}
-		case co.code == 204:
-			if err != nil {
-				t.Log("Successful response returned error.")
-			}
-		case co.code == 206:
-			if err != nil {
-				t.Log("Successful response returned error.")
-			}
-		default:
-			if err == nil {
-				t.Log("Unsuccessful response did not return error.")
-			}
-		}
-	}
-}
-
 func TestEmptyIfNilOrError(t *testing.T) {
-
 	assert.Empty(t, emptyIfNilOrError(nil))
 	assert.Equal(t, "failure", emptyIfNilOrError(fmt.Errorf("failure")))
 }
