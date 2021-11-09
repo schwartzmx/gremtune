@@ -18,6 +18,14 @@ func OutE(labels ...string) interfaces.Edge {
 	}
 }
 
+// OutV adds .outv(), to the query. The query call returns all outgoing vertex of the edge
+func OutV() interfaces.Vertex {
+	query := NewSimpleQB("__.outV()")
+	return &vertex{
+		builders: []interfaces.QueryBuilder{query},
+	}
+}
+
 // Unfold adds .unfold() to the query.
 func Unfold() interfaces.QueryBuilder {
 	query := NewSimpleQB("__.unfold()")

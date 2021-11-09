@@ -92,6 +92,11 @@ func (v *vertex) Not(not interfaces.QueryBuilder) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".not(%s)", not))
 }
 
+// Where adds .where(<traversal>) to the query. The query call can be user to filter the results of a traversal
+func (v *vertex) Where(where interfaces.QueryBuilder) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".where(%s)", where))
+}
+
 // Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
 // e.g. .has("temperature",23.02) or .has("available",true)
 // The method can also be used to return vertices that have a certain property.

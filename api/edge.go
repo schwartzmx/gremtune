@@ -45,6 +45,11 @@ func (e *edge) Fold() interfaces.Edge {
 	return e.Add(NewSimpleQB(".fold()"))
 }
 
+// Where adds .where(<traversal>) to the query. The query call can be user to filter the results of a traversal
+func (e *edge) Where(where interfaces.QueryBuilder) interfaces.Edge {
+	return e.Add(NewSimpleQB(".where(%s)", where))
+}
+
 //  Not adds .not(<traversal>) to the query.
 func (e *edge) Not(not interfaces.QueryBuilder) interfaces.Edge {
 	return e.Add(NewSimpleQB(".not(%s)", not))
