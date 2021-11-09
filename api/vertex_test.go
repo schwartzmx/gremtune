@@ -94,6 +94,23 @@ func TestNotV(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().not(%s)", graphName, q1), result.String())
 }
 
+func TestWhereV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	q1 := NewSimpleQB("g.V()")
+
+	// WHEN
+	result := v.Where(q1)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().where(%s)", graphName, q1), result.String())
+}
+
 func TestNewVertexG(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

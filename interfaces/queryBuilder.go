@@ -109,6 +109,9 @@ type Vertex interface {
 
 	// V adds .V() to the query. The query call returns all vertices.
 	V() Vertex
+
+	// Where adds .where(<traversal>) to the query. The query call can be user to filter the results of a traversal
+	Where(qb QueryBuilder) Vertex
 }
 
 type Edge interface {
@@ -167,6 +170,9 @@ type Edge interface {
 
 	// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
 	Coalesce(qb1 QueryBuilder, qb2 QueryBuilder) Edge
+
+	// Where adds .where(<traversal>) to the query. The query call can be user to filter the results of a traversal
+	Where(qb QueryBuilder) Edge
 }
 
 type Property interface {

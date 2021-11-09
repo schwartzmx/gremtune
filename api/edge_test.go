@@ -76,6 +76,23 @@ func TestNotE(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.not(%s)", graphName, q1), result.String())
 }
 
+func TestWhereE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	q1 := NewSimpleQB("g.V()")
+
+	// WHEN
+	result := e.Where(q1)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.where(%s)", graphName, q1), result.String())
+}
+
 func TestToLblE(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
