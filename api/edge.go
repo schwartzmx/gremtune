@@ -40,6 +40,11 @@ func (e *edge) Coalesce(qb1 interfaces.QueryBuilder, qb2 interfaces.QueryBuilder
 	return e.Add(NewSimpleQB(".coalesce(%s,%s)", qb1, qb2))
 }
 
+// HasNext adds .hasNext() to the query. This part is commonly used to check for element existence (see: https://tinkerpop.apache.org/docs/current/recipes/#element-existence)
+func (e *edge) HasNext() interfaces.Edge {
+	return e.Add(NewSimpleQB(".hasNext()"))
+}
+
 // Fold adds .fold() to the query.
 func (e *edge) Fold() interfaces.Edge {
 	return e.Add(NewSimpleQB(".fold()"))
