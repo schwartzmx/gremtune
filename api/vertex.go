@@ -82,6 +82,11 @@ func (v *vertex) Coalesce(qb1 interfaces.QueryBuilder, qb2 interfaces.QueryBuild
 	return v.Add(NewSimpleQB(".coalesce(%s,%s)", qb1, qb2))
 }
 
+// HasNext adds .hasNext() to the query. This part is commonly used to check for element existence (see: https://tinkerpop.apache.org/docs/current/recipes/#element-existence)
+func (v *vertex) HasNext() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".hasNext()"))
+}
+
 // Fold adds .fold() to the query.
 func (v *vertex) Fold() interfaces.Vertex {
 	return v.Add(NewSimpleQB(".fold()"))

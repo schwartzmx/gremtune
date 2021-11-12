@@ -112,6 +112,9 @@ type Vertex interface {
 
 	// Where adds .where(<traversal>) to the query. The query call can be user to filter the results of a traversal
 	Where(qb QueryBuilder) Vertex
+
+	// HasNext adds .hasNext() to the query. This part is commonly used to check for element existence (see: https://tinkerpop.apache.org/docs/current/recipes/#element-existence)
+	HasNext() Vertex
 }
 
 type Edge interface {
@@ -173,6 +176,9 @@ type Edge interface {
 
 	// Where adds .where(<traversal>) to the query. The query call can be user to filter the results of a traversal
 	Where(qb QueryBuilder) Edge
+
+	// HasNext adds .hasNext() to the query. This part is commonly used to check for element existence (see: https://tinkerpop.apache.org/docs/current/recipes/#element-existence)
+	HasNext() Edge
 }
 
 type Property interface {

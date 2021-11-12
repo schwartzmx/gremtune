@@ -43,6 +43,22 @@ func TestCoalesceV(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().coalesce(%s,%s)", graphName, q1, q2), result.String())
 }
 
+func TestHasNextV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	result := v.HasNext()
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().hasNext()", graphName), result.String())
+}
+
 func TestFoldV(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

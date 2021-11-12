@@ -26,6 +26,21 @@ func TestCoalesceE(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.coalesce(%s,%s)", graphName, q1, q2), result.String())
 }
 
+func TestHasNextE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	// WHEN
+	result := e.HasNext()
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.hasNext()", graphName), result.String())
+}
+
 func TestFoldE(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
