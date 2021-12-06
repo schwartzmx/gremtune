@@ -449,6 +449,24 @@ func TestEdgeAs(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.as(\"%s\")", graphName, label), e.String())
 }
 
+func TestEdgeAggregate(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	label := "label"
+
+	// WHEN
+	e = e.Aggregate(label)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.aggregate(\"%s\")", graphName, label), e.String())
+}
+
 func TestEdgeAsMulti(t *testing.T) {
 
 	// GIVEN

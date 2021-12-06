@@ -59,6 +59,11 @@ func (v *vertex) As(labels ...string) interfaces.Vertex {
 	return v.Add(query)
 }
 
+// Aggregate adds .aggregate(<label>) step to the query. This is used to aggregate all the objects at a particular point of traversal into a Collection.
+func (v *vertex) Aggregate(label string) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".aggregate(\"%s\")", label))
+}
+
 // Select adds .select([<label_1>,<label_2>,..,<label_n>]), to the query to select previous results using their label
 func (v *vertex) Select(labels ...string) interfaces.Vertex {
 	query := multiParamQuery(".select", labels...)
