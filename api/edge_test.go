@@ -56,6 +56,21 @@ func TestFoldE(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.fold()", graphName), result.String())
 }
 
+func TestUnfoldE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	// WHEN
+	result := e.Unfold()
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.unfold()", graphName), result.String())
+}
+
 func TestSelectE(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

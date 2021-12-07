@@ -118,6 +118,9 @@ type Vertex interface {
 
 	// HasNext adds .hasNext() to the query. This part is commonly used to check for element existence (see: https://tinkerpop.apache.org/docs/current/recipes/#element-existence)
 	HasNext() Vertex
+
+	// Unfold adds .unfold() to the query. An iterator, iterable, or map, then it is unrolled into a linear form. If not, then the object is simply emitted.
+	Unfold() Vertex
 }
 
 type Edge interface {
@@ -185,6 +188,9 @@ type Edge interface {
 
 	// HasNext adds .hasNext() to the query. This part is commonly used to check for element existence (see: https://tinkerpop.apache.org/docs/current/recipes/#element-existence)
 	HasNext() Edge
+
+	// Unfold adds .unfold() to the query. An iterator, iterable, or map, then it is unrolled into a linear form. If not, then the object is simply emitted.
+	Unfold() Edge
 }
 
 type Property interface {
