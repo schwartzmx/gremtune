@@ -121,6 +121,9 @@ type Vertex interface {
 
 	// Unfold adds .unfold() to the query. An iterator, iterable, or map, then it is unrolled into a linear form. If not, then the object is simply emitted.
 	Unfold() Vertex
+
+	// BothE adds .bothE(), to the query. The query call returns all edges of the Vertex
+	BothE() Edge
 }
 
 type Edge interface {

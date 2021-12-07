@@ -186,6 +186,12 @@ func (v *vertex) AddE(label string) interfaces.Edge {
 	return NewEdgeV(v)
 }
 
+// BothE adds .bothE(), to the query. The query call returns all edges of the Vertex
+func (v *vertex) BothE() interfaces.Edge {
+	v.Add(NewSimpleQB(".bothE()"))
+	return NewEdgeV(v)
+}
+
 func (v *vertex) Profile() interfaces.QueryBuilder {
 	if !gUSE_COSMOS_DB_QUERY_LANGUAGE {
 		return v.Add(NewSimpleQB(".profile()"))

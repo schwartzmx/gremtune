@@ -650,6 +650,22 @@ func TestAddE(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().addE(\"%s\")", graphName, label), qb.String())
 }
 
+func TestBothE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	qb := v.BothE()
+
+	// THEN
+	assert.NotNil(t, qb)
+	assert.Equal(t, fmt.Sprintf("%s.V().bothE()", graphName), qb.String())
+}
+
 func TestChain(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
