@@ -817,6 +817,23 @@ func TestVertexAs(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().as(\"%s\")", graphName, label), v.String())
 }
 
+func TestVertexAggregate(t *testing.T) {
+
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	label := "label1"
+
+	// WHEN
+	v = v.Aggregate(label)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().aggregate(\"%s\")", graphName, label), v.String())
+}
 func TestVertexAsMulti(t *testing.T) {
 
 	// GIVEN

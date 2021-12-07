@@ -92,6 +92,9 @@ type Vertex interface {
 	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
 	As(labels ...string) Vertex
 
+	// Aggregate adds .aggregate(<label>) step to the query. This is used to aggregate all the objects at a particular point of traversal into a Collection.
+	Aggregate(label string) Vertex
+
 	// Select adds .select([<label_1>,<label_2>,..,<label_n>]), to the query to select previous results using their label
 	Select(labels ...string) Vertex
 
@@ -161,6 +164,9 @@ type Edge interface {
 
 	// As adds .as([<label_1>,<label_2>,..,<label_n>]), to the query to label that query step for later access.
 	As(labels ...string) Edge
+
+	// Aggregate adds .aggregate(<label>) step to the query. This is used to aggregate all the objects at a particular point of traversal into a Collection.
+	Aggregate(label string) Edge
 
 	// Select adds .select([<label_1>,<label_2>,..,<label_n>]), to the query to select previous results using their label
 	Select(labels ...string) Vertex
