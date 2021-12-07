@@ -75,6 +75,22 @@ func TestFoldV(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().fold()", graphName), result.String())
 }
 
+func TestUnfoldV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	result := v.Unfold()
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().unfold()", graphName), result.String())
+}
+
 func TestSelectV(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

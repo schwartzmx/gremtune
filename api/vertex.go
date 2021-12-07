@@ -92,6 +92,11 @@ func (v *vertex) HasNext() interfaces.Vertex {
 	return v.Add(NewSimpleQB(".hasNext()"))
 }
 
+// Unfold adds .unfold() to the query. An iterator, iterable, or map, then it is unrolled into a linear form. If not, then the object is simply emitted.
+func (v *vertex) Unfold() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".unfold()"))
+}
+
 // Fold adds .fold() to the query.
 func (v *vertex) Fold() interfaces.Vertex {
 	return v.Add(NewSimpleQB(".fold()"))
