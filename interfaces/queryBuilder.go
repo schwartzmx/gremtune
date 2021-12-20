@@ -101,6 +101,9 @@ type Vertex interface {
 	// Not adds .not(<traversal>) to the query.
 	Not(builder QueryBuilder) Vertex
 
+	// Or adds .or(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+	Or(builder ...QueryBuilder) Vertex
+
 	// Fold adds .fold() to the query.
 	Fold() Vertex
 

@@ -71,3 +71,25 @@ func TestAnonymousConstant(t *testing.T) {
 	assert.NotNil(t, e)
 	assert.Equal(t, "__.constant(\"1234\")", e.String())
 }
+
+func TestAnonymousHas(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e := Has("name", "hans")
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, `__.has("name","hans")`, e.String())
+}
+
+func TestAnonymousHas_OnlyKey(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e := Has("name")
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, `__.has("name")`, e.String())
+}

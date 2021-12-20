@@ -102,6 +102,12 @@ func (v *vertex) Fold() interfaces.Vertex {
 	return v.Add(NewSimpleQB(".fold()"))
 }
 
+// Or adds .or(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+func (v *vertex) Or(traversals ...interfaces.QueryBuilder) interfaces.Vertex {
+	query := multitraversalQuery(".or", traversals...)
+	return v.Add(query)
+}
+
 //  Not adds .not(<traversal>) to the query.
 func (v *vertex) Not(not interfaces.QueryBuilder) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".not(%s)", not))
@@ -118,7 +124,6 @@ func (v *vertex) Where(where interfaces.QueryBuilder) interfaces.Vertex {
 // Then .has("<prop name>") will be added to the query.
 //	v.Has("prop1")
 func (v *vertex) Has(key string, value ...interface{}) interfaces.Vertex {
-
 	if len(value) == 0 {
 		return v.Add(NewSimpleQB(".has(\"%s\")", key))
 	}
