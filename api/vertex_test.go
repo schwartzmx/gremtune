@@ -109,6 +109,57 @@ func TestSelectV(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().select(\"%s\",\"%s\")", graphName, label1, label2), result.String())
 }
 
+func TestOrV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	q1 := NewSimpleQB(`has("name","alpha")`)
+	q2 := NewSimpleQB(`has("name","omega")`)
+
+	// WHEN
+	result := v.Or(q1, q2)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().or(%s,%s)", graphName, q1, q2), result.String())
+}
+
+func TestOrEmpty(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	result := v.Or()
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().or()", graphName), result.String())
+}
+
+func TestOrOne(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	q1 := NewSimpleQB(`has("name","alpha")`)
+
+	// WHEN
+	result := v.Or(q1)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().or(%s)", graphName, q1), result.String())
+}
+
 func TestNotV(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

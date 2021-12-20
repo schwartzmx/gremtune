@@ -96,3 +96,20 @@ func multiParamQuery(query string, params ...string) interfaces.QueryBuilder {
 	qStr = fmt.Sprintf("%s(\"%s\")", query, qStr)
 	return NewSimpleQB(qStr)
 }
+
+// multitraversalQuery creates a query based on the given (optional) parameters.
+// The query is the name of the query method that supports 0..* parameters.
+func multitraversalQuery(query string, traversals ...interfaces.QueryBuilder) interfaces.QueryBuilder {
+	if len(traversals) == 0 {
+		return NewSimpleQB(fmt.Sprintf("%s()", query))
+	}
+
+	traversalStrs := make([]string, 0, len(traversals))
+	for _, traversal := range traversals {
+		traversalStrs = append(traversalStrs, traversal.String())
+	}
+
+	qStr := strings.Join(traversalStrs, ",")
+	qStr = fmt.Sprintf("%s(%s)", query, qStr)
+	return NewSimpleQB(qStr)
+}

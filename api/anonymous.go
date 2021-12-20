@@ -1,6 +1,9 @@
 package api
 
-import "github.com/supplyon/gremcos/interfaces"
+import (
+	"github.com/pkg/errors"
+	"github.com/supplyon/gremcos/interfaces"
+)
 
 // InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all incoming edges of the Vertex
 func InE(labels ...string) interfaces.Edge {
@@ -45,4 +48,22 @@ func AddV(label string) interfaces.Vertex {
 // Constant adds .constant() to the query.
 func Constant(c string) interfaces.QueryBuilder {
 	return NewSimpleQB("__.constant(\"%s\")", c)
+}
+
+// Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
+// e.g. .has("temperature",23.02) or .has("available",true)
+// The method can also be used to return vertices that have a certain property.
+// Then .has("<prop name>") will be added to the query.
+//	v.Has("prop1")
+func Has(key string, value ...interface{}) interfaces.QueryBuilder {
+	if len(value) == 0 {
+		return NewSimpleQB("__.has(\"%s\")", key)
+	}
+
+	keyVal, err := toKeyValueString(key, value[0])
+	if err != nil {
+		panic(errors.Wrapf(err, "cast has value %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", value))
+	}
+
+	return NewSimpleQB("__.has%s", keyVal)
 }
