@@ -261,8 +261,10 @@ func toKeyValueString(key, value interface{}) (string, error) {
 		return fmt.Sprintf("(\"%s\",%f)", key, casted), nil
 	case time.Time:
 		return fmt.Sprintf("(\"%s\",\"%s\")", key, casted.String()), nil
+	case fmt.Stringer:
+		return fmt.Sprintf("(\"%s\",\"%s\")", key, Escape(casted.String())), nil
 	default:
-		fmt.Printf("Type %T is not supported in v.toKeyValueString() will try to cast to string", casted)
+		fmt.Printf("[warn] Type %T is not supported in v.toKeyValueString() will try to cast to string\n", casted)
 		asStr, err := cast.ToStringE(casted)
 		if err != nil {
 			return "", errors.Wrapf(err, "cast %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", casted)
