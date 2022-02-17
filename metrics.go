@@ -89,3 +89,25 @@ func NewMetrics(namespace string) *Metrics {
 
 	return instance
 }
+
+func newStubbedMetrics() *Metrics {
+	requestChargePerQueryResponseAvg := m.NewStubGauge()
+	requestChargePerQuery := m.NewStubGauge()
+	requestChargeTotal := m.NewStubCounter()
+	statusCodeTotal := m.NewStubCounterVec()
+	retryAfterMS := m.NewStubGauge()
+	serverTimePerQueryMS := m.NewStubGauge()
+	serverTimePerQueryResponseAvgMS := m.NewStubGauge()
+
+	metrics := &Metrics{
+		statusCodeTotal:                  statusCodeTotal,
+		retryAfterMS:                     retryAfterMS,
+		requestChargeTotal:               requestChargeTotal,
+		requestChargePerQuery:            requestChargePerQuery,
+		requestChargePerQueryResponseAvg: requestChargePerQueryResponseAvg,
+		serverTimePerQueryMS:             serverTimePerQueryMS,
+		serverTimePerQueryResponseAvgMS:  serverTimePerQueryResponseAvgMS,
+	}
+
+	return metrics
+}

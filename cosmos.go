@@ -2,6 +2,7 @@ package gremcos
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"sync"
 	"time"
 
@@ -29,7 +30,7 @@ type Cosmos interface {
 	// Stop stops the connector, terminates all background go routines and closes open connections.
 	Stop() error
 
-	// String
+	// String returns a string representation of the cosmos connector
 	String() string
 
 	// IsHealthy returns nil in case the connection to the CosmosDB is up, the according error otherwise.
@@ -59,6 +60,11 @@ type cosmosImpl struct {
 	wg sync.WaitGroup
 
 	credentialProvider CredentialProvider
+
+	// defines the number of times a request is retried if suggested by cosmos
+	maxRetries int
+	// defines the max duration a request should be retried
+	retryTimeout time.Duration
 }
 
 type websocketGeneratorFun func(host string, options ...optionWebsocket) (interfaces.Dialer, error)
@@ -84,7 +90,7 @@ func WithAuth(username string, password string) Option {
 //
 // If you want to use static credentials (primary-/ secondary cosmos key as password) instead you can either use "WithAuth".
 //	New("wss://example.com", WithAuth("username","primary-key"))
-// Or you use the default implementation for a static credentials provider "StaticCredentialProvider"
+// Or you use the default implementation for a static credential provider "StaticCredentialProvider"
 //	staticCredProvider := StaticCredentialProvider{UsernameStatic: "username", PasswordStatic: "primary-key"}
 //	New("wss://example.com", WithResourceTokenAuth(staticCredProvider))
 func WithResourceTokenAuth(credentialProvider CredentialProvider) Option {
@@ -137,6 +143,21 @@ func withMetrics(metrics *Metrics) Option {
 func wsGenerator(wsGenerator websocketGeneratorFun) Option {
 	return func(c *cosmosImpl) {
 		c.websocketGenerator = wsGenerator
+	}
+}
+
+// AutomaticRetries tries to retry failed requests, if appropriate. Retries are limited to maxRetries. Retrying is stopped after timeout is reached.
+// Appropriate error codes are 409, 412, 429, 1007, 1008 see https://docs.microsoft.com/en-us/azure/cosmos-db/graph/gremlin-headers#status-codes
+func AutomaticRetries(maxRetries int, timeout time.Duration) Option {
+	return func(c *cosmosImpl) {
+		if maxRetries > 0 {
+			c.maxRetries = maxRetries
+		}
+
+		c.retryTimeout = timeout
+		if timeout <= 0 {
+			c.retryTimeout = time.Duration(timeout.Seconds() * 30)
+		}
 	}
 }
 
@@ -203,39 +224,157 @@ func (c *cosmosImpl) dial() (interfaces.QueryExecutor, error) {
 
 func (c *cosmosImpl) ExecuteQuery(query interfaces.QueryBuilder) ([]interfaces.Response, error) {
 	if query == nil {
-		return nil, fmt.Errorf("Query is nil")
+		return nil, fmt.Errorf("query is nil")
 	}
 	return c.Execute(query.String())
 }
 
 func (c *cosmosImpl) Execute(query string) ([]interfaces.Response, error) {
 
-	responses, err := c.pool.Execute(query)
+	doRetry := func() ([]interfaces.Response, error) {
+		return c.pool.Execute(query)
+	}
+
+	responses, err := c.retryLoop(doRetry)
 
 	// try to investigate the responses and to find out if we can find more specific error information
 	if respErr := extractFirstError(responses); respErr != nil {
 		err = respErr
 	}
 
-	updateRequestMetrics(responses, c.metrics)
 	return responses, err
 }
 
 func (c *cosmosImpl) ExecuteWithBindings(query string, bindings, rebindings map[string]interface{}) ([]interfaces.Response, error) {
 
-	responses, err := c.pool.ExecuteWithBindings(query, bindings, rebindings)
+	doRetry := func() ([]interfaces.Response, error) {
+		return c.pool.ExecuteWithBindings(query, bindings, rebindings)
+	}
+
+	responses, err := c.retryLoop(doRetry)
 
 	// try to investigate the responses and to find out if we can find more specific error information
 	if respErr := extractFirstError(responses); respErr != nil {
 		err = respErr
 	}
 
-	updateRequestMetrics(responses, c.metrics)
+	return responses, err
+}
+
+type retryFun func() ([]interfaces.Response, error)
+
+func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.Response, err error) {
+	var tryCount int
+	shouldRetry := c.maxRetries > 0
+	maxTries := c.maxRetries + 1
+
+	retryTimeoutTimer := time.NewTimer(c.retryTimeout)
+	defer retryTimeoutTimer.Stop()
+
+RETRY:
+	for tryCount = 0; tryCount < maxTries; tryCount++ {
+
+		responses, err = executeRequest()
+
+		updateRequestMetrics(responses, c.metrics)
+
+		if !shouldRetry || err != nil {
+			break
+		}
+
+		retryInformation := extractRetryConditions(responses)
+
+		// Retry is always on a new or at least active connection,
+		// therefore retryInformation.retryOnNewConnection can be used here as well
+		if !(retryInformation.retry || retryInformation.retryOnNewConnection) {
+			break
+		}
+
+		c.logger.Info().Msgf("retrying query after %v because of header status code %d", retryInformation.retryAfter, retryInformation.responseStatusCode)
+		if retryInformation.retryAfter > 0 {
+			waitForRetryTimer := time.NewTimer(retryInformation.retryAfter)
+
+			// Abort waiting if timout is reached
+			select {
+			case <-retryTimeoutTimer.C:
+				// no further retries, we return the current responses
+				c.logger.Info().Msgf("canceling retries, timeout reached after %d tries", tryCount)
+				waitForRetryTimer.Stop()
+				break RETRY
+			case <-waitForRetryTimer.C:
+				waitForRetryTimer.Stop()
+				continue RETRY
+			}
+		}
+
+		// Stop retry-loop if timeout is reached
+		select {
+			case <-retryTimeoutTimer.C:
+				// no further retries, we return the current responses
+				c.logger.Info().Msgf("canceling retries, timeout reached after %d tries", tryCount)
+				break RETRY
+			default:
+				continue RETRY
+		}
+
+	}
+
+	return responses, err
+}
+
+func (c *cosmosImpl) executeAsync(query string, asyncResponses *[]interfaces.AsyncResponse) (responses []interfaces.Response, err error) {
+	intermediateChannel := make(chan interfaces.AsyncResponse, 100)
+
+	if err := c.pool.ExecuteAsync(query, intermediateChannel); err != nil {
+		return nil, err
+	}
+
+	responses = make([]interfaces.Response, 0, 5)
+	*asyncResponses = make([]interfaces.AsyncResponse, 0, 5)
+
+	for resp := range intermediateChannel {
+		*asyncResponses = append(*asyncResponses, resp)
+		responses = append(responses, resp.Response)
+		if resp.ErrorMessage != "" {
+			if err == nil {
+				err = errors.New(resp.ErrorMessage)
+				continue
+			}
+			err = errors.Wrap(err, resp.ErrorMessage)
+		}
+	}
+
 	return responses, err
 }
 
 func (c *cosmosImpl) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
-	return c.pool.ExecuteAsync(query, responseChannel)
+
+	var asyncResponses []interfaces.AsyncResponse
+
+	doRetry := func() ([]interfaces.Response, error) {
+		return c.executeAsync(query, &asyncResponses)
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer close(responseChannel)
+		_, err = c.retryLoop(doRetry)
+		wg.Done()
+		if err != nil {
+			// return because the asyncResponses we gathered might be outdated
+			return
+		}
+
+		// Write final result
+		for _, response := range asyncResponses {
+			responseChannel <- response
+		}
+	}()
+
+	wg.Wait()
+
+	return err
 }
 
 func (c *cosmosImpl) IsConnected() bool {
@@ -266,10 +405,10 @@ func (c *cosmosImpl) IsHealthy() error {
 }
 
 // updateRequestMetrics updates the request relevant metrics based on the given chunk of responses
-func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
+func updateRequestMetrics(responses []interfaces.Response, metrics *Metrics) {
 
 	// nothing to update
-	if len(respones) == 0 {
+	if len(responses) == 0 {
 		return
 	}
 
@@ -277,7 +416,7 @@ func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
 	var requestChargePerQueryTotal float32
 	var serverTimePerQueryTotal time.Duration
 
-	for _, response := range respones {
+	for _, response := range responses {
 		statusCode := response.Status.Code
 		respInfo, err := parseAttributeMap(response.Status.Attributes)
 
@@ -291,7 +430,7 @@ func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
 		statusCode = respInfo.statusCode
 		metrics.statusCodeTotal.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
 
-		// only take the largest waittime of this chunk of responses
+		// only take the largest wait time of this chunk of responses
 		if retryAfter < respInfo.retryAfter {
 			retryAfter = respInfo.retryAfter
 		}
@@ -307,7 +446,7 @@ func updateRequestMetrics(respones []interfaces.Response, metrics *Metrics) {
 		}
 	}
 
-	numResponses := len(respones)
+	numResponses := len(responses)
 	var requestChargePerQueryResponseAvg float64
 	var serverTimePerQueryResponseAvg float64
 	if numResponses > 0 {

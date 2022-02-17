@@ -58,7 +58,7 @@ func (c *client) saveResponse(resp interfaces.Response, err error) {
 		responseStatusNotifierChannel.c <- resp.Status.Code
 	}
 
-	// post an error in case it is not a partial messsage.
+	// post an error in case it is not a partial message.
 	// note that here the given error can be nil.
 	// this is the good case that just completes the retrieval of the response
 	if resp.Status.Code != interfaces.StatusPartialContent {
@@ -84,7 +84,7 @@ func (c *client) retrieveResponseAsync(id string, responseChannel chan interface
 			// Only retrieve all but one from the partial responses saved in results Map that are not sent to responseChannel
 			for i := responseProcessedIndex; i < len(d)-1; i++ {
 				responseProcessedIndex++
-				var asyncResponse interfaces.AsyncResponse = interfaces.AsyncResponse{}
+				var asyncResponse = interfaces.AsyncResponse{}
 				asyncResponse.Response = d[i].(interfaces.Response)
 				// Send the Partial response object to the responseChannel
 				responseChannel <- asyncResponse
@@ -157,13 +157,13 @@ func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 
 	responseErrorChannelUntyped, ok := c.responseNotifier.Load(id)
 	if !ok {
-		return nil, fmt.Errorf("Response with id %s not found", id)
+		return nil, fmt.Errorf("response with id %s not found", id)
 	}
 	responseErrorChannel = responseErrorChannelUntyped.(*safeCloseErrorChannel)
 
 	responseStatusNotifierUntyped, ok := c.responseStatusNotifier.Load(id)
 	if !ok {
-		return nil, fmt.Errorf("Response with id %s not found", id)
+		return nil, fmt.Errorf("response with id %s not found", id)
 	}
 	responseStatusNotifierChannel = responseStatusNotifierUntyped.(*safeCloseIntChannel)
 
@@ -189,7 +189,7 @@ func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 	return data, err
 }
 
-// deleteRespones deletes the response from the container. Used for cleanup purposes by requester.
+// deleteResponse deletes the response from the container. Used for cleanup purposes by requester.
 func (c *client) deleteResponse(id string) {
 	c.results.Delete(id)
 }
