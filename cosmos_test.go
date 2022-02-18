@@ -351,12 +351,12 @@ func TestAutomaticRetries(t *testing.T) {
 	metrics, _ := NewMockedMetrics(mockCtrl)
 
 	// WHEN
-	cosmos, err := New("ws://host", AutomaticRetries(3,time.Second), withMetrics(metrics))
+	cosmos, err := New("ws://host", AutomaticRetries(3, time.Second), withMetrics(metrics))
 	require.NoError(t, err)
 
 	// THEN
 	cImpl := toCosmosImpl(t, cosmos)
-	assert.Equal(t, time.Second,cImpl.retryTimeout)
+	assert.Equal(t, time.Second, cImpl.retryTimeout)
 	assert.Equal(t, 3, cImpl.maxRetries)
 }
 
@@ -427,10 +427,10 @@ func TestCosmosImpl_Execute_NoRetries(t *testing.T) {
 
 	const maxRetries = 0
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -475,10 +475,10 @@ func TestCosmosImpl_Execute_MaxRetriesFailure(t *testing.T) {
 
 	const maxRetries = 3
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -525,10 +525,10 @@ func TestCosmosImpl_Execute_NoRetriesAfterSuccess(t *testing.T) {
 
 	const maxRetries = 3
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -582,10 +582,10 @@ func TestCosmosImpl_ExecuteWithBindings_RetriesSuccess(t *testing.T) {
 
 	const maxRetries = 3
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -639,10 +639,10 @@ func TestCosmosImpl_ExecuteWithBindings_NoRetries(t *testing.T) {
 
 	const maxRetries = 0
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -687,10 +687,10 @@ func TestCosmosImpl_ExecuteWithBindings_MaxRetriesFailure(t *testing.T) {
 
 	const maxRetries = 3
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -737,10 +737,10 @@ func TestCosmosImpl_ExecuteWithBindings_NoRetriesAfterSuccess(t *testing.T) {
 
 	const maxRetries = 3
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -794,10 +794,10 @@ func TestCosmosImpl_ExecuteAsync_RetriesSuccess(t *testing.T) {
 
 	const maxRetries = 3
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -865,10 +865,10 @@ func TestCosmosImpl_ExecuteAsync_NoRetries(t *testing.T) {
 
 	const maxRetries = 0
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -923,10 +923,10 @@ func TestCosmosImpl_ExecuteAsync_MaxRetriesFailure(t *testing.T) {
 
 	const maxRetries = 3
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -987,10 +987,10 @@ func TestCosmosImpl_ExecuteAsync_NoRetriesAfterSuccess(t *testing.T) {
 
 	const maxRetries = 3
 	cosmos := cosmosImpl{
-		logger:           zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		pool:             poolMock,
-		metrics:          newStubbedMetrics(),
-		maxRetries:       maxRetries,
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
 		retryTimeout: time.Second * 2,
 	}
 
@@ -1046,4 +1046,63 @@ func TestCosmosImpl_ExecuteAsync_NoRetriesAfterSuccess(t *testing.T) {
 	// THEN
 	assert.EqualValues(t, responses, success)
 	assert.NoError(t, err)
+}
+
+func TestCosmosImpl_ExecuteAsync_NoRetriesAfterTimeout(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	queryExecutor, poolMock, err := newMockedPool(mockCtrl)
+	require.NoError(t, err)
+
+	const maxRetries = 3
+	cosmos := cosmosImpl{
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		pool:         poolMock,
+		metrics:      newStubbedMetrics(),
+		maxRetries:   maxRetries,
+		retryTimeout: time.Millisecond * 110,
+	}
+
+	query := "g.V().has(\"user_id\",\"12345\")"
+
+	doRetry := []interfaces.Response{
+		{
+			Status: interfaces.Status{
+				Code: interfaces.StatusServerError,
+				Attributes: map[string]interface{}{
+					"x-ms-status-code":    429,
+					"x-ms-substatus-code": 3200,
+					"x-ms-retry-after-ms": "00:00:00.0500000",
+				},
+			},
+		},
+	}
+
+	queryExecutor.EXPECT().LastError().AnyTimes().Return(nil)
+	queryExecutor.EXPECT().IsConnected().AnyTimes().Return(true)
+
+	callCount := 0
+	queryExecutor.EXPECT().ExecuteAsync(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(func(q string, resp chan interfaces.AsyncResponse) error {
+		resp <- interfaces.AsyncResponse{Response: doRetry[0]}
+		close(resp)
+		callCount++
+		return nil
+	})
+
+	// WHEN
+	responseChannel := make(chan interfaces.AsyncResponse, 100)
+
+	err = cosmos.ExecuteAsync(query, responseChannel)
+
+	responses := make([]interfaces.Response, 0, 1)
+	for resp := range responseChannel {
+		responses = append(responses, resp.Response)
+	}
+
+	// THEN
+	assert.EqualValues(t, responses, doRetry)
+	assert.NoError(t, err)
+	assert.True(t, callCount < maxRetries+1)
 }

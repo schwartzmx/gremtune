@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/websocket v1.4.1
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.4.1
+	github.com/prometheus/client_golang v1.12.0
 	github.com/rs/zerolog v1.18.0
 	github.com/spf13/cast v1.3.1
 	github.com/stretchr/testify v1.4.0
