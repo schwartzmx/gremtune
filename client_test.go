@@ -3,6 +3,7 @@ package gremcos
 import (
 	"encoding/json"
 	"fmt"
+	"go.uber.org/goleak"
 	"sync"
 	"testing"
 	"time"
@@ -373,6 +374,7 @@ func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
 }
 
 func TestForceCloseOnClosedChannelPanic(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	// This test was added to reproduce https://github.com/supplyon/gremcos/issues/29
 
 	// GIVEN
@@ -393,7 +395,7 @@ func TestForceCloseOnClosedChannelPanic(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	// catch the request that should be send over the wire
+	// catch the request that should be sent over the wire
 	requestToSend := <-client.requests
 	// convert it to a readable request
 	req, err := packedRequest2Request(requestToSend)
@@ -472,4 +474,27 @@ func TestAuthenticate_Fail(t *testing.T) {
 	client.credentialProvider = credProvider{uname: ""}
 	err = client.authenticate("reqID")
 	assert.Error(t, err)
+}
+
+func TestCloseClient(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	mockedDialer.EXPECT().Connect().Return(nil)
+	mockedDialer.EXPECT().Read()
+	mockedDialer.EXPECT().Close().Return(nil)
+	errChan := make(chan error, 100)
+	defer close(errChan)
+
+	client, err := Dial(mockedDialer, errChan)
+	require.NoError(t, err)
+
+	// WHEN
+	closeErr := client.Close()
+
+	// THEN
+	assert.NoError(t, closeErr)
 }

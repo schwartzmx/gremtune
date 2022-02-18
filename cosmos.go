@@ -148,6 +148,8 @@ func wsGenerator(wsGenerator websocketGeneratorFun) Option {
 
 // AutomaticRetries tries to retry failed requests, if appropriate. Retries are limited to maxRetries. Retrying is stopped after timeout is reached.
 // Appropriate error codes are 409, 412, 429, 1007, 1008 see https://docs.microsoft.com/en-us/azure/cosmos-db/graph/gremlin-headers#status-codes
+// Hint: Be careful when specifying the values for maxRetries and timeout. They influence how much latency is added on requests that need to be retried.
+//       For example if maxRetries = 1 and timeout = 1s the call might take 1s longer to return a potential persistent error.
 func AutomaticRetries(maxRetries int, timeout time.Duration) Option {
 	return func(c *cosmosImpl) {
 		if maxRetries > 0 {
@@ -156,7 +158,7 @@ func AutomaticRetries(maxRetries int, timeout time.Duration) Option {
 
 		c.retryTimeout = timeout
 		if timeout <= 0 {
-			c.retryTimeout = time.Duration(timeout.Seconds() * 30)
+			c.retryTimeout = time.Second * 30
 		}
 	}
 }
@@ -268,10 +270,30 @@ func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.
 	shouldRetry := c.maxRetries > 0
 	maxTries := c.maxRetries + 1
 
-	retryTimeoutTimer := time.NewTimer(c.retryTimeout)
-	defer retryTimeoutTimer.Stop()
+	timeoutReachedChan := make(chan bool)
 
-RETRY:
+	defer close(timeoutReachedChan)
+	timedOut := false
+
+	done := make(chan bool)
+	defer close(done)
+
+	go func() {
+		retryTimeoutTimer := time.NewTimer(c.retryTimeout)
+		defer retryTimeoutTimer.Stop()
+
+		select {
+		case <-retryTimeoutTimer.C:
+			// no further retries, we return the current responses
+			c.logger.Info().Msgf("stopping retries after %v, timeout reached", c.retryTimeout)
+			timedOut = true
+			timeoutReachedChan <- true
+			return
+		case <-done:
+			return
+		}
+	}()
+
 	for tryCount = 0; tryCount < maxTries; tryCount++ {
 
 		responses, err = executeRequest()
@@ -290,44 +312,42 @@ RETRY:
 			break
 		}
 
-		c.logger.Info().Msgf("retrying query after %v because of header status code %d", retryInformation.retryAfter, retryInformation.responseStatusCode)
 		if retryInformation.retryAfter > 0 {
-			waitForRetryTimer := time.NewTimer(retryInformation.retryAfter)
+			c.logger.Info().Msgf("retry %d of query after %v because of header status code %d", tryCount+1, retryInformation.retryAfter, retryInformation.responseStatusCode)
 
-			// Abort waiting if timout is reached
-			select {
-			case <-retryTimeoutTimer.C:
-				// no further retries, we return the current responses
-				c.logger.Info().Msgf("canceling retries, timeout reached after %d tries", tryCount)
-				waitForRetryTimer.Stop()
-				break RETRY
-			case <-waitForRetryTimer.C:
-				waitForRetryTimer.Stop()
-				continue RETRY
+			if waitDone := waitForRetry(retryInformation.retryAfter, timeoutReachedChan); waitDone == false {
+				break
 			}
 		}
 
-		// Stop retry-loop if timeout is reached
-		select {
-			case <-retryTimeoutTimer.C:
-				// no further retries, we return the current responses
-				c.logger.Info().Msgf("canceling retries, timeout reached after %d tries", tryCount)
-				break RETRY
-			default:
-				continue RETRY
+		// Timeout check in case no waiting is required
+		if timedOut {
+			break
 		}
-
 	}
 
 	return responses, err
 }
 
-func (c *cosmosImpl) executeAsync(query string, asyncResponses *[]interfaces.AsyncResponse) (responses []interfaces.Response, err error) {
+func waitForRetry(wait time.Duration, stop <-chan bool) (waitDone bool) {
+	waitForRetryTimer := time.NewTimer(wait)
+	defer waitForRetryTimer.Stop()
+
+	select {
+	case <-stop:
+		return false
+	case <-waitForRetryTimer.C:
+		return true
+	}
+}
+
+func (c *cosmosImpl) executeAsync(query string, asyncResponses *[]interfaces.AsyncResponse, errorCallback func(err error)) (responses []interfaces.Response, err error) {
 	intermediateChannel := make(chan interfaces.AsyncResponse, 100)
 
 	if err := c.pool.ExecuteAsync(query, intermediateChannel); err != nil {
 		return nil, err
 	}
+	errorCallback(err)
 
 	responses = make([]interfaces.Response, 0, 5)
 	*asyncResponses = make([]interfaces.AsyncResponse, 0, 5)
@@ -351,17 +371,31 @@ func (c *cosmosImpl) ExecuteAsync(query string, responseChannel chan interfaces.
 
 	var asyncResponses []interfaces.AsyncResponse
 
-	doRetry := func() ([]interfaces.Response, error) {
-		return c.executeAsync(query, &asyncResponses)
-	}
-
 	wg := sync.WaitGroup{}
 	wg.Add(1)
+
+	var returnAfterFirstCall sync.Once
+	var firstCallError error
+	var firstCallErrorLock sync.Mutex
+
+	errCallback := func(callbackErr error) {
+		returnAfterFirstCall.Do(func() {
+			firstCallErrorLock.Lock()
+			firstCallError = callbackErr
+			firstCallErrorLock.Unlock()
+			wg.Done()
+		})
+	}
+
+	doRetry := func() ([]interfaces.Response, error) {
+		return c.executeAsync(query, &asyncResponses, errCallback)
+	}
+
 	go func() {
 		defer close(responseChannel)
-		_, err = c.retryLoop(doRetry)
-		wg.Done()
-		if err != nil {
+		_, retryErr := c.retryLoop(doRetry)
+
+		if retryErr != nil {
 			// return because the asyncResponses we gathered might be outdated
 			return
 		}
@@ -373,8 +407,9 @@ func (c *cosmosImpl) ExecuteAsync(query string, responseChannel chan interfaces.
 	}()
 
 	wg.Wait()
-
-	return err
+	firstCallErrorLock.Lock()
+	defer firstCallErrorLock.Unlock()
+	return firstCallError
 }
 
 func (c *cosmosImpl) IsConnected() bool {
@@ -382,13 +417,14 @@ func (c *cosmosImpl) IsConnected() bool {
 }
 
 func (c *cosmosImpl) Stop() error {
-	defer func() {
-		close(c.errorChannel)
-		c.wg.Wait()
-	}()
 	c.logger.Info().Msg("Teardown requested")
 
-	return c.pool.Close()
+	poolCloseErr := c.pool.Close()
+
+	close(c.errorChannel)
+	c.wg.Wait()
+
+	return poolCloseErr
 }
 
 func (c *cosmosImpl) String() string {

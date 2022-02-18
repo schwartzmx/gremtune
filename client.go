@@ -328,6 +328,17 @@ func (c *client) ExecuteFile(path string) (resp []interfaces.Response, err error
 
 // Close closes the underlying connection and marks the client as closed.
 func (c *client) Close() error {
+
+	err := c.safeClose()
+
+	// wait for cleanup of all started go routines
+	c.wg.Wait()
+
+	return err
+}
+
+// safeClose encapsulates the cleanup logic that enables failed workers to clean up after them. It is called by the deferred workerSaveExit
+func (c *client) safeClose() error {
 	var err error
 
 	// ensure that the channels are only closed once
@@ -353,11 +364,6 @@ func (c *client) Close() error {
 			err = c.conn.Close()
 		}
 	})
-
-	// wait for cleanup of all started go routines
-	defer func() {
-		c.wg.Wait()
-	}()
 	return err
 }
 
@@ -414,7 +420,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 			errs <- errorToPost
 			c.setLastErr(errorToPost)
 
-			// to return at this point is save since we call workerSaveExit() to clean up everything
+			// to return at this point is safe since we call workerSaveExit() to clean up everything
 			// when the function is left
 			return
 		}
@@ -447,16 +453,17 @@ func (c *client) pingWorker(errs chan error, quit <-chan struct{}) {
 	}
 }
 
-// workerSaveExit can be used as defered call on leaving a worker routine.
+// workerSaveExit can be used as deferred call on leaving a worker routine.
 // It ensures that the client is closed and cleaned up appropriately.
 func (c *client) workerSaveExit(name string, errs chan<- error) {
-	c.wg.Done()
 
 	// call close to ensure that everything is cleaned up appropriately
-	if err := c.Close(); err != nil {
+	if err := c.safeClose(); err != nil {
 		err = fmt.Errorf("error closing client while leaving worker '%s'", name)
 		errs <- err
 	}
+	// client exited
+	c.wg.Done()
 }
 
 // Ping send a ping over the socket to the peer
