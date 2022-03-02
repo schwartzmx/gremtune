@@ -197,3 +197,127 @@ func TestStatusCodeToDescription(t *testing.T) {
 	// THEN
 	assert.Contains(t, desc, "unknown")
 }
+
+func TestExtractRetryConditions(t *testing.T) {
+	// GIVEN
+	noError := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusSuccess,
+		},
+	}
+	tooManyRequests := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusServerError,
+			Attributes: map[string]interface{}{
+				"x-ms-status-code":    429,
+				"x-ms-substatus-code": 3200,
+				"x-ms-retry-after-ms": "00:00:00.5000000",
+			},
+		},
+	}
+	responses := []interfaces.Response{noError, tooManyRequests}
+
+	// WHEN
+	retryConditions := extractRetryConditions(responses)
+
+	// THEN
+	assert.True(t, retryConditions.retry)
+	assert.False(t, retryConditions.retryOnNewConnection)
+	assert.NotEqual(t, noRetry, retryConditions.cosmosStatusCodeDescription)
+	assert.Equal(t, time.Millisecond*500, retryConditions.retryAfter)
+}
+
+func TestExtractRetryConditionsNoRetry(t *testing.T) {
+	// GIVEN
+	noError := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusSuccess,
+		},
+	}
+	tooManyRequests := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusServerError,
+			Attributes: map[string]interface{}{
+				"x-ms-status-code":    404,
+				"x-ms-substatus-code": 3200,
+				"x-ms-retry-after-ms": "00:00:00.5000000",
+			},
+		},
+	}
+	responses := []interfaces.Response{noError, tooManyRequests}
+
+	// WHEN
+	retryConditions := extractRetryConditions(responses)
+
+	// THEN
+	assert.False(t, retryConditions.retry)
+	assert.False(t, retryConditions.retryOnNewConnection)
+	assert.Equal(t, noRetry, retryConditions.cosmosStatusCodeDescription)
+}
+
+func TestExtractRetryConditionsOnlyOnNewConnection(t *testing.T) {
+	// GIVEN
+	noError := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusSuccess,
+		},
+	}
+	tooManyRequests := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusServerError,
+			Attributes: map[string]interface{}{
+				"x-ms-status-code":    1007,
+				"x-ms-substatus-code": 3200,
+				"x-ms-retry-after-ms": "00:00:00.5000000",
+			},
+		},
+	}
+	responses := []interfaces.Response{noError, tooManyRequests}
+
+	// WHEN
+	retryConditions := extractRetryConditions(responses)
+
+	// THEN
+	assert.True(t, retryConditions.retry)
+	assert.True(t, retryConditions.retryOnNewConnection)
+	assert.NotEqual(t, noRetry, retryConditions.cosmosStatusCodeDescription)
+	assert.Equal(t, time.Millisecond*500, retryConditions.retryAfter)
+}
+
+func TestExtractRetryConditionsIgnoreError(t *testing.T) {
+	// GIVEN
+	noError := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusSuccess,
+		},
+	}
+	willError := interfaces.Response{
+		Status: interfaces.Status{
+			Code:    interfaces.StatusServerError,
+			Message: "ABCD",
+			Attributes: map[string]interface{}{
+				"x-ms-status-code": "invalid",
+			},
+		},
+	}
+	tooManyRequests := interfaces.Response{
+		Status: interfaces.Status{
+			Code: interfaces.StatusServerError,
+			Attributes: map[string]interface{}{
+				"x-ms-status-code":    429,
+				"x-ms-substatus-code": 3200,
+				"x-ms-retry-after-ms": "00:00:00.5000000",
+			},
+		},
+	}
+	responses := []interfaces.Response{noError, willError, tooManyRequests}
+
+	// WHEN
+	retryConditions := extractRetryConditions(responses)
+
+	// THEN
+	assert.True(t, retryConditions.retry)
+	assert.False(t, retryConditions.retryOnNewConnection)
+	assert.NotEqual(t, noRetry, retryConditions.cosmosStatusCodeDescription)
+	assert.Equal(t, time.Millisecond*500, retryConditions.retryAfter)
+}

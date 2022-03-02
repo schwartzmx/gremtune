@@ -99,12 +99,12 @@ func (p *pool) IsConnected() bool {
 		}
 
 		// We assume to be healthy if at least one active connection
-		// could be found. Hence we can stop searching when the first
+		// could be found. Hence, we can stop searching when the first
 		// healthy one was found.
 		return true
 	}
 
-	// did not found any working connection
+	// did not find any working connection
 	return false
 }
 

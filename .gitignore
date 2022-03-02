@@ -17,3 +17,5 @@ lint.out
 air.conf
 
 tmp/
+/gremcos.iml
+/.idea/

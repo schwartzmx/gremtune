@@ -114,7 +114,7 @@ func newClient(dialer interfaces.Dialer, options ...clientOption) *client {
 func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOption) (*client, error) {
 
 	if conn == nil {
-		return nil, fmt.Errorf("Dialer is nil")
+		return nil, fmt.Errorf("dialer is nil")
 	}
 	client := newClient(conn, options...)
 
@@ -233,11 +233,11 @@ func (c *client) executeAsync(query string, bindings, rebindings *map[string]int
 
 func validateCredentials(username string, password string) error {
 	if len(username) == 0 {
-		return fmt.Errorf("Username is missing")
+		return fmt.Errorf("username is missing")
 	}
 
 	if len(password) == 0 {
-		return fmt.Errorf("Password is missing")
+		return fmt.Errorf("password is missing")
 	}
 	return nil
 }
@@ -287,7 +287,7 @@ func (c *client) Execute(query string) (resp []interfaces.Response, err error) {
 	return
 }
 
-// Execute formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method paramater.
+// ExecuteAsync formats a raw Gremlin query, sends it to Gremlin Server, and the results are streamed to channel provided in method parameter.
 func (c *client) ExecuteAsync(query string, responseChannel chan interfaces.AsyncResponse) (err error) {
 	if !c.conn.IsConnected() {
 		return ErrNoConnection
@@ -328,6 +328,17 @@ func (c *client) ExecuteFile(path string) (resp []interfaces.Response, err error
 
 // Close closes the underlying connection and marks the client as closed.
 func (c *client) Close() error {
+
+	err := c.safeClose()
+
+	// wait for cleanup of all started go routines
+	c.wg.Wait()
+
+	return err
+}
+
+// safeClose encapsulates the cleanup logic that enables failed workers to clean up after them. It is called by the deferred workerSaveExit
+func (c *client) safeClose() error {
 	var err error
 
 	// ensure that the channels are only closed once
@@ -348,16 +359,11 @@ func (c *client) Close() error {
 		})
 
 		if c.conn == nil {
-			err = fmt.Errorf("Connection is nil")
+			err = fmt.Errorf("connection is nil")
 		} else {
 			err = c.conn.Close()
 		}
 	})
-
-	// wait for cleanup of all started go routines
-	defer func() {
-		c.wg.Wait()
-	}()
 	return err
 }
 
@@ -395,7 +401,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 			errs <- closedErr
 			c.setLastErr(closedErr)
 
-			// to return at this point is save since we call workerSaveExit() to clean up everything
+			// to return at this point is safe since we call workerSaveExit() to clean up everything
 			// when the function is left
 			return
 		}
@@ -404,7 +410,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 		if err != nil {
 			errorToPost = err
 		} else if msg == nil {
-			errorToPost = fmt.Errorf("Receive message type: %d, but message was nil", msgType)
+			errorToPost = fmt.Errorf("receive message type: %d, but message was nil", msgType)
 		} else {
 			// handle the message
 			errorToPost = c.handleResponse(msg)
@@ -414,7 +420,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 			errs <- errorToPost
 			c.setLastErr(errorToPost)
 
-			// to return at this point is save since we call workerSaveExit() to clean up everything
+			// to return at this point is safe since we call workerSaveExit() to clean up everything
 			// when the function is left
 			return
 		}
@@ -447,16 +453,17 @@ func (c *client) pingWorker(errs chan error, quit <-chan struct{}) {
 	}
 }
 
-// workerSaveExit can be used as defered call on leaving a worker routine.
+// workerSaveExit can be used as deferred call on leaving a worker routine.
 // It ensures that the client is closed and cleaned up appropriately.
 func (c *client) workerSaveExit(name string, errs chan<- error) {
-	c.wg.Done()
 
 	// call close to ensure that everything is cleaned up appropriately
-	if err := c.Close(); err != nil {
-		err = fmt.Errorf("Error closing client while leaving worker '%s'", name)
+	if err := c.safeClose(); err != nil {
+		err = fmt.Errorf("error closing client while leaving worker '%s'", name)
 		errs <- err
 	}
+	// client exited
+	c.wg.Done()
 }
 
 // Ping send a ping over the socket to the peer
