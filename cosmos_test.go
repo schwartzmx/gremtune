@@ -1260,3 +1260,80 @@ func TestWaitForRetry_Abort(t *testing.T) {
 	mu.Unlock()
 	assert.True(t, duration <= waitTime)
 }
+
+func TestHandleTimeout(t *testing.T) {
+	// GIVEN
+	cosmos := cosmosImpl{
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		retryTimeout: time.Millisecond * 50,
+	}
+	done := make(chan bool)
+	defer close(done)
+
+	timedOut := false
+	mu := sync.Mutex{}
+
+	// WHEN
+	go func() {
+		timedOutChan := cosmos.handleTimeout(done)
+
+		select {
+		case <-timedOutChan:
+			mu.Lock()
+			timedOut = true
+			mu.Unlock()
+		}
+	}()
+	time.Sleep(time.Millisecond * 20)
+
+	// THEN
+	mu.Lock()
+	assert.False(t, timedOut)
+	mu.Unlock()
+
+	time.Sleep(time.Millisecond * 31)
+	mu.Lock()
+	assert.True(t, timedOut)
+	mu.Unlock()
+}
+
+func TestHandleTimeout_Abort(t *testing.T) {
+	// GIVEN
+	cosmos := cosmosImpl{
+		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
+		retryTimeout: time.Millisecond * 50,
+	}
+	done := make(chan bool)
+
+	timedOut := false
+	closed := false
+	mu := sync.Mutex{}
+
+	// WHEN
+	go func() {
+		timedOutChan := cosmos.handleTimeout(done)
+
+		for {
+			select {
+			case isTimedOut, ok := <-timedOutChan:
+				mu.Lock()
+				timedOut = isTimedOut
+				closed = !ok
+				mu.Unlock()
+				if !ok {
+					return
+				}
+			}
+		}
+	}()
+	time.Sleep(time.Millisecond * 20)
+	close(done)
+
+	// THEN
+	time.Sleep(time.Millisecond * 1)
+
+	mu.Lock()
+	assert.False(t, timedOut)
+	assert.True(t, closed)
+	mu.Unlock()
+}
