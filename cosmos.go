@@ -270,29 +270,10 @@ func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.
 	shouldRetry := c.maxRetries > 0
 	maxTries := c.maxRetries + 1
 
-	timeoutReachedChan := make(chan bool)
-
-	defer close(timeoutReachedChan)
-	timedOut := false
-
 	done := make(chan bool)
 	defer close(done)
 
-	go func() {
-		retryTimeoutTimer := time.NewTimer(c.retryTimeout)
-		defer retryTimeoutTimer.Stop()
-
-		select {
-		case <-retryTimeoutTimer.C:
-			// no further retries, we return the current responses
-			c.logger.Info().Msgf("stopping retries after %v, timeout reached", c.retryTimeout)
-			timedOut = true
-			timeoutReachedChan <- true
-			return
-		case <-done:
-			return
-		}
-	}()
+	timeoutReachedChan := c.handleTimeout(done)
 
 	for tryCount = 0; tryCount < maxTries; tryCount++ {
 
@@ -321,12 +302,39 @@ func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.
 		}
 
 		// Timeout check in case no waiting is required
-		if timedOut {
-			break
+		select {
+		case <-timeoutReachedChan:
+			// we stop here and return what we got so far
+			return responses, err
+		default:
+			// continue with next retry
 		}
 	}
 
 	return responses, err
+}
+
+func (c *cosmosImpl) handleTimeout(done <-chan bool) (timedOutChan <-chan bool) {
+
+	timeoutReachedChan := make(chan bool)
+
+	go func() {
+		retryTimeoutTimer := time.NewTimer(c.retryTimeout)
+
+		defer close(timeoutReachedChan)
+
+		select {
+		case <-retryTimeoutTimer.C:
+			// no further retries, we return the current responses
+			c.logger.Info().Msgf("stopping retries after %v, timeout reached", c.retryTimeout)
+			timeoutReachedChan <- true
+			return
+		case <-done:
+			retryTimeoutTimer.Stop()
+			return
+		}
+	}()
+	return timeoutReachedChan
 }
 
 func waitForRetry(wait time.Duration, stop <-chan bool) (waitDone bool) {
