@@ -11,7 +11,7 @@ import (
 // Metrics represents the collection of metrics internally set by the service.
 type Metrics struct {
 	statusCodeTotal                  m.CounterVec
-	retryAfterMS                     m.Gauge
+	retryAfterMS                     m.Histogram
 	requestChargeTotal               m.Counter
 	requestChargePerQuery            m.Gauge
 	requestChargePerQueryResponseAvg m.Gauge
@@ -35,11 +35,12 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "Counts the number of responses from cosmos separated by status code.",
 		}, statusCode)
 
-		retryAfterMS := promauto.NewGauge(prometheus.GaugeOpts{
+		retryAfterMS := promauto.NewHistogram(prometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: "cosmos",
 			Name:      "retry_after_ms",
 			Help:      "The time in milliseconds suggested by cosmos to wait before issuing the next query.",
+			Buckets: []float64{0,50,100,250,500,1000,5000,10000},
 		})
 
 		requestChargePerQuery := promauto.NewGauge(prometheus.GaugeOpts{
@@ -95,7 +96,7 @@ func newStubbedMetrics() *Metrics {
 	requestChargePerQuery := m.NewStubGauge()
 	requestChargeTotal := m.NewStubCounter()
 	statusCodeTotal := m.NewStubCounterVec()
-	retryAfterMS := m.NewStubGauge()
+	retryAfterMS := m.NewStubHistogram()
 	serverTimePerQueryMS := m.NewStubGauge()
 	serverTimePerQueryResponseAvgMS := m.NewStubGauge()
 
