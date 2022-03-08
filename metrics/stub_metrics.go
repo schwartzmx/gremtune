@@ -73,3 +73,35 @@ var nopCounter = NewStubCounter()
 func (m *StubCounterVec) WithLabelValues(lvs ...string) Counter {
 	return nopCounter
 }
+
+// StubHistogram is a stub of Histogram interface
+type StubHistogram struct {
+}
+
+// NewStubHistogram creates a new stub instance
+func NewStubHistogram() *StubHistogram {
+	stub := &StubHistogram{}
+	return stub
+}
+
+// Observe stubs base method
+func (m *StubHistogram) Observe(arg0 float64) {
+	// just a Stub
+}
+
+// StubHistogramVec is a stub of HistogramVec interface
+type StubHistogramVec struct {
+}
+
+// NewHistogramVec creates a new stub instance
+func NewHistogramVec() *StubHistogramVec {
+	stub := &StubHistogramVec{}
+	return stub
+}
+
+var nopHistogram = NewStubHistogram()
+
+// WithLabelValues stubs base method
+func (m *StubHistogramVec) WithLabelValues(lvs ...string) Histogram {
+	return nopHistogram
+}
