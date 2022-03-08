@@ -241,7 +241,7 @@ func TestUpdateMetricsZero(t *testing.T) {
 	metricMocks.requestChargePerQueryResponseAvg.EXPECT().Set(float64(0))
 	metricMocks.requestChargePerQuery.EXPECT().Set(float64(0))
 	metricMocks.requestChargeTotal.EXPECT().Add(float64(0))
-	metricMocks.retryAfterMS.EXPECT().Set(float64(0))
+	metricMocks.retryAfterMS.EXPECT().Observe(float64(0))
 	updateRequestMetrics(responses, metrics)
 
 	// THEN
@@ -278,7 +278,7 @@ func TestUpdateMetricsFull(t *testing.T) {
 	metricMocks.requestChargePerQueryResponseAvg.EXPECT().Set(float64(11))
 	metricMocks.requestChargePerQuery.EXPECT().Set(float64(11))
 	metricMocks.requestChargeTotal.EXPECT().Add(float64(11))
-	metricMocks.retryAfterMS.EXPECT().Set(float64(33))
+	metricMocks.retryAfterMS.EXPECT().Observe(float64(33))
 	updateRequestMetrics(responses, metrics)
 
 	// THEN
@@ -1277,12 +1277,10 @@ func TestHandleTimeout(t *testing.T) {
 	go func() {
 		timedOutChan := cosmos.handleTimeout(done)
 
-		select {
-		case <-timedOutChan:
-			mu.Lock()
-			timedOut = true
-			mu.Unlock()
-		}
+		timeOut := <-timedOutChan
+		mu.Lock()
+		timedOut = timeOut
+		mu.Unlock()
 	}()
 	time.Sleep(time.Millisecond * 20)
 
@@ -1313,18 +1311,15 @@ func TestHandleTimeout_Abort(t *testing.T) {
 	go func() {
 		timedOutChan := cosmos.handleTimeout(done)
 
-		for {
-			select {
-			case isTimedOut, ok := <-timedOutChan:
-				mu.Lock()
-				timedOut = isTimedOut
-				closed = !ok
-				mu.Unlock()
-				if !ok {
-					return
-				}
-			}
+		for isTimedOut := range timedOutChan {
+			mu.Lock()
+			timedOut = isTimedOut
+			mu.Unlock()
 		}
+
+		mu.Lock()
+		closed = true
+		mu.Unlock()
 	}()
 	time.Sleep(time.Millisecond * 20)
 	close(done)

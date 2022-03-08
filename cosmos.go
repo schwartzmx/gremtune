@@ -296,7 +296,7 @@ func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.
 		if retryInformation.retryAfter > 0 {
 			c.logger.Info().Msgf("retry %d of query after %v because of header status code %d", tryCount+1, retryInformation.retryAfter, retryInformation.responseStatusCode)
 
-			if waitDone := waitForRetry(retryInformation.retryAfter, timeoutReachedChan); waitDone == false {
+			if waitDone := waitForRetry(retryInformation.retryAfter, timeoutReachedChan); !waitDone {
 				break
 			}
 		}
@@ -503,5 +503,5 @@ func updateRequestMetrics(responses []interfaces.Response, metrics *Metrics) {
 	metrics.requestChargePerQueryResponseAvg.Set(requestChargePerQueryResponseAvg)
 	metrics.requestChargePerQuery.Set(float64(requestChargePerQueryTotal))
 	metrics.requestChargeTotal.Add(float64(requestChargePerQueryTotal))
-	metrics.retryAfterMS.Set(float64(retryAfter.Milliseconds()))
+	metrics.retryAfterMS.Observe(float64(retryAfter.Milliseconds()))
 }

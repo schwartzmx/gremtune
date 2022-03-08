@@ -10,7 +10,7 @@ import (
 
 type MetricsMocks struct {
 	statusCodeTotal                  *mock_metrics.MockCounterVec
-	retryAfterMS                     *mock_metrics.MockGauge
+	retryAfterMS                     *mock_metrics.MockHistogram
 	requestChargeTotal               *mock_metrics.MockCounter
 	requestChargePerQuery            *mock_metrics.MockGauge
 	requestChargePerQueryResponseAvg *mock_metrics.MockGauge
@@ -28,7 +28,7 @@ type MetricsMocks struct {
 // use metrics...
 func NewMockedMetrics(mockCtrl *gomock.Controller) (*Metrics, *MetricsMocks) {
 	mStatusCodeTotal := mock_metrics.NewMockCounterVec(mockCtrl)
-	mRetryAfterMS := mock_metrics.NewMockGauge(mockCtrl)
+	mRetryAfterMS := mock_metrics.NewMockHistogram(mockCtrl)
 	mRequestChargeTotal := mock_metrics.NewMockCounter(mockCtrl)
 	mRequestChargePerQuery := mock_metrics.NewMockGauge(mockCtrl)
 	mRequestChargePerQueryResponseAvg := mock_metrics.NewMockGauge(mockCtrl)
@@ -68,3 +68,5 @@ func Test_NewMetrics(t *testing.T) {
 	assert.NotNil(t, metrics.serverTimePerQueryMS)
 	assert.NotNil(t, metrics.serverTimePerQueryResponseAvgMS)
 }
+
+

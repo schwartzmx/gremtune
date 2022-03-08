@@ -39,7 +39,7 @@ func main() {
 		gremcos.NumMaxActiveConnections(10),
 		gremcos.ConnectionIdleTimeout(time.Second*30),
 		gremcos.MetricsPrefix("myservice"),
-		gremcos.AutomaticRetries(3),
+		gremcos.AutomaticRetries(3,time.Second * 2),
 	)
 
 	if err != nil {
