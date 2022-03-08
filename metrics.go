@@ -40,7 +40,7 @@ func NewMetrics(namespace string) *Metrics {
 			Subsystem: "cosmos",
 			Name:      "retry_after_ms",
 			Help:      "The time in milliseconds suggested by cosmos to wait before issuing the next query.",
-			Buckets: []float64{0,50,100,250,500,1000,5000,10000},
+			Buckets: []float64{0,50,100,250,500,1000,2000,3000,5000,7000,10000},
 		})
 
 		requestChargePerQuery := promauto.NewGauge(prometheus.GaugeOpts{
