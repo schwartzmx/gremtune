@@ -130,7 +130,7 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOpti
 
 	err := client.conn.Connect()
 	if err != nil {
-		client.metrics.incConnectivityErrorCount()
+		client.metrics.incrementConnectivityErrorCount()
 		return nil, errors.Wrapf(err, "dialer connecting")
 	}
 
@@ -388,13 +388,13 @@ func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
 			c.mux.Lock()
 			err := c.conn.Write(msg)
 			if err != nil {
-				c.metrics.incConnectionUsageCount(connectionUsageKindWrite, true)
+				c.metrics.incrementConnectionUsageCount(connectionUsageKindWrite, true)
 				errs <- err
 				c.setLastErr(err)
 				c.mux.Unlock()
 				break
 			}
-			c.metrics.incConnectionUsageCount(connectionUsageKindWrite, false)
+			c.metrics.incrementConnectionUsageCount(connectionUsageKindWrite, false)
 			c.mux.Unlock()
 
 		case <-quit:
@@ -430,7 +430,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 		}
 
 		if errorToPost != nil {
-			c.metrics.incConnectionUsageCount(connectionUsageKindRead, true)
+			c.metrics.incrementConnectionUsageCount(connectionUsageKindRead, true)
 
 			errs <- errorToPost
 			c.setLastErr(errorToPost)
@@ -440,7 +440,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 			return
 		}
 
-		c.metrics.incConnectionUsageCount(connectionUsageKindRead, false)
+		c.metrics.incrementConnectionUsageCount(connectionUsageKindRead, false)
 		select {
 		case <-quit:
 			return
@@ -490,6 +490,6 @@ func (c *client) Ping() error {
 		wasAnError = true
 	}
 
-	c.metrics.incConnectionUsageCount(connectionUsageKindPing, wasAnError)
+	c.metrics.incrementConnectionUsageCount(connectionUsageKindPing, wasAnError)
 	return err
 }

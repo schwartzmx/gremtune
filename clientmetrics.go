@@ -18,15 +18,15 @@ func (uk connectionUsageKind) String() string {
 }
 
 type clientMetrics interface {
-	// incConnectivityErrorCount increments the counter for connectivity errors
-	incConnectivityErrorCount()
+	// incrementConnectivityErrorCount increments the counter for connectivity errors
+	incrementConnectivityErrorCount()
 
-	// incConnectionUsageCount increments the counter for using a connection
-	incConnectionUsageCount(kindOfUsage connectionUsageKind, wasAnError bool)
+	// incrementConnectionUsageCount increments the counter for using a connection
+	incrementConnectionUsageCount(kindOfUsage connectionUsageKind, wasAnError bool)
 }
 
 // clientMetricsNop implements clientMetrics and can be used when metrics should be disabled
 type clientMetricsNop struct{}
 
-func (c *clientMetricsNop) incConnectivityErrorCount()                            {}
-func (c *clientMetricsNop) incConnectionUsageCount(_ connectionUsageKind, _ bool) {}
+func (c *clientMetricsNop) incrementConnectivityErrorCount()                            {}
+func (c *clientMetricsNop) incrementConnectionUsageCount(_ connectionUsageKind, _ bool) {}

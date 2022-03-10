@@ -92,7 +92,7 @@ func NewMetrics(namespace string) *Metrics {
 			Namespace: namespace,
 			Subsystem: "cosmos",
 			Name:      "connection_usage_total",
-			Help:      "The amount of reads, writes and pings that where made (the label is called kind). Errors that happened are labelled as error=true",
+			Help:      "The amount of reads, writes and pings that where made (the label is called kind). Errors that happened are labelled as error=true.",
 		}, labels)
 
 		instance = &Metrics{
@@ -137,11 +137,11 @@ func newStubbedMetrics() *Metrics {
 	return metrics
 }
 
-func (m *Metrics) incConnectivityErrorCount() {
+func (m *Metrics) incrementConnectivityErrorCount() {
 	m.connectivityErrorsTotal.Inc()
 }
 
-func (m *Metrics) incConnectionUsageCount(kind connectionUsageKind, wasAnError bool) {
+func (m *Metrics) incrementConnectionUsageCount(kind connectionUsageKind, wasAnError bool) {
 	wasErrStr := "false"
 	if wasAnError {
 		wasErrStr = "true"
