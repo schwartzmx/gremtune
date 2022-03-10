@@ -146,9 +146,5 @@ func (m *Metrics) incrementConnectionUsageCount(kind connectionUsageKind, wasAnE
 	if wasAnError {
 		wasErrStr = "true"
 	}
-	if m.connectionUsageTotal == nil {
-		panic("södlfksöldfkölsdkflösdklöfksd")
-	}
-
-	m.connectionUsageTotal.WithLabelValues("kind", kind.String(), "error", wasErrStr).Inc()
+	m.connectionUsageTotal.WithLabelValues(kind.String(), wasErrStr).Inc()
 }
