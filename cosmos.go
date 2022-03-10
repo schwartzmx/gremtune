@@ -2,9 +2,10 @@ package gremcos
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/rs/zerolog"
 	"github.com/supplyon/gremcos/interfaces"
@@ -221,7 +222,7 @@ func (c *cosmosImpl) dial() (interfaces.QueryExecutor, error) {
 		return nil, err
 	}
 
-	return Dial(dialer, c.errorChannel, SetAuth(c.credentialProvider), PingInterval(time.Second*30))
+	return Dial(dialer, c.errorChannel, SetAuth(c.credentialProvider), PingInterval(time.Second*30), WithMetrics(c.metrics))
 }
 
 func (c *cosmosImpl) ExecuteQuery(query interfaces.QueryBuilder) ([]interfaces.Response, error) {
