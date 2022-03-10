@@ -78,7 +78,7 @@ func TestDialUsingDifferentWebsockets(t *testing.T) {
 	// WHEN
 	mockCount := mock_metrics.NewMockCounter(mockCtrl)
 	mockCount.EXPECT().Inc().Times(2)
-	metricMocks.connectionUsageTotal.EXPECT().WithLabelValues("kind", "READ", "error", "true").Return(mockCount).Times(2)
+	metricMocks.connectionUsageTotal.EXPECT().WithLabelValues("READ", "true").Return(mockCount).Times(2)
 
 	queryExecutor1, err1 := cImpl.dial()
 	queryExecutor2, err2 := cImpl.dial()
