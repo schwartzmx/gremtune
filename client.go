@@ -71,6 +71,8 @@ type client struct {
 	// token to ensure that the resources are closed only once
 	// even if client.Close() is called multiple times
 	once sync.Once
+
+	metrics clientMetrics
 }
 
 // clientOption is the struct for defining optional parameters for the Client
@@ -90,6 +92,13 @@ func PingInterval(interval time.Duration) clientOption {
 	}
 }
 
+// WithMetrics sets the metrics provider
+func WithMetrics(metrics clientMetrics) clientOption {
+	return func(c *client) {
+		c.metrics = metrics
+	}
+}
+
 func newClient(dialer interfaces.Dialer, options ...clientOption) *client {
 	client := &client{
 		conn:                   dialer,
@@ -100,6 +109,7 @@ func newClient(dialer interfaces.Dialer, options ...clientOption) *client {
 		pingInterval:           60 * time.Second,
 		quitChannel:            make(chan struct{}),
 		credentialProvider:     noCredentials{},
+		metrics:                &clientMetricsNop{},
 	}
 
 	for _, opt := range options {
@@ -120,6 +130,7 @@ func Dial(conn interfaces.Dialer, errorChannel chan error, options ...clientOpti
 
 	err := client.conn.Connect()
 	if err != nil {
+		client.metrics.incConnectivityErrorCount()
 		return nil, errors.Wrapf(err, "dialer connecting")
 	}
 
@@ -377,11 +388,13 @@ func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
 			c.mux.Lock()
 			err := c.conn.Write(msg)
 			if err != nil {
+				c.metrics.incConnectionUsageCount(connectionUsageKindWrite, true)
 				errs <- err
 				c.setLastErr(err)
 				c.mux.Unlock()
 				break
 			}
+			c.metrics.incConnectionUsageCount(connectionUsageKindWrite, false)
 			c.mux.Unlock()
 
 		case <-quit:
@@ -417,6 +430,8 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 		}
 
 		if errorToPost != nil {
+			c.metrics.incConnectionUsageCount(connectionUsageKindRead, true)
+
 			errs <- errorToPost
 			c.setLastErr(errorToPost)
 
@@ -425,6 +440,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 			return
 		}
 
+		c.metrics.incConnectionUsageCount(connectionUsageKindRead, false)
 		select {
 		case <-quit:
 			return
@@ -444,7 +460,7 @@ func (c *client) pingWorker(errs chan error, quit <-chan struct{}) {
 	for {
 		select {
 		case <-ticker.C:
-			if err := c.conn.Ping(); err != nil {
+			if err := c.Ping(); err != nil {
 				errs <- err
 			}
 		case <-quit:
@@ -468,5 +484,12 @@ func (c *client) workerSaveExit(name string, errs chan<- error) {
 
 // Ping send a ping over the socket to the peer
 func (c *client) Ping() error {
-	return c.conn.Ping()
+	wasAnError := false
+	err := c.conn.Ping()
+	if err != nil {
+		wasAnError = true
+	}
+
+	c.metrics.incConnectionUsageCount(connectionUsageKindPing, wasAnError)
+	return err
 }

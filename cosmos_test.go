@@ -2,11 +2,12 @@ package gremcos
 
 import (
 	"fmt"
-	"go.uber.org/goleak"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"go.uber.org/goleak"
 
 	"github.com/golang/mock/gomock"
 	"github.com/rs/zerolog"
@@ -58,7 +59,7 @@ func TestDialUsingDifferentWebsockets(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	metrics, _ := NewMockedMetrics(mockCtrl)
+	metrics, metricMocks := NewMockedMetrics(mockCtrl)
 	idleTimeout := time.Second * 12
 	maxActiveConnections := 10
 	username := "abcd"
@@ -75,6 +76,10 @@ func TestDialUsingDifferentWebsockets(t *testing.T) {
 	cImpl := toCosmosImpl(t, cosmos)
 
 	// WHEN
+	mockCount := mock_metrics.NewMockCounter(mockCtrl)
+	mockCount.EXPECT().Inc().Times(2)
+	metricMocks.connectionUsageTotal.EXPECT().WithLabelValues("kind", "READ", "error", "true").Return(mockCount).Times(2)
+
 	queryExecutor1, err1 := cImpl.dial()
 	queryExecutor2, err2 := cImpl.dial()
 

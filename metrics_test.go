@@ -16,6 +16,8 @@ type MetricsMocks struct {
 	requestChargePerQueryResponseAvg *mock_metrics.MockGauge
 	serverTimePerQueryMS             *mock_metrics.MockGauge
 	serverTimePerQueryResponseAvgMS  *mock_metrics.MockGauge
+	connectivityErrorsTotal          *mock_metrics.MockCounter
+	connectionUsageTotal             *mock_metrics.MockCounterVec
 }
 
 // NewMockedMetrics creates and returns mocked metrics that can be used
@@ -34,6 +36,8 @@ func NewMockedMetrics(mockCtrl *gomock.Controller) (*Metrics, *MetricsMocks) {
 	mRequestChargePerQueryResponseAvg := mock_metrics.NewMockGauge(mockCtrl)
 	mServerTimePerQueryMS := mock_metrics.NewMockGauge(mockCtrl)
 	mServerTimePerQueryResponseAvgMS := mock_metrics.NewMockGauge(mockCtrl)
+	mConnectivityErrorsTotal := mock_metrics.NewMockCounter(mockCtrl)
+	mConnectionUsageTotal := mock_metrics.NewMockCounterVec(mockCtrl)
 
 	metrics := &Metrics{
 		statusCodeTotal:                  mStatusCodeTotal,
@@ -43,6 +47,8 @@ func NewMockedMetrics(mockCtrl *gomock.Controller) (*Metrics, *MetricsMocks) {
 		requestChargePerQueryResponseAvg: mRequestChargePerQueryResponseAvg,
 		serverTimePerQueryMS:             mServerTimePerQueryMS,
 		serverTimePerQueryResponseAvgMS:  mServerTimePerQueryResponseAvgMS,
+		connectivityErrorsTotal:          mConnectivityErrorsTotal,
+		connectionUsageTotal:             mConnectionUsageTotal,
 	}
 
 	mocks := &MetricsMocks{
@@ -53,6 +59,8 @@ func NewMockedMetrics(mockCtrl *gomock.Controller) (*Metrics, *MetricsMocks) {
 		requestChargePerQueryResponseAvg: mRequestChargePerQueryResponseAvg,
 		serverTimePerQueryMS:             mServerTimePerQueryMS,
 		serverTimePerQueryResponseAvgMS:  mServerTimePerQueryResponseAvgMS,
+		connectivityErrorsTotal:          mConnectivityErrorsTotal,
+		connectionUsageTotal:             mConnectionUsageTotal,
 	}
 
 	return metrics, mocks
@@ -67,6 +75,6 @@ func Test_NewMetrics(t *testing.T) {
 	assert.NotNil(t, metrics.requestChargePerQueryResponseAvg)
 	assert.NotNil(t, metrics.serverTimePerQueryMS)
 	assert.NotNil(t, metrics.serverTimePerQueryResponseAvgMS)
+	assert.NotNil(t, metrics.connectivityErrorsTotal)
+	assert.NotNil(t, metrics.connectionUsageTotal)
 }
-
-

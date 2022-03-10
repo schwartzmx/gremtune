@@ -235,6 +235,20 @@ func (mr *MockVertexMockRecorder) AddV(label interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddV", reflect.TypeOf((*MockVertex)(nil).AddV), label)
 }
 
+// Aggregate mocks base method.
+func (m *MockVertex) Aggregate(label string) interfaces.Vertex {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Aggregate", label)
+	ret0, _ := ret[0].(interfaces.Vertex)
+	return ret0
+}
+
+// Aggregate indicates an expected call of Aggregate.
+func (mr *MockVertexMockRecorder) Aggregate(label interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Aggregate", reflect.TypeOf((*MockVertex)(nil).Aggregate), label)
+}
+
 // As mocks base method.
 func (m *MockVertex) As(labels ...string) interfaces.Vertex {
 	m.ctrl.T.Helper()
@@ -251,6 +265,20 @@ func (m *MockVertex) As(labels ...string) interfaces.Vertex {
 func (mr *MockVertexMockRecorder) As(labels ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "As", reflect.TypeOf((*MockVertex)(nil).As), labels...)
+}
+
+// BothE mocks base method.
+func (m *MockVertex) BothE() interfaces.Edge {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BothE")
+	ret0, _ := ret[0].(interfaces.Edge)
+	return ret0
+}
+
+// BothE indicates an expected call of BothE.
+func (mr *MockVertexMockRecorder) BothE() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BothE", reflect.TypeOf((*MockVertex)(nil).BothE))
 }
 
 // Coalesce mocks base method.
@@ -360,6 +388,20 @@ func (mr *MockVertexMockRecorder) HasLabel(vertexLabel ...interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasLabel", reflect.TypeOf((*MockVertex)(nil).HasLabel), vertexLabel...)
 }
 
+// HasNext mocks base method.
+func (m *MockVertex) HasNext() interfaces.Vertex {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasNext")
+	ret0, _ := ret[0].(interfaces.Vertex)
+	return ret0
+}
+
+// HasNext indicates an expected call of HasNext.
+func (mr *MockVertexMockRecorder) HasNext() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasNext", reflect.TypeOf((*MockVertex)(nil).HasNext))
+}
+
 // Id mocks base method.
 func (m *MockVertex) Id() interfaces.QueryBuilder {
 	m.ctrl.T.Helper()
@@ -418,6 +460,24 @@ func (m *MockVertex) Not(builder interfaces.QueryBuilder) interfaces.Vertex {
 func (mr *MockVertexMockRecorder) Not(builder interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Not", reflect.TypeOf((*MockVertex)(nil).Not), builder)
+}
+
+// Or mocks base method.
+func (m *MockVertex) Or(builder ...interfaces.QueryBuilder) interfaces.Vertex {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range builder {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Or", varargs...)
+	ret0, _ := ret[0].(interfaces.Vertex)
+	return ret0
+}
+
+// Or indicates an expected call of Or.
+func (mr *MockVertexMockRecorder) Or(builder ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Or", reflect.TypeOf((*MockVertex)(nil).Or), builder...)
 }
 
 // OutE mocks base method.
@@ -530,6 +590,34 @@ func (mr *MockVertexMockRecorder) String() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "String", reflect.TypeOf((*MockVertex)(nil).String))
 }
 
+// Unfold mocks base method.
+func (m *MockVertex) Unfold() interfaces.Vertex {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unfold")
+	ret0, _ := ret[0].(interfaces.Vertex)
+	return ret0
+}
+
+// Unfold indicates an expected call of Unfold.
+func (mr *MockVertexMockRecorder) Unfold() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unfold", reflect.TypeOf((*MockVertex)(nil).Unfold))
+}
+
+// V mocks base method.
+func (m *MockVertex) V() interfaces.Vertex {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "V")
+	ret0, _ := ret[0].(interfaces.Vertex)
+	return ret0
+}
+
+// V indicates an expected call of V.
+func (mr *MockVertexMockRecorder) V() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "V", reflect.TypeOf((*MockVertex)(nil).V))
+}
+
 // ValueMap mocks base method.
 func (m *MockVertex) ValueMap() interfaces.QueryBuilder {
 	m.ctrl.T.Helper()
@@ -572,6 +660,20 @@ func (mr *MockVertexMockRecorder) ValuesBy(label interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValuesBy", reflect.TypeOf((*MockVertex)(nil).ValuesBy), label)
 }
 
+// Where mocks base method.
+func (m *MockVertex) Where(qb interfaces.QueryBuilder) interfaces.Vertex {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Where", qb)
+	ret0, _ := ret[0].(interfaces.Vertex)
+	return ret0
+}
+
+// Where indicates an expected call of Where.
+func (mr *MockVertexMockRecorder) Where(qb interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Where", reflect.TypeOf((*MockVertex)(nil).Where), qb)
+}
+
 // MockEdge is a mock of Edge interface.
 type MockEdge struct {
 	ctrl     *gomock.Controller
@@ -607,6 +709,20 @@ func (m *MockEdge) Add(builder interfaces.QueryBuilder) interfaces.Edge {
 func (mr *MockEdgeMockRecorder) Add(builder interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockEdge)(nil).Add), builder)
+}
+
+// Aggregate mocks base method.
+func (m *MockEdge) Aggregate(label string) interfaces.Edge {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Aggregate", label)
+	ret0, _ := ret[0].(interfaces.Edge)
+	return ret0
+}
+
+// Aggregate indicates an expected call of Aggregate.
+func (mr *MockEdgeMockRecorder) Aggregate(label interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Aggregate", reflect.TypeOf((*MockEdge)(nil).Aggregate), label)
 }
 
 // As mocks base method.
@@ -743,6 +859,20 @@ func (mr *MockEdgeMockRecorder) HasLabel(label ...interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasLabel", reflect.TypeOf((*MockEdge)(nil).HasLabel), label...)
 }
 
+// HasNext mocks base method.
+func (m *MockEdge) HasNext() interfaces.Edge {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasNext")
+	ret0, _ := ret[0].(interfaces.Edge)
+	return ret0
+}
+
+// HasNext indicates an expected call of HasNext.
+func (mr *MockEdgeMockRecorder) HasNext() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasNext", reflect.TypeOf((*MockEdge)(nil).HasNext))
+}
+
 // Id mocks base method.
 func (m *MockEdge) Id() interfaces.QueryBuilder {
 	m.ctrl.T.Helper()
@@ -842,14 +972,14 @@ func (mr *MockEdgeMockRecorder) Property(key, value interface{}) *gomock.Call {
 }
 
 // Select mocks base method.
-func (m *MockEdge) Select(labels ...string) interfaces.Edge {
+func (m *MockEdge) Select(labels ...string) interfaces.Vertex {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range labels {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Select", varargs...)
-	ret0, _ := ret[0].(interfaces.Edge)
+	ret0, _ := ret[0].(interfaces.Vertex)
 	return ret0
 }
 
@@ -899,6 +1029,34 @@ func (m *MockEdge) ToLbl(label string) interfaces.Edge {
 func (mr *MockEdgeMockRecorder) ToLbl(label interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToLbl", reflect.TypeOf((*MockEdge)(nil).ToLbl), label)
+}
+
+// Unfold mocks base method.
+func (m *MockEdge) Unfold() interfaces.Edge {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unfold")
+	ret0, _ := ret[0].(interfaces.Edge)
+	return ret0
+}
+
+// Unfold indicates an expected call of Unfold.
+func (mr *MockEdgeMockRecorder) Unfold() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unfold", reflect.TypeOf((*MockEdge)(nil).Unfold))
+}
+
+// Where mocks base method.
+func (m *MockEdge) Where(qb interfaces.QueryBuilder) interfaces.Edge {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Where", qb)
+	ret0, _ := ret[0].(interfaces.Edge)
+	return ret0
+}
+
+// Where indicates an expected call of Where.
+func (mr *MockEdgeMockRecorder) Where(qb interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Where", reflect.TypeOf((*MockEdge)(nil).Where), qb)
 }
 
 // MockProperty is a mock of Property interface.
