@@ -1162,7 +1162,7 @@ func TestCosmosImpl_ExecuteAsync_NoRetriesAfterTimeout(t *testing.T) {
 	}
 
 	// THEN
-	assert.Empty(t, responses)
+	assert.EqualValues(t, doRetry, responses)
 	assert.NoError(t, err)
 }
 
@@ -1219,7 +1219,7 @@ func TestCosmosImpl_ExecuteAsync_AbortRetryIfRetryAfterTooLong(t *testing.T) {
 	}
 
 	// THEN
-	assert.Empty(t, responses)
+	assert.EqualValues(t, doRetry, responses)
 	assert.NoError(t, err)
 }
 
@@ -1428,43 +1428,13 @@ func TestHandleRetryLoop_FailWaitingTooLongForRetry(t *testing.T) {
 	responses, err := retryLoop(retryFn, 1, time.Second, metrics, zerolog.Nop())
 
 	// THEN
-	assert.Error(t, err)
-	assert.Empty(t, responses)
-}
-
-func TestHandleRetryLoop_FailWhileCallWasTooLong(t *testing.T) {
-	// In this test the call to cosmos takes 1s
-	// At the same time we defined to wait for 200ms at max.
-	// Hence an error should be returned
-
-	// GIVEN
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-	metrics := newStubbedMetrics()
-	retryFn := func() ([]interfaces.Response, error) {
-		response := interfaces.Response{
-			Result: interfaces.Result{Data: []byte("[]")},
-			Status: interfaces.Status{
-				Code: 429,
-				Attributes: map[string]interface{}{
-					string(headerRetryAfterMS): "00:00:00.300",
-					string(headerStatusCode):   "429",
-				},
-			},
-		}
-		return []interfaces.Response{response}, nil
-	}
-	// WHEN
-	responses, err := retryLoop(retryFn, 1, time.Millisecond*500, metrics, zerolog.Nop())
-
-	// THEN
-	assert.Error(t, err)
-	assert.Empty(t, responses)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, responses)
 }
 
 func TestHandleRetryLoop_FailOnEndlessRetries(t *testing.T) {
 	// In this test the call to cosmos returned that a retry should be done after 0ms
-	// This test should ensure that the defined timeout is respected and that the retryLoop ends in an error.
+	// This test should ensure that the defined timeout is respected.
 
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
@@ -1488,6 +1458,6 @@ func TestHandleRetryLoop_FailOnEndlessRetries(t *testing.T) {
 	responses, err := retryLoop(retryFn, 2, time.Millisecond*100, metrics, zerolog.Nop())
 
 	// THEN
-	assert.Error(t, err)
-	assert.Empty(t, responses)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, responses)
 }
