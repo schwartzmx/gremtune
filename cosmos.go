@@ -282,16 +282,17 @@ func retryLoop(executeRequest retryFun, maxRetries int, retryTimeout time.Durati
 
 	for tryCount = 0; tryCount < maxTries; tryCount++ {
 		responses, err = executeRequest()
+		isARetry := tryCount > 0
+		updateRequestMetrics(responses, metrics, isARetry)
+
+		// error is handled late to ensure an update of the metrics
 		if err != nil {
 			metrics.requestErrorsTotal.Inc()
 			return nil, errors.Wrap(err, "executing request in retry loop")
 		}
 
-		isARetry := tryCount > 0
-		updateRequestMetrics(responses, metrics, isARetry)
-
 		if !shouldRetry {
-			break
+			return responses, nil
 		}
 
 		retryInformation := extractRetryConditions(responses)
@@ -299,7 +300,7 @@ func retryLoop(executeRequest retryFun, maxRetries int, retryTimeout time.Durati
 		// Retry is always on a new or at least active connection,
 		// therefore retryInformation.retryOnNewConnection can be used here as well
 		if !(retryInformation.retry || retryInformation.retryOnNewConnection) {
-			break
+			return responses, nil
 		}
 
 		if retryInformation.retryAfter > 0 {
@@ -307,8 +308,9 @@ func retryLoop(executeRequest retryFun, maxRetries int, retryTimeout time.Durati
 
 			if waitDone := waitForRetry(retryInformation.retryAfter, timeoutReachedChan); !waitDone {
 				// timeout occurred
+				logger.Warn().Msgf("Timed out while waiting to do a retry after %s (timeout=%s)", retryInformation.retryAfter, retryTimeout)
 				metrics.requestRetryTimeoutsTotal.Inc()
-				return nil, fmt.Errorf("timed out while waiting to do a retry after %s (timeout=%s)", retryInformation.retryAfter, retryTimeout)
+				return responses, nil
 			}
 		}
 
@@ -317,7 +319,8 @@ func retryLoop(executeRequest retryFun, maxRetries int, retryTimeout time.Durati
 		case <-timeoutReachedChan:
 			// we stop here and return what we got so far
 			metrics.requestRetryTimeoutsTotal.Inc()
-			return nil, fmt.Errorf("timed out while doing a retry (timeout=%s)", retryTimeout)
+			logger.Warn().Msgf("Timed out while doing a retry (timeout=%s)", retryTimeout)
+			return responses, nil
 		default:
 			continue
 			// continue with next retry
@@ -373,7 +376,7 @@ func (c *cosmosImpl) executeAsync(query string, asyncResponses *[]interfaces.Asy
 	if err := c.pool.ExecuteAsync(query, intermediateChannel); err != nil {
 		return nil, err
 	}
-	defer errorCallback(err)
+	errorCallback(err)
 
 	responses = make([]interfaces.Response, 0, 5)
 	*asyncResponses = make([]interfaces.AsyncResponse, 0, 5)
