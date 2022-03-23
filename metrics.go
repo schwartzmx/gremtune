@@ -19,6 +19,9 @@ type Metrics struct {
 	serverTimePerQueryResponseAvgMS  m.Gauge
 	connectivityErrorsTotal          m.Counter
 	connectionUsageTotal             m.CounterVec
+	requestErrorsTotal               m.Counter
+	requestRetiesTotal               m.Counter
+	requestRetryTimeoutsTotal        m.Counter
 }
 
 var metricsOnce sync.Once
@@ -95,6 +98,27 @@ func NewMetrics(namespace string) *Metrics {
 			Help:      "The amount of reads, writes and pings that where made (the label is called kind). Errors that happened are labelled as error=true.",
 		}, labels)
 
+		requestErrorsTotal := promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "cosmos",
+			Name:      "request_errors_total",
+			Help:      "The accumulated number of request errors.",
+		})
+
+		requestRetiesTotal := promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "cosmos",
+			Name:      "request_retries_total",
+			Help:      "The accumulated number of retried requests.",
+		})
+
+		requestRetryTimeoutsTotal := promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: "cosmos",
+			Name:      "request_retry_timeouts_total",
+			Help:      "The accumulated number of timeouts that happened for request retries.",
+		})
+
 		instance = &Metrics{
 			statusCodeTotal:                  statusCodeTotal,
 			retryAfterMS:                     retryAfterMS,
@@ -105,6 +129,9 @@ func NewMetrics(namespace string) *Metrics {
 			serverTimePerQueryResponseAvgMS:  serverTimePerQueryResponseAvgMS,
 			connectivityErrorsTotal:          connectivityErrorsTotal,
 			connectionUsageTotal:             connectionUsageTotal,
+			requestErrorsTotal:               requestErrorsTotal,
+			requestRetiesTotal:               requestRetiesTotal,
+			requestRetryTimeoutsTotal:        requestRetryTimeoutsTotal,
 		}
 	})
 
@@ -121,6 +148,9 @@ func newStubbedMetrics() *Metrics {
 	serverTimePerQueryResponseAvgMS := m.NewStubGauge()
 	connectivityErrorsTotal := m.NewStubCounter()
 	connectionUsageTotal := m.NewStubCounterVec()
+	requestErrorsTotal := m.NewStubCounter()
+	requestRetiesTotal := m.NewStubCounter()
+	requestRetryTimeoutsTotal := m.NewStubCounter()
 
 	metrics := &Metrics{
 		statusCodeTotal:                  statusCodeTotal,
@@ -132,6 +162,9 @@ func newStubbedMetrics() *Metrics {
 		serverTimePerQueryResponseAvgMS:  serverTimePerQueryResponseAvgMS,
 		connectivityErrorsTotal:          connectivityErrorsTotal,
 		connectionUsageTotal:             connectionUsageTotal,
+		requestErrorsTotal:               requestErrorsTotal,
+		requestRetiesTotal:               requestRetiesTotal,
+		requestRetryTimeoutsTotal:        requestRetryTimeoutsTotal,
 	}
 
 	return metrics
