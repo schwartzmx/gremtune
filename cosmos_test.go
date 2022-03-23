@@ -1226,7 +1226,7 @@ func TestCosmosImpl_ExecuteAsync_AbortRetryIfRetryAfterTooLong(t *testing.T) {
 func TestWaitForRetry(t *testing.T) {
 	// GIVEN
 	waitTime := time.Millisecond * 20
-	stop := make(chan struct{})
+	stop := make(chan bool)
 	defer close(stop)
 	now := time.Now()
 	// WHEN
@@ -1240,10 +1240,10 @@ func TestWaitForRetry(t *testing.T) {
 
 func TestWaitForRetry_Abort(t *testing.T) {
 	// GIVEN
-	waitTime := time.Millisecond * 100
-	stop := make(chan struct{})
+	waitTime := time.Millisecond * 20
+	stop := make(chan bool)
 	now := time.Now()
-	waitDone := false
+	waitDone := true
 	called := false
 	mu := sync.Mutex{}
 	// WHEN
@@ -1253,8 +1253,7 @@ func TestWaitForRetry_Abort(t *testing.T) {
 		waitDone = waitForRetry(waitTime, stop)
 		called = true
 	}()
-	time.Sleep(time.Millisecond * 20)
-	close(stop)
+	stop <- true
 
 	duration := time.Since(now)
 
@@ -1269,7 +1268,7 @@ func TestWaitForRetry_Abort(t *testing.T) {
 func TestHandleTimeout(t *testing.T) {
 	// GIVEN
 	retryTimeout := time.Millisecond * 50
-	done := make(chan struct{})
+	done := make(chan bool)
 	defer close(done)
 
 	timedOut := false
@@ -1279,9 +1278,9 @@ func TestHandleTimeout(t *testing.T) {
 	go func() {
 		timedOutChan := handleTimeout(done, retryTimeout, zerolog.Nop())
 
-		<-timedOutChan
+		isTimedOut := <-timedOutChan
 		mu.Lock()
-		timedOut = true
+		timedOut = isTimedOut
 		mu.Unlock()
 	}()
 	time.Sleep(time.Millisecond * 20)
@@ -1300,7 +1299,7 @@ func TestHandleTimeout(t *testing.T) {
 func TestHandleTimeout_Abort(t *testing.T) {
 	// GIVEN
 	retryTimeout := time.Millisecond * 50
-	done := make(chan struct{})
+	done := make(chan bool)
 
 	timedOut := false
 	closed := false
@@ -1310,9 +1309,9 @@ func TestHandleTimeout_Abort(t *testing.T) {
 	go func() {
 		timedOutChan := handleTimeout(done, retryTimeout, zerolog.Nop())
 
-		for range timedOutChan {
+		for isTimedOut := range timedOutChan {
 			mu.Lock()
-			timedOut = true
+			timedOut = isTimedOut
 			mu.Unlock()
 		}
 
@@ -1320,8 +1319,7 @@ func TestHandleTimeout_Abort(t *testing.T) {
 		closed = true
 		mu.Unlock()
 	}()
-	time.Sleep(time.Millisecond * 20)
-	close(done)
+	done <- true
 
 	// THEN
 	time.Sleep(time.Millisecond * 1)

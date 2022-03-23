@@ -275,7 +275,7 @@ func retryLoop(executeRequest retryFun, maxRetries int, retryTimeout time.Durati
 	shouldRetry := maxRetries > 0
 	maxTries := maxRetries + 1
 
-	done := make(chan struct{})
+	done := make(chan bool)
 	defer close(done)
 
 	timeoutReachedChan := handleTimeout(done, retryTimeout, logger)
@@ -330,25 +330,19 @@ func retryLoop(executeRequest retryFun, maxRetries int, retryTimeout time.Durati
 	return responses, err
 }
 
-func handleTimeout(done <-chan struct{}, retryTimeout time.Duration, logger zerolog.Logger) (timedOutChan <-chan struct{}) {
-	timeoutReachedChan := make(chan struct{})
-	var once sync.Once
-	safeCloseChannel := func() {
-		once.Do(func() {
-			close(timeoutReachedChan)
-		})
-	}
+func handleTimeout(done <-chan bool, retryTimeout time.Duration, logger zerolog.Logger) (timedOutChan <-chan bool) {
+	timeoutReachedChan := make(chan bool)
 
 	go func() {
 		retryTimeoutTimer := time.NewTimer(retryTimeout)
 
-		defer safeCloseChannel()
+		defer close(timeoutReachedChan)
 
 		select {
 		case <-retryTimeoutTimer.C:
 			// no further retries, we return the current responses
 			logger.Info().Msgf("Specified timout (%v) for retries exceeded. Hence the current request won't be retried in case suggests to retry. This message does not indicate that the request itself failed or timed out.", retryTimeout)
-			safeCloseChannel()
+			timeoutReachedChan <- true
 			return
 		case <-done:
 			retryTimeoutTimer.Stop()
@@ -358,7 +352,7 @@ func handleTimeout(done <-chan struct{}, retryTimeout time.Duration, logger zero
 	return timeoutReachedChan
 }
 
-func waitForRetry(wait time.Duration, stop <-chan struct{}) (waitDone bool) {
+func waitForRetry(wait time.Duration, stop <-chan bool) (waitDone bool) {
 	waitForRetryTimer := time.NewTimer(wait)
 	defer waitForRetryTimer.Stop()
 
