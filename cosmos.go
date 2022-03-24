@@ -238,7 +238,7 @@ func (c *cosmosImpl) Execute(query string) ([]interfaces.Response, error) {
 		return c.pool.Execute(query)
 	}
 
-	responses, err := c.retryLoop(doRetry)
+	responses, err := retryLoop(doRetry, c.maxRetries, c.retryTimeout, c.metrics, c.logger)
 
 	// try to investigate the responses and to find out if we can find more specific error information
 	if respErr := extractFirstError(responses); respErr != nil {
@@ -254,7 +254,7 @@ func (c *cosmosImpl) ExecuteWithBindings(query string, bindings, rebindings map[
 		return c.pool.ExecuteWithBindings(query, bindings, rebindings)
 	}
 
-	responses, err := c.retryLoop(doRetry)
+	responses, err := retryLoop(doRetry, c.maxRetries, c.retryTimeout, c.metrics, c.logger)
 
 	// try to investigate the responses and to find out if we can find more specific error information
 	if respErr := extractFirstError(responses); respErr != nil {
@@ -266,24 +266,33 @@ func (c *cosmosImpl) ExecuteWithBindings(query string, bindings, rebindings map[
 
 type retryFun func() ([]interfaces.Response, error)
 
-func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.Response, err error) {
+func retryLoop(executeRequest retryFun, maxRetries int, retryTimeout time.Duration, metrics *Metrics, logger zerolog.Logger) (responses []interfaces.Response, err error) {
+	if metrics == nil {
+		return nil, fmt.Errorf("metrics must not be nil")
+	}
+
 	var tryCount int
-	shouldRetry := c.maxRetries > 0
-	maxTries := c.maxRetries + 1
+	shouldRetry := maxRetries > 0
+	maxTries := maxRetries + 1
 
 	done := make(chan bool)
 	defer close(done)
 
-	timeoutReachedChan := c.handleTimeout(done)
+	timeoutReachedChan := handleTimeout(done, retryTimeout, logger)
 
 	for tryCount = 0; tryCount < maxTries; tryCount++ {
-
 		responses, err = executeRequest()
+		isARetry := tryCount > 0
+		updateRequestMetrics(responses, metrics, isARetry)
 
-		updateRequestMetrics(responses, c.metrics)
+		// error is handled late to ensure an update of the metrics
+		if err != nil {
+			metrics.requestErrorsTotal.Inc()
+			return nil, errors.Wrap(err, "executing request in retry loop")
+		}
 
-		if !shouldRetry || err != nil {
-			break
+		if !shouldRetry {
+			return responses, nil
 		}
 
 		retryInformation := extractRetryConditions(responses)
@@ -291,14 +300,17 @@ func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.
 		// Retry is always on a new or at least active connection,
 		// therefore retryInformation.retryOnNewConnection can be used here as well
 		if !(retryInformation.retry || retryInformation.retryOnNewConnection) {
-			break
+			return responses, nil
 		}
 
 		if retryInformation.retryAfter > 0 {
-			c.logger.Info().Msgf("retry %d of query after %v because of header status code %d", tryCount+1, retryInformation.retryAfter, retryInformation.responseStatusCode)
+			logger.Info().Msgf("retry %d of query after %v because of header status code %d", tryCount+1, retryInformation.retryAfter, retryInformation.responseStatusCode)
 
 			if waitDone := waitForRetry(retryInformation.retryAfter, timeoutReachedChan); !waitDone {
-				break
+				// timeout occurred
+				logger.Warn().Msgf("Timed out while waiting to do a retry after %s (timeout=%s)", retryInformation.retryAfter, retryTimeout)
+				metrics.requestRetryTimeoutsTotal.Inc()
+				return responses, nil
 			}
 		}
 
@@ -306,8 +318,11 @@ func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.
 		select {
 		case <-timeoutReachedChan:
 			// we stop here and return what we got so far
-			return responses, err
+			metrics.requestRetryTimeoutsTotal.Inc()
+			logger.Warn().Msgf("Timed out while doing a retry (timeout=%s)", retryTimeout)
+			return responses, nil
 		default:
+			continue
 			// continue with next retry
 		}
 	}
@@ -315,19 +330,18 @@ func (c *cosmosImpl) retryLoop(executeRequest retryFun) (responses []interfaces.
 	return responses, err
 }
 
-func (c *cosmosImpl) handleTimeout(done <-chan bool) (timedOutChan <-chan bool) {
-
+func handleTimeout(done <-chan bool, retryTimeout time.Duration, logger zerolog.Logger) (timedOutChan <-chan bool) {
 	timeoutReachedChan := make(chan bool)
 
 	go func() {
-		retryTimeoutTimer := time.NewTimer(c.retryTimeout)
+		retryTimeoutTimer := time.NewTimer(retryTimeout)
 
 		defer close(timeoutReachedChan)
 
 		select {
 		case <-retryTimeoutTimer.C:
 			// no further retries, we return the current responses
-			c.logger.Info().Msgf("stopping retries after %v, timeout reached", c.retryTimeout)
+			logger.Info().Msgf("Specified timout (%v) for retries exceeded. Hence the current request won't be retried in case suggests to retry. This message does not indicate that the request itself failed or timed out.", retryTimeout)
 			timeoutReachedChan <- true
 			return
 		case <-done:
@@ -402,7 +416,7 @@ func (c *cosmosImpl) ExecuteAsync(query string, responseChannel chan interfaces.
 
 	go func() {
 		defer close(responseChannel)
-		_, retryErr := c.retryLoop(doRetry)
+		_, retryErr := retryLoop(doRetry, c.maxRetries, c.retryTimeout, c.metrics, c.logger)
 
 		if retryErr != nil {
 			// return because the asyncResponses we gathered might be outdated
@@ -450,7 +464,10 @@ func (c *cosmosImpl) IsHealthy() error {
 }
 
 // updateRequestMetrics updates the request relevant metrics based on the given chunk of responses
-func updateRequestMetrics(responses []interfaces.Response, metrics *Metrics) {
+func updateRequestMetrics(responses []interfaces.Response, metrics *Metrics, isARetry bool) {
+	if isARetry {
+		metrics.requestRetiesTotal.Inc()
+	}
 
 	// nothing to update
 	if len(responses) == 0 {

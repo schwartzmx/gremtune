@@ -11,3 +11,6 @@
 | gremcos_cosmos_server_time_per_queryresponse_avg_ms | The average time spent in ms for one query per response.                                                                                 | Gauge            |
 | gremcos_cosmos_connectivity_errors_total            | The amount of errors happened when creating a new connection.                                                                            | Counter          |
 | gremcos_cosmos_connection_usage_total               | The amount of reads, writes and pings that where made (the label is called kind). Errors that happened are labelled as error=true.       | Labelled Counter |
+| gremcos_cosmos_request_errors_total                 | The accumulated number of request errors.                                                                                                | Counter          |
+| gremcos_cosmos_request_retries_total                | The accumulated number of retried requests.                                                                                              | Counter          |
+| gremcos_cosmos_request_retry_timeouts_total         | The accumulated number of timeouts that happened for request retries.                                                                    | Counter          |

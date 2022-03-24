@@ -18,6 +18,9 @@ type MetricsMocks struct {
 	serverTimePerQueryResponseAvgMS  *mock_metrics.MockGauge
 	connectivityErrorsTotal          *mock_metrics.MockCounter
 	connectionUsageTotal             *mock_metrics.MockCounterVec
+	requestErrorsTotal               *mock_metrics.MockCounter
+	requestRetiesTotal               *mock_metrics.MockCounter
+	requestRetryTimeoutsTotal        *mock_metrics.MockCounter
 }
 
 // NewMockedMetrics creates and returns mocked metrics that can be used
@@ -38,6 +41,9 @@ func NewMockedMetrics(mockCtrl *gomock.Controller) (*Metrics, *MetricsMocks) {
 	mServerTimePerQueryResponseAvgMS := mock_metrics.NewMockGauge(mockCtrl)
 	mConnectivityErrorsTotal := mock_metrics.NewMockCounter(mockCtrl)
 	mConnectionUsageTotal := mock_metrics.NewMockCounterVec(mockCtrl)
+	mRequestErrorsTotal := mock_metrics.NewMockCounter(mockCtrl)
+	mRequestRetiesTotal := mock_metrics.NewMockCounter(mockCtrl)
+	mRequestRetryTimeoutsTotal := mock_metrics.NewMockCounter(mockCtrl)
 
 	metrics := &Metrics{
 		statusCodeTotal:                  mStatusCodeTotal,
@@ -49,6 +55,9 @@ func NewMockedMetrics(mockCtrl *gomock.Controller) (*Metrics, *MetricsMocks) {
 		serverTimePerQueryResponseAvgMS:  mServerTimePerQueryResponseAvgMS,
 		connectivityErrorsTotal:          mConnectivityErrorsTotal,
 		connectionUsageTotal:             mConnectionUsageTotal,
+		requestErrorsTotal:               mRequestErrorsTotal,
+		requestRetiesTotal:               mRequestRetiesTotal,
+		requestRetryTimeoutsTotal:        mRequestRetryTimeoutsTotal,
 	}
 
 	mocks := &MetricsMocks{
@@ -61,6 +70,9 @@ func NewMockedMetrics(mockCtrl *gomock.Controller) (*Metrics, *MetricsMocks) {
 		serverTimePerQueryResponseAvgMS:  mServerTimePerQueryResponseAvgMS,
 		connectivityErrorsTotal:          mConnectivityErrorsTotal,
 		connectionUsageTotal:             mConnectionUsageTotal,
+		requestErrorsTotal:               mRequestErrorsTotal,
+		requestRetiesTotal:               mRequestRetiesTotal,
+		requestRetryTimeoutsTotal:        mRequestRetryTimeoutsTotal,
 	}
 
 	return metrics, mocks
@@ -77,4 +89,7 @@ func Test_NewMetrics(t *testing.T) {
 	assert.NotNil(t, metrics.serverTimePerQueryResponseAvgMS)
 	assert.NotNil(t, metrics.connectivityErrorsTotal)
 	assert.NotNil(t, metrics.connectionUsageTotal)
+	assert.NotNil(t, metrics.requestErrorsTotal)
+	assert.NotNil(t, metrics.requestRetiesTotal)
+	assert.NotNil(t, metrics.requestRetryTimeoutsTotal)
 }

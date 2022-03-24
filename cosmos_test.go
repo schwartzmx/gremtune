@@ -207,7 +207,7 @@ func TestUpdateMetricsNoResponses(t *testing.T) {
 	var responses []interfaces.Response
 
 	// WHEN
-	updateRequestMetrics(responses, metrics)
+	updateRequestMetrics(responses, metrics, false)
 
 	// THEN
 	// there should be no invocation on the metrics mock
@@ -247,7 +247,7 @@ func TestUpdateMetricsZero(t *testing.T) {
 	metricMocks.requestChargePerQuery.EXPECT().Set(float64(0))
 	metricMocks.requestChargeTotal.EXPECT().Add(float64(0))
 	metricMocks.retryAfterMS.EXPECT().Observe(float64(0))
-	updateRequestMetrics(responses, metrics)
+	updateRequestMetrics(responses, metrics, false)
 
 	// THEN
 	// expect the calls on the metrics specified above
@@ -275,6 +275,7 @@ func TestUpdateMetricsFull(t *testing.T) {
 	responses := []interfaces.Response{withError}
 
 	// WHEN
+	metricMocks.requestRetiesTotal.EXPECT().Inc()
 	mockCount200 := mock_metrics.NewMockCounter(mockCtrl)
 	mockCount200.EXPECT().Inc()
 	metricMocks.statusCodeTotal.EXPECT().WithLabelValues("429").Return(mockCount200)
@@ -284,7 +285,7 @@ func TestUpdateMetricsFull(t *testing.T) {
 	metricMocks.requestChargePerQuery.EXPECT().Set(float64(11))
 	metricMocks.requestChargeTotal.EXPECT().Add(float64(11))
 	metricMocks.retryAfterMS.EXPECT().Observe(float64(33))
-	updateRequestMetrics(responses, metrics)
+	updateRequestMetrics(responses, metrics, true)
 
 	// THEN
 	// expect the calls on the metrics specified above
@@ -1161,7 +1162,7 @@ func TestCosmosImpl_ExecuteAsync_NoRetriesAfterTimeout(t *testing.T) {
 	}
 
 	// THEN
-	assert.EqualValues(t, responses, doRetry)
+	assert.EqualValues(t, doRetry, responses)
 	assert.NoError(t, err)
 }
 
@@ -1218,7 +1219,7 @@ func TestCosmosImpl_ExecuteAsync_AbortRetryIfRetryAfterTooLong(t *testing.T) {
 	}
 
 	// THEN
-	assert.EqualValues(t, responses, doRetry)
+	assert.EqualValues(t, doRetry, responses)
 	assert.NoError(t, err)
 }
 
@@ -1238,13 +1239,11 @@ func TestWaitForRetry(t *testing.T) {
 }
 
 func TestWaitForRetry_Abort(t *testing.T) {
-
 	// GIVEN
 	waitTime := time.Millisecond * 20
 	stop := make(chan bool)
-	defer close(stop)
 	now := time.Now()
-	waitDone := false
+	waitDone := true
 	called := false
 	mu := sync.Mutex{}
 	// WHEN
@@ -1268,10 +1267,7 @@ func TestWaitForRetry_Abort(t *testing.T) {
 
 func TestHandleTimeout(t *testing.T) {
 	// GIVEN
-	cosmos := cosmosImpl{
-		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		retryTimeout: time.Millisecond * 50,
-	}
+	retryTimeout := time.Millisecond * 50
 	done := make(chan bool)
 	defer close(done)
 
@@ -1280,11 +1276,11 @@ func TestHandleTimeout(t *testing.T) {
 
 	// WHEN
 	go func() {
-		timedOutChan := cosmos.handleTimeout(done)
+		timedOutChan := handleTimeout(done, retryTimeout, zerolog.Nop())
 
-		timeOut := <-timedOutChan
+		isTimedOut := <-timedOutChan
 		mu.Lock()
-		timedOut = timeOut
+		timedOut = isTimedOut
 		mu.Unlock()
 	}()
 	time.Sleep(time.Millisecond * 20)
@@ -1302,10 +1298,7 @@ func TestHandleTimeout(t *testing.T) {
 
 func TestHandleTimeout_Abort(t *testing.T) {
 	// GIVEN
-	cosmos := cosmosImpl{
-		logger:       zerolog.New(os.Stdout).Level(zerolog.DebugLevel),
-		retryTimeout: time.Millisecond * 50,
-	}
+	retryTimeout := time.Millisecond * 50
 	done := make(chan bool)
 
 	timedOut := false
@@ -1314,7 +1307,7 @@ func TestHandleTimeout_Abort(t *testing.T) {
 
 	// WHEN
 	go func() {
-		timedOutChan := cosmos.handleTimeout(done)
+		timedOutChan := handleTimeout(done, retryTimeout, zerolog.Nop())
 
 		for isTimedOut := range timedOutChan {
 			mu.Lock()
@@ -1326,8 +1319,7 @@ func TestHandleTimeout_Abort(t *testing.T) {
 		closed = true
 		mu.Unlock()
 	}()
-	time.Sleep(time.Millisecond * 20)
-	close(done)
+	done <- true
 
 	// THEN
 	time.Sleep(time.Millisecond * 1)
@@ -1336,4 +1328,134 @@ func TestHandleTimeout_Abort(t *testing.T) {
 	assert.False(t, timedOut)
 	assert.True(t, closed)
 	mu.Unlock()
+}
+
+func TestHandleRetryLoop_FailMissingMetrics(t *testing.T) {
+	// GIVEN
+	retryFn := func() ([]interfaces.Response, error) {
+		return nil, nil
+	}
+	// WHEN
+	responses, err := retryLoop(retryFn, 0, time.Second, nil, zerolog.Nop())
+
+	// THEN
+	assert.Error(t, err)
+	assert.Nil(t, responses)
+}
+
+func TestHandleRetryLoop_FailureNoRetry(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics, metricMocks := NewMockedMetrics(mockCtrl)
+
+	retryFn := func() ([]interfaces.Response, error) {
+		return nil, fmt.Errorf("Failure")
+	}
+	// WHEN
+	metricMocks.requestErrorsTotal.EXPECT().Inc()
+	responses, err := retryLoop(retryFn, 1, time.Second, metrics, zerolog.Nop())
+
+	// THEN
+	assert.Error(t, err)
+	assert.Nil(t, responses)
+}
+
+func TestHandleRetryLoop_SuccessNoRetry(t *testing.T) {
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics, metricMocks := NewMockedMetrics(mockCtrl)
+	retryFn := func() ([]interfaces.Response, error) {
+		response := interfaces.Response{
+			Result: interfaces.Result{Data: []byte("[]")},
+			Status: interfaces.Status{Code: 200},
+		}
+		return []interfaces.Response{response}, nil
+	}
+	// WHEN
+	mockCount200 := mock_metrics.NewMockCounter(mockCtrl)
+	mockCount200.EXPECT().Inc()
+	metricMocks.statusCodeTotal.EXPECT().WithLabelValues("200").Return(mockCount200)
+	metricMocks.serverTimePerQueryResponseAvgMS.EXPECT().Set(float64(0))
+	metricMocks.serverTimePerQueryMS.EXPECT().Set(float64(0))
+	metricMocks.requestChargePerQueryResponseAvg.EXPECT().Set(float64(0))
+	metricMocks.requestChargePerQuery.EXPECT().Set(float64(0))
+	metricMocks.requestChargeTotal.EXPECT().Add(float64(0))
+	metricMocks.retryAfterMS.EXPECT().Observe(float64(0))
+	responses, err := retryLoop(retryFn, 1, time.Second, metrics, zerolog.Nop())
+
+	// THEN
+	assert.NoError(t, err)
+	assert.Len(t, responses, 1)
+}
+
+func TestHandleRetryLoop_FailWaitingTooLongForRetry(t *testing.T) {
+	// In this test cosmos responds with a retry after 10m
+	// At the same time we defined to wait for 1s at max.
+	// Hence an error should be returned
+
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics, metricMocks := NewMockedMetrics(mockCtrl)
+	retryFn := func() ([]interfaces.Response, error) {
+		response := interfaces.Response{
+			Result: interfaces.Result{Data: []byte("[]")},
+			Status: interfaces.Status{
+				Code: 429,
+				Attributes: map[string]interface{}{
+					string(headerRetryAfterMS): "00:10:00.00",
+					string(headerStatusCode):   "429",
+				},
+			},
+		}
+		return []interfaces.Response{response}, nil
+	}
+	// WHEN
+	metricMocks.requestRetryTimeoutsTotal.EXPECT().Inc()
+	mockCount200 := mock_metrics.NewMockCounter(mockCtrl)
+	mockCount200.EXPECT().Inc()
+	metricMocks.statusCodeTotal.EXPECT().WithLabelValues("429").Return(mockCount200)
+	metricMocks.serverTimePerQueryResponseAvgMS.EXPECT().Set(float64(0))
+	metricMocks.serverTimePerQueryMS.EXPECT().Set(float64(0))
+	metricMocks.requestChargePerQueryResponseAvg.EXPECT().Set(float64(0))
+	metricMocks.requestChargePerQuery.EXPECT().Set(float64(0))
+	metricMocks.requestChargeTotal.EXPECT().Add(float64(0))
+	metricMocks.retryAfterMS.EXPECT().Observe(float64(600000))
+	responses, err := retryLoop(retryFn, 1, time.Second, metrics, zerolog.Nop())
+
+	// THEN
+	assert.NoError(t, err)
+	assert.NotEmpty(t, responses)
+}
+
+func TestHandleRetryLoop_FailOnEndlessRetries(t *testing.T) {
+	// In this test the call to cosmos returned that a retry should be done after 0ms
+	// This test should ensure that the defined timeout is respected.
+
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	metrics := newStubbedMetrics()
+	retryFn := func() ([]interfaces.Response, error) {
+		time.Sleep(55 * time.Millisecond)
+		response := interfaces.Response{
+			Result: interfaces.Result{Data: []byte("[]")},
+			Status: interfaces.Status{
+				Code: 429,
+				Attributes: map[string]interface{}{
+					string(headerRetryAfterMS): "00:00:00.000",
+					string(headerStatusCode):   "429",
+				},
+			},
+		}
+		return []interfaces.Response{response}, nil
+	}
+	// WHEN
+	responses, err := retryLoop(retryFn, 2, time.Millisecond*100, metrics, zerolog.Nop())
+
+	// THEN
+	assert.NoError(t, err)
+	assert.NotEmpty(t, responses)
 }

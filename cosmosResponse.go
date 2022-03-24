@@ -11,8 +11,8 @@ import (
 
 //nolint:structcheck // reports responseStatusCode wrong
 type cosmosStatusCodeDescription struct {
-	responseStatusCode            int
-	retry                         bool
+	responseStatusCode int
+	retry              bool
 	// retryOnNewConnection defines whether a retry has to be done on a new connection or not.
 	// This is always given when we act on the pool, but has to be regarded when the client is exported/used.
 	retryOnNewConnection          bool
@@ -108,7 +108,7 @@ func extractRetryConditions(responses []interfaces.Response) (c cosmosRetryInfor
 			continue
 		}
 
-		responseCosmosStatusCode,ok := statusCodeDescription[responseInfo.statusCode]
+		responseCosmosStatusCode, ok := statusCodeDescription[responseInfo.statusCode]
 
 		if !ok {
 			// status code not found, ignore it
