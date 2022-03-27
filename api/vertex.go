@@ -56,7 +56,7 @@ func (v *vertex) Order() interfaces.Vertex {
 // By adds .by('<name of the property>',[<sort-order>]), to the query.
 // Sort order is ascending per default.
 func (v *vertex) By(propertyName string, order ...interfaces.Order) interfaces.Vertex {
-	if order == nil || len(order) == 0 {
+	if len(order) == 0 {
 		return v.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, interfaces.OrderAscending)))
 	}
 
@@ -66,7 +66,7 @@ func (v *vertex) By(propertyName string, order ...interfaces.Order) interfaces.V
 // toSortOrder returns the sort order respecting the language differences between cosmos and tinkerpop gremlin dialect
 func toSortOrder(useCosmosDialect bool, order ...interfaces.Order) string {
 	sortOrder := interfaces.OrderAscending
-	if order != nil && len(order) > 0 {
+	if len(order) > 0 {
 		sortOrder = order[0]
 	}
 
