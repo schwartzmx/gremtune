@@ -946,7 +946,7 @@ func TestToSortOrder(t *testing.T) {
 	assert.Equal(t, "decr", toSortOrder(true, interfaces.OrderDescending))
 }
 
-func TestVertexBy(t *testing.T) {
+func TestVertexByOrder(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -956,17 +956,17 @@ func TestVertexBy(t *testing.T) {
 	prop := "prop"
 
 	// WHEN + THEN
-	v1 := v.By(prop)
+	v1 := v.ByOrder(prop)
 	assert.NotNil(t, v1)
 	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",incr)`, graphName, prop), v1.String())
 
 	v = g.V()
-	v2 := v.By(prop, interfaces.OrderAscending)
+	v2 := v.ByOrder(prop, interfaces.OrderAscending)
 	assert.NotNil(t, v2)
 	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",incr)`, graphName, prop), v2.String())
 
 	v = g.V()
-	v3 := v.By(prop, interfaces.OrderDescending)
+	v3 := v.ByOrder(prop, interfaces.OrderDescending)
 	assert.NotNil(t, v3)
 	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",decr)`, graphName, prop), v3.String())
 }
@@ -1014,4 +1014,21 @@ func TestVertexProject(t *testing.T) {
 	vMulti := v.Project("label1", "label2")
 	assert.NotNil(t, vMulti)
 	assert.Equal(t, fmt.Sprintf(`%s.V().project("label1","label2")`, graphName), vMulti.String())
+}
+
+func TestVertexBy(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	q := NewSimpleQB(`has("name","alpha")`)
+
+	// WHEN
+	result := v.By(q)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().by(%s)", graphName, q), result.String())
 }

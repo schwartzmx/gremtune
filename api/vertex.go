@@ -48,6 +48,12 @@ func (v *vertex) V() interfaces.Vertex {
 	return v
 }
 
+// ByV adds .by([<traversal>]) to the query.
+func (v *vertex) By(traversals ...interfaces.QueryBuilder) interfaces.Vertex {
+	query := multitraversalQuery(".by", traversals...)
+	return v.Add(query)
+}
+
 // Project adds .project([<label_1>,<label_2>,..,<label_n>])
 func (v *vertex) Project(labels ...string) interfaces.Vertex {
 	query := multiParamQuery(".project", labels...)
@@ -59,9 +65,9 @@ func (v *vertex) Order() interfaces.Vertex {
 	return v.Add(NewSimpleQB(".order()"))
 }
 
-// By adds .by('<name of the property>',[<sort-order>]), to the query.
+// ByOrder adds .by('<name of the property>',[<sort-order>]), to the query.
 // Sort order is ascending per default.
-func (v *vertex) By(propertyName string, order ...interfaces.Order) interfaces.Vertex {
+func (v *vertex) ByOrder(propertyName string, order ...interfaces.Order) interfaces.Vertex {
 	if len(order) == 0 {
 		return v.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, interfaces.OrderAscending)))
 	}

@@ -145,9 +145,12 @@ type Vertex interface {
 	// Order adds .order(), to the query.
 	Order() Vertex
 
-	// By adds .by('<name of the property>',[<sort-order>]), to the query.
+	// ByOrder adds .by('<name of the property>',[<sort-order>]), to the query.
 	// Sort order is ascending per default.
-	By(propertyName string, order ...Order) Vertex
+	ByOrder(propertyName string, order ...Order) Vertex
+
+	// By adds .by(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+	By(builder ...QueryBuilder) Vertex
 
 	// Project adds .project([<label_1>,<label_2>,..,<label_n>])
 	Project(labels ...string) Vertex
