@@ -148,6 +148,9 @@ type Vertex interface {
 	// By adds .by('<name of the property>',[<sort-order>]), to the query.
 	// Sort order is ascending per default.
 	By(propertyName string, order ...Order) Vertex
+
+	// Project adds .project([<label_1>,<label_2>,..,<label_n>])
+	Project(labels ...string) Vertex
 }
 
 type Edge interface {

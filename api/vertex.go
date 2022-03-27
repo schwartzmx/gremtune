@@ -48,6 +48,12 @@ func (v *vertex) V() interfaces.Vertex {
 	return v
 }
 
+// Project adds .project([<label_1>,<label_2>,..,<label_n>])
+func (v *vertex) Project(labels ...string) interfaces.Vertex {
+	query := multiParamQuery(".project", labels...)
+	return v.Add(query)
+}
+
 // Order adds .order(), to the query.
 func (v *vertex) Order() interfaces.Vertex {
 	return v.Add(NewSimpleQB(".order()"))

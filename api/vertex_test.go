@@ -986,3 +986,32 @@ func TestVertexOrder(t *testing.T) {
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf(`%s.V().order()`, graphName), v.String())
 }
+
+func TestVertexProject(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN + THEN
+	vEmpty := v.Project()
+	require.NotNil(t, v)
+	assert.NotNil(t, vEmpty)
+	assert.Equal(t, fmt.Sprintf(`%s.V().project()`, graphName), vEmpty.String())
+
+	// WHEN + THEN
+	v = g.V()
+	require.NotNil(t, v)
+	vOne := v.Project("label1")
+	assert.NotNil(t, vOne)
+	assert.Equal(t, fmt.Sprintf(`%s.V().project("label1")`, graphName), vOne.String())
+
+	// WHEN + THEN
+	v = g.V()
+	require.NotNil(t, v)
+	vMulti := v.Project("label1", "label2")
+	assert.NotNil(t, vMulti)
+	assert.Equal(t, fmt.Sprintf(`%s.V().project("label1","label2")`, graphName), vMulti.String())
+}
