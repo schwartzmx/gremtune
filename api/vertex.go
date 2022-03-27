@@ -48,6 +48,42 @@ func (v *vertex) V() interfaces.Vertex {
 	return v
 }
 
+// Order adds .order(), to the query.
+func (v *vertex) Order() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".order()"))
+}
+
+// By adds .by('<name of the property>',[<sort-order>]), to the query.
+// Sort order is ascending per default.
+func (v *vertex) By(propertyName string, order ...interfaces.Order) interfaces.Vertex {
+	if order == nil || len(order) == 0 {
+		return v.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, interfaces.OrderAscending)))
+	}
+
+	return v.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, order[0])))
+}
+
+// toSortOrder returns the sort order respecting the language differences between cosmos and tinkerpop gremlin dialect
+func toSortOrder(useCosmosDialect bool, order ...interfaces.Order) string {
+	sortOrder := interfaces.OrderAscending
+	if order != nil && len(order) > 0 {
+		sortOrder = order[0]
+	}
+
+	if !useCosmosDialect {
+		return sortOrder.String()
+	}
+
+	switch sortOrder {
+	case interfaces.OrderAscending:
+		return "incr"
+	case interfaces.OrderDescending:
+		return "decr"
+	default:
+		return "unknown"
+	}
+}
+
 // Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
 func (v *vertex) Limit(maxElements int) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".limit(%d)", maxElements))

@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 func TestVV(t *testing.T) {
@@ -934,4 +935,54 @@ func TestVertexAsMulti(t *testing.T) {
 	// THEN
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.V().as(\"%s\",\"%s\")", graphName, l1, l2), v.String())
+}
+
+func TestToSortOrder(t *testing.T) {
+	assert.Equal(t, "asc", toSortOrder(false))
+	assert.Equal(t, "asc", toSortOrder(false, interfaces.OrderAscending))
+	assert.Equal(t, "desc", toSortOrder(false, interfaces.OrderDescending))
+	assert.Equal(t, "incr", toSortOrder(true))
+	assert.Equal(t, "incr", toSortOrder(true, interfaces.OrderAscending))
+	assert.Equal(t, "decr", toSortOrder(true, interfaces.OrderDescending))
+}
+
+func TestVertexBy(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	prop := "prop"
+
+	// WHEN + THEN
+	v1 := v.By(prop)
+	assert.NotNil(t, v1)
+	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",incr)`, graphName, prop), v1.String())
+
+	v = g.V()
+	v2 := v.By(prop, interfaces.OrderAscending)
+	assert.NotNil(t, v2)
+	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",incr)`, graphName, prop), v2.String())
+
+	v = g.V()
+	v3 := v.By(prop, interfaces.OrderDescending)
+	assert.NotNil(t, v3)
+	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",decr)`, graphName, prop), v3.String())
+}
+
+func TestVertexOrder(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	v = v.Order()
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().order()`, graphName), v.String())
 }

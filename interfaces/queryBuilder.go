@@ -2,6 +2,20 @@ package interfaces
 
 import "github.com/gofrs/uuid"
 
+type Order string
+
+const (
+	OrderAscending  Order = "asc"
+	OrderDescending Order = "desc"
+)
+
+func (order Order) String() string {
+	if order == OrderAscending {
+		return "asc"
+	}
+	return "desc"
+}
+
 // QueryBuilder can be used to generate queries for the cosmos db
 type QueryBuilder interface {
 	String() string
@@ -127,6 +141,13 @@ type Vertex interface {
 
 	// BothE adds .bothE(), to the query. The query call returns all edges of the Vertex
 	BothE() Edge
+
+	// Order adds .order(), to the query.
+	Order() Vertex
+
+	// By adds .by('<name of the property>',[<sort-order>]), to the query.
+	// Sort order is ascending per default.
+	By(propertyName string, order ...Order) Vertex
 }
 
 type Edge interface {
