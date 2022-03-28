@@ -48,6 +48,54 @@ func (v *vertex) V() interfaces.Vertex {
 	return v
 }
 
+// ByV adds .by([<traversal>]) to the query.
+func (v *vertex) By(traversals ...interfaces.QueryBuilder) interfaces.Vertex {
+	query := multitraversalQuery(".by", traversals...)
+	return v.Add(query)
+}
+
+// Project adds .project([<label_1>,<label_2>,..,<label_n>])
+func (v *vertex) Project(labels ...string) interfaces.Vertex {
+	query := multiParamQuery(".project", labels...)
+	return v.Add(query)
+}
+
+// Order adds .order(), to the query.
+func (v *vertex) Order() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".order()"))
+}
+
+// ByOrder adds .by('<name of the property>',[<sort-order>]), to the query.
+// Sort order is ascending per default.
+func (v *vertex) ByOrder(propertyName string, order ...interfaces.Order) interfaces.Vertex {
+	if len(order) == 0 {
+		return v.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, interfaces.OrderAscending)))
+	}
+
+	return v.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, order[0])))
+}
+
+// toSortOrder returns the sort order respecting the language differences between cosmos and tinkerpop gremlin dialect
+func toSortOrder(useCosmosDialect bool, order ...interfaces.Order) string {
+	sortOrder := interfaces.OrderAscending
+	if len(order) > 0 {
+		sortOrder = order[0]
+	}
+
+	if !useCosmosDialect {
+		return sortOrder.String()
+	}
+
+	switch sortOrder {
+	case interfaces.OrderAscending:
+		return "incr"
+	case interfaces.OrderDescending:
+		return "decr"
+	default:
+		return "unknown"
+	}
+}
+
 // Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
 func (v *vertex) Limit(maxElements int) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".limit(%d)", maxElements))

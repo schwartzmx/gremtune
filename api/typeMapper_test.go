@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const dataVertices = `[{
@@ -562,4 +563,40 @@ func TestToTypeArrayProperties(t *testing.T) {
 	assert.Equal(t, "knows", edges[0].Label)
 	assert.Equal(t, "user1", edges[0].InVLabel)
 	assert.Equal(t, "user2", edges[0].OutVLabel)
+}
+
+func TestToVertex(t *testing.T) {
+	data := map[string]interface{}{
+		"type":  "vertex",
+		"id":    "the id",
+		"label": "a vertex",
+		"properties": map[string][]ValueWithID{
+			"prop1": []ValueWithID{
+				ValueWithID{
+					ID:    "1234",
+					Value: TypedValue{Value: "hello"},
+				},
+			},
+		},
+	}
+
+	vertex, err := ToVertex(data)
+	require.NoError(t, err)
+	assert.Equal(t, Type("vertex"), vertex.Type)
+	assert.Equal(t, "the id", vertex.ID)
+	assert.Equal(t, "a vertex", vertex.Label)
+	require.Len(t, vertex.Properties, 1)
+	require.Len(t, vertex.Properties["prop1"], 1)
+	assert.Equal(t, "hello", vertex.Properties["prop1"][0].Value.AsString())
+}
+
+func TestToVertex_Fail(t *testing.T) {
+	_, err := ToVertex("not the right input type")
+	assert.Error(t, err)
+
+	data := map[string]interface{}{
+		"missing": "vertex properties",
+	}
+	_, err = ToVertex(data)
+	assert.Error(t, err)
 }

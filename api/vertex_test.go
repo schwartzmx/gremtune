@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 func TestVV(t *testing.T) {
@@ -934,4 +935,100 @@ func TestVertexAsMulti(t *testing.T) {
 	// THEN
 	assert.NotNil(t, v)
 	assert.Equal(t, fmt.Sprintf("%s.V().as(\"%s\",\"%s\")", graphName, l1, l2), v.String())
+}
+
+func TestToSortOrder(t *testing.T) {
+	assert.Equal(t, "asc", toSortOrder(false))
+	assert.Equal(t, "asc", toSortOrder(false, interfaces.OrderAscending))
+	assert.Equal(t, "desc", toSortOrder(false, interfaces.OrderDescending))
+	assert.Equal(t, "incr", toSortOrder(true))
+	assert.Equal(t, "incr", toSortOrder(true, interfaces.OrderAscending))
+	assert.Equal(t, "decr", toSortOrder(true, interfaces.OrderDescending))
+}
+
+func TestVertexByOrder(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	prop := "prop"
+
+	// WHEN + THEN
+	v1 := v.ByOrder(prop)
+	assert.NotNil(t, v1)
+	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",incr)`, graphName, prop), v1.String())
+
+	v = g.V()
+	v2 := v.ByOrder(prop, interfaces.OrderAscending)
+	assert.NotNil(t, v2)
+	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",incr)`, graphName, prop), v2.String())
+
+	v = g.V()
+	v3 := v.ByOrder(prop, interfaces.OrderDescending)
+	assert.NotNil(t, v3)
+	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",decr)`, graphName, prop), v3.String())
+}
+
+func TestVertexOrder(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	v = v.Order()
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().order()`, graphName), v.String())
+}
+
+func TestVertexProject(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN + THEN
+	vEmpty := v.Project()
+	require.NotNil(t, v)
+	assert.NotNil(t, vEmpty)
+	assert.Equal(t, fmt.Sprintf(`%s.V().project()`, graphName), vEmpty.String())
+
+	// WHEN + THEN
+	v = g.V()
+	require.NotNil(t, v)
+	vOne := v.Project("label1")
+	assert.NotNil(t, vOne)
+	assert.Equal(t, fmt.Sprintf(`%s.V().project("label1")`, graphName), vOne.String())
+
+	// WHEN + THEN
+	v = g.V()
+	require.NotNil(t, v)
+	vMulti := v.Project("label1", "label2")
+	assert.NotNil(t, vMulti)
+	assert.Equal(t, fmt.Sprintf(`%s.V().project("label1","label2")`, graphName), vMulti.String())
+}
+
+func TestVertexBy(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	q := NewSimpleQB(`has("name","alpha")`)
+
+	// WHEN
+	result := v.By(q)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().by(%s)", graphName, q), result.String())
 }

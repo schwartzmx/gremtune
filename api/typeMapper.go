@@ -168,3 +168,17 @@ func ToValueMap(input []byte) (map[string]TypedValue, error) {
 
 	return result, nil
 }
+
+// ToVertex casts the given object into a vertex
+func ToVertex(input interface{}) (Vertex, error) {
+	mapStrct, ok := input.(map[string]interface{})
+	if !ok {
+		return Vertex{}, fmt.Errorf("Failed to cast %v (%T) into map[string]interface{}", input, input)
+	}
+
+	var vertex Vertex
+	if err := mapStructToType(mapStrct, &vertex); err != nil {
+		return Vertex{}, errors.Wrapf(err, "casting to Vertex: %v (%T)", input, input)
+	}
+	return vertex, nil
+}
