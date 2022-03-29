@@ -81,6 +81,10 @@ func toValues(input []interface{}) ([]TypedValue, error) {
 	return result, nil
 }
 
+func (tv TypedValue) AsInt64E() (int64, error) {
+	return cast.ToInt64E(tv.Value)
+}
+
 func (tv TypedValue) AsFloat64E() (float64, error) {
 	return cast.ToFloat64E(tv.Value)
 }

@@ -13,17 +13,21 @@ func Test_toValues(t *testing.T) {
 	inputStr := "hello"
 	inputBool := true
 	inputFloat64 := 123.45
-	input := []interface{}{inputStr, inputBool, inputFloat64}
+	inputInt64 := int64(12345)
+	input := []interface{}{inputStr, inputBool, inputFloat64, inputInt64}
 
 	// WHEN
 	values, err := toValues(input)
 
 	// THEN
 	assert.NoError(t, err)
-	assert.Len(t, values, 3)
+	assert.Len(t, values, 4)
 	assert.Equal(t, inputStr, values[0].AsString())
 	assert.True(t, values[1].AsBool())
 	assert.Equal(t, inputFloat64, values[2].AsFloat64())
+	valInt64, err := values[3].AsInt64E()
+	assert.NoError(t, err)
+	assert.Equal(t, inputInt64, valInt64)
 }
 
 func TestToValue(t *testing.T) {
