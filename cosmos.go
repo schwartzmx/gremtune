@@ -341,7 +341,7 @@ func handleTimeout(done <-chan bool, retryTimeout time.Duration, logger zerolog.
 		select {
 		case <-retryTimeoutTimer.C:
 			// no further retries, we return the current responses
-			logger.Info().Msgf("Specified timout (%v) for retries exceeded. Hence the current request won't be retried in case suggests to retry. This message does not indicate that the request itself failed or timed out.", retryTimeout)
+			logger.Debug().Msgf("Specified timout (%v) for retries exceeded. Hence the current request won't be retried in case suggests to retry. This message does not indicate that the request itself failed or timed out.", retryTimeout)
 			timeoutReachedChan <- true
 			return
 		case <-done:
