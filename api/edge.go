@@ -35,6 +35,33 @@ func (e *edge) String() string {
 	return queryString
 }
 
+// ByV adds .by([<traversal>]) to the query.
+func (e *edge) By(traversals ...interfaces.QueryBuilder) interfaces.Edge {
+	query := multitraversalQuery(".by", traversals...)
+	return e.Add(query)
+}
+
+// Project adds .project([<label_1>,<label_2>,..,<label_n>])
+func (e *edge) Project(labels ...string) interfaces.Edge {
+	query := multiParamQuery(".project", labels...)
+	return e.Add(query)
+}
+
+// ByOrder adds .by('<name of the property>',[<sort-order>]), to the query.
+// Sort order is ascending per default.
+func (e *edge) ByOrder(propertyName string, order ...interfaces.Order) interfaces.Edge {
+	if len(order) == 0 {
+		return e.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, interfaces.OrderAscending)))
+	}
+
+	return e.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, order[0])))
+}
+
+// Order adds .order(), to the query.
+func (e *edge) Order() interfaces.Edge {
+	return e.Add(NewSimpleQB(".order()"))
+}
+
 // Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
 func (e *edge) Coalesce(qb1 interfaces.QueryBuilder, qb2 interfaces.QueryBuilder) interfaces.Edge {
 	return e.Add(NewSimpleQB(".coalesce(%s,%s)", qb1, qb2))
