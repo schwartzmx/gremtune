@@ -28,6 +28,17 @@ func TestAnonymousOutE(t *testing.T) {
 	assert.Equal(t, "__.outE()", e.String())
 }
 
+func TestAnonymousInV(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	v := InV()
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, "__.inV()", v.String())
+}
+
 func TestAnonymousOutV(t *testing.T) {
 	// GIVEN
 
