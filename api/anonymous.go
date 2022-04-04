@@ -21,9 +21,17 @@ func OutE(labels ...string) interfaces.Edge {
 	}
 }
 
-// OutV adds .outv(), to the query. The query call returns all outgoing vertex of the edge
+// OutV adds .outV(), to the query. The query call returns all outgoing vertex of the edge
 func OutV() interfaces.Vertex {
 	query := NewSimpleQB("__.outV()")
+	return &vertex{
+		builders: []interfaces.QueryBuilder{query},
+	}
+}
+
+// InV adds .inV(), to the query. The query call returns all incoming vertex of the edge
+func InV() interfaces.Vertex {
+	query := NewSimpleQB("__.inV()")
 	return &vertex{
 		builders: []interfaces.QueryBuilder{query},
 	}

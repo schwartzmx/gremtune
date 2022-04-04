@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supplyon/gremcos/interfaces"
 )
 
 func TestCoalesceE(t *testing.T) {
@@ -499,4 +500,91 @@ func TestEdgeAsMulti(t *testing.T) {
 	// THEN
 	assert.NotNil(t, e)
 	assert.Equal(t, fmt.Sprintf("%s.as(\"%s\",\"%s\")", graphName, l1, l2), e.String())
+}
+
+func TestEdgeByOrder(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	prop := "prop"
+
+	// WHEN + THEN
+	g1 := e.ByOrder(prop)
+	assert.NotNil(t, g1)
+	assert.Equal(t, fmt.Sprintf(`%s.by("%s",incr)`, graphName, prop), g1.String())
+
+	e = NewEdgeG(g)
+	g2 := e.ByOrder(prop, interfaces.OrderAscending)
+	assert.NotNil(t, g2)
+	assert.Equal(t, fmt.Sprintf(`%s.by("%s",incr)`, graphName, prop), g2.String())
+
+	e = NewEdgeG(g)
+	g3 := e.ByOrder(prop, interfaces.OrderDescending)
+	assert.NotNil(t, g3)
+	assert.Equal(t, fmt.Sprintf(`%s.by("%s",decr)`, graphName, prop), g3.String())
+}
+
+func TestEdgeOrder(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+
+	// WHEN
+	e = e.Order()
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf(`%s.order()`, graphName), e.String())
+}
+
+func TestEdgeProject(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+
+	// WHEN + THEN
+	eEmpty := e.Project()
+	require.NotNil(t, e)
+	assert.NotNil(t, eEmpty)
+	assert.Equal(t, fmt.Sprintf(`%s.project()`, graphName), eEmpty.String())
+
+	// WHEN + THEN
+	e = NewEdgeG(g)
+	require.NotNil(t, e)
+	eOne := e.Project("label1")
+	assert.NotNil(t, eOne)
+	assert.Equal(t, fmt.Sprintf(`%s.project("label1")`, graphName), eOne.String())
+
+	// WHEN + THEN
+	e = NewEdgeG(g)
+	require.NotNil(t, e)
+	eMulti := e.Project("label1", "label2")
+	assert.NotNil(t, eMulti)
+	assert.Equal(t, fmt.Sprintf(`%s.project("label1","label2")`, graphName), eMulti.String())
+}
+
+func TestEdgeBy(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	q := NewSimpleQB(`has("name","alpha")`)
+
+	// WHEN
+	result := e.By(q)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.by(%s)", graphName, q), result.String())
 }

@@ -224,6 +224,19 @@ type Edge interface {
 
 	// Unfold adds .unfold() to the query. An iterator, iterable, or map, then it is unrolled into a linear form. If not, then the object is simply emitted.
 	Unfold() Edge
+
+	// Order adds .order(), to the query.
+	Order() Edge
+
+	// ByOrder adds .by('<name of the property>',[<sort-order>]), to the query.
+	// Sort order is ascending per default.
+	ByOrder(propertyName string, order ...Order) Edge
+
+	// By adds .by(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+	By(builder ...QueryBuilder) Edge
+
+	// Project adds .project([<label_1>,<label_2>,..,<label_n>])
+	Project(labels ...string) Edge
 }
 
 type Property interface {
