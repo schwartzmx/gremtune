@@ -48,6 +48,20 @@ func (v *vertex) V() interfaces.Vertex {
 	return v
 }
 
+// Out adds .out([<edge_1>,<edge_2>,..,<edge_n>]), to the query. The query call returns all outgoing vertices of the named edge
+func (v *vertex) Out(edgenames ...string) interfaces.Vertex {
+	query := multiParamQuery(".out", edgenames...)
+	v.Add(query)
+	return v
+}
+
+// In adds .in([<edge_1>,<edge_2>,..,<edge_n>]), to the query. The query call returns all incoming vertices of the named edge
+func (v *vertex) In(edgenames ...string) interfaces.Vertex {
+	query := multiParamQuery(".in", edgenames...)
+	v.Add(query)
+	return v
+}
+
 // ByV adds .by([<traversal>]) to the query.
 func (v *vertex) By(traversals ...interfaces.QueryBuilder) interfaces.Vertex {
 	query := multitraversalQuery(".by", traversals...)
@@ -58,6 +72,11 @@ func (v *vertex) By(traversals ...interfaces.QueryBuilder) interfaces.Vertex {
 func (v *vertex) Project(labels ...string) interfaces.Vertex {
 	query := multiParamQuery(".project", labels...)
 	return v.Add(query)
+}
+
+// Dedup adds .dedup() to the query.
+func (v *vertex) Dedup() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".dedup()"))
 }
 
 // Order adds .order(), to the query.

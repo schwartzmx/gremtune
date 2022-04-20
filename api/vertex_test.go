@@ -971,6 +971,22 @@ func TestVertexByOrder(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",decr)`, graphName, prop), v3.String())
 }
 
+func TestVertexDedup(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	v = v.Dedup()
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().dedup()`, graphName), v.String())
+}
+
 func TestVertexOrder(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
@@ -1031,4 +1047,44 @@ func TestVertexBy(t *testing.T) {
 	// THEN
 	assert.NotNil(t, result)
 	assert.Equal(t, fmt.Sprintf("%s.V().by(%s)", graphName, q), result.String())
+}
+
+func TestVertexOut(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN + THEN
+	v = v.Out()
+	require.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().out()`, graphName), v.String())
+
+	// WHEN + THEN
+	v = g.V()
+	v = v.Out("edge name")
+	require.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().out("edge name")`, graphName), v.String())
+}
+
+func TestVertexIn(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN + THEN
+	v = v.In()
+	require.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().in()`, graphName), v.String())
+
+	// WHEN + THEN
+	v = g.V()
+	v = v.In("edge name")
+	require.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().in("edge name")`, graphName), v.String())
 }
