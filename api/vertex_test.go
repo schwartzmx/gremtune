@@ -1032,3 +1032,43 @@ func TestVertexBy(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, fmt.Sprintf("%s.V().by(%s)", graphName, q), result.String())
 }
+
+func TestVertexOut(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN + THEN
+	v = v.Out()
+	require.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().out()`, graphName), v.String())
+
+	// WHEN + THEN
+	v = g.V()
+	v = v.Out("edge name")
+	require.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().out("edge name")`, graphName), v.String())
+}
+
+func TestVertexIn(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN + THEN
+	v = v.In()
+	require.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().in()`, graphName), v.String())
+
+	// WHEN + THEN
+	v = g.V()
+	v = v.In("edge name")
+	require.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().in("edge name")`, graphName), v.String())
+}

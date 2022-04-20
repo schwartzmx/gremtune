@@ -100,6 +100,12 @@ type Vertex interface {
 	// InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all incoming edges of the Vertex
 	InE(labels ...string) Edge
 
+	// Out adds .out([<edge_1>,<edge_2>,..,<edge_n>]), to the query. The query call returns all outgoing vertices of the named edge
+	Out(edgenames ...string) Vertex
+
+	// In adds .in([<edge_1>,<edge_2>,..,<edge_n>]), to the query. The query call returns all incoming vertices of the named edge
+	In(edgenames ...string) Vertex
+
 	// Limit adds .limit(<num>), to the query. The query call will limit the results of the query to the given number.
 	Limit(maxElements int) Vertex
 
@@ -178,6 +184,7 @@ type Edge interface {
 
 	// OutV adds .outV(), to the query. The query call will return the vertices on the outgoing side of this edge
 	OutV() Vertex
+
 	// InV adds .inV(), to the query. The query call will return the vertices on the incoming side of this edge
 	InV() Vertex
 
