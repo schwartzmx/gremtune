@@ -74,6 +74,11 @@ func (v *vertex) Project(labels ...string) interfaces.Vertex {
 	return v.Add(query)
 }
 
+// Dedup adds .dedup() to the query.
+func (v *vertex) Dedup() interfaces.Vertex {
+	return v.Add(NewSimpleQB(".dedup()"))
+}
+
 // Order adds .order(), to the query.
 func (v *vertex) Order() interfaces.Vertex {
 	return v.Add(NewSimpleQB(".order()"))

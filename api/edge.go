@@ -57,6 +57,11 @@ func (e *edge) ByOrder(propertyName string, order ...interfaces.Order) interface
 	return e.Add(NewSimpleQB(`.by("%s",%s)`, propertyName, toSortOrder(gUSE_COSMOS_DB_QUERY_LANGUAGE, order[0])))
 }
 
+// Dedup adds .dedup() to the query.
+func (e *edge) Dedup() interfaces.Edge {
+	return e.Add(NewSimpleQB(".dedup()"))
+}
+
 // Order adds .order(), to the query.
 func (e *edge) Order() interfaces.Edge {
 	return e.Add(NewSimpleQB(".order()"))

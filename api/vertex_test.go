@@ -971,6 +971,22 @@ func TestVertexByOrder(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf(`%s.V().by("%s",decr)`, graphName, prop), v3.String())
 }
 
+func TestVertexDedup(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+
+	// WHEN
+	v = v.Dedup()
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf(`%s.V().dedup()`, graphName), v.String())
+}
+
 func TestVertexOrder(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

@@ -527,6 +527,22 @@ func TestEdgeByOrder(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf(`%s.by("%s",decr)`, graphName, prop), g3.String())
 }
 
+func TestEdgeDedup(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+
+	// WHEN
+	e = e.Dedup()
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf(`%s.dedup()`, graphName), e.String())
+}
+
 func TestEdgeOrder(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

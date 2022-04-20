@@ -160,6 +160,9 @@ type Vertex interface {
 
 	// Project adds .project([<label_1>,<label_2>,..,<label_n>])
 	Project(labels ...string) Vertex
+
+	// Dedup adds .dedup() to the query.
+	Dedup() Vertex
 }
 
 type Edge interface {
@@ -244,6 +247,9 @@ type Edge interface {
 
 	// Project adds .project([<label_1>,<label_2>,..,<label_n>])
 	Project(labels ...string) Edge
+
+	// Dedup adds .dedup() to the query.
+	Dedup() Edge
 }
 
 type Property interface {
