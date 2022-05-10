@@ -2,6 +2,7 @@ package gremcos
 
 import (
 	"fmt"
+	"go.uber.org/atomic"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -26,7 +27,7 @@ type websocket struct {
 	conn interfaces.WebsocketConnection
 
 	// connected flags the websocket as connected or not connected
-	connected bool
+	connected *atomic.Bool
 
 	// writingWait is the maximum time a write operation will wait to start
 	// sending data on the socket. If this duration has been exceeded
@@ -44,7 +45,8 @@ type websocket struct {
 	readBufSize  int
 	writeBufSize int
 
-	mux sync.RWMutex
+	read sync.Mutex // makes sure there is only one reader on the connection
+	write sync.Mutex // makes sure there is only one writer on the connection
 
 	// wsDialerFactory is a factory that creates
 	// dialers (functions that can establish a websocket connection)
@@ -57,7 +59,7 @@ func NewWebsocket(host string, options ...optionWebsocket) (interfaces.Dialer, e
 		timeout:         5 * time.Second,
 		writingWait:     15 * time.Second,
 		readingWait:     15 * time.Second,
-		connected:       false,
+		connected:       atomic.NewBool(false),
 		readBufSize:     8192,
 		writeBufSize:    8192,
 		host:            host,
@@ -115,7 +117,7 @@ func (ws *websocket) Connect() error {
 	// Install the handler for pong messages from the peer.
 	// As stated in the documentation (see :https://github.com/gorilla/websocket/blob/master/conn.go#L1156)
 	// the handler has usually to do nothing except of reading the connection.
-	// This is one of two parts of the websockets heartbeet protocol.
+	// This is one of two parts of the websockets heartbeat protocol.
 	conn.SetPongHandler(func(appData string) error {
 		return nil
 	})
@@ -147,16 +149,19 @@ func extractConnectionError(resp *http.Response) error {
 }
 
 func (ws *websocket) setConnection(connection interfaces.WebsocketConnection) {
-	ws.mux.Lock()
-	defer ws.mux.Unlock()
+	ws.write.Lock()
+	ws.read.Lock()
+	defer func() {
+		ws.write.Unlock()
+		ws.read.Unlock()
+	}()
 	ws.conn = connection
+	ws.connected.Store(connection!=nil)
 }
 
 // IsConnected returns whether the underlying WebsocketConnection is connected or not
 func (ws *websocket) IsConnected() bool {
-	ws.mux.RLock()
-	defer ws.mux.RUnlock()
-	return ws.conn != nil
+	return ws.connected.Load()
 }
 
 // Write writes the given data chunk on the socket
@@ -165,9 +170,10 @@ func (ws *websocket) Write(msg []byte) error {
 		return ErrNoConnection
 	}
 
-	// ensure that we have the connection during the whole read operation
-	ws.mux.RLock()
-	defer ws.mux.RUnlock()
+	// ensure that we have the connection during the whole write operation
+	ws.write.Lock()
+
+	defer ws.write.Unlock()
 
 	// ensure to not block forever
 	if err := ws.conn.SetWriteDeadline(time.Now().Add(ws.writingWait)); err != nil {
@@ -190,8 +196,9 @@ func (ws *websocket) Read() (messageType int, msg []byte, err error) {
 	}
 
 	// ensure that we have the connection during the whole read operation
-	ws.mux.RLock()
-	defer ws.mux.RUnlock()
+	ws.read.Lock()
+
+	defer ws.read.Unlock()
 
 	// ensure to not block forever
 	if err := ws.conn.SetReadDeadline(time.Now().Add(ws.readingWait)); err != nil {
@@ -207,38 +214,38 @@ func (ws *websocket) Close() error {
 		return nil
 	}
 
+	// ensure that we have the connection during the whole close operation
+	ws.write.Lock()
+
 	// clean up in any case
 	defer func() {
 		if ws.conn != nil {
 			ws.conn.Close()
 		}
+		ws.write.Unlock()
 	}()
-
-	// ensure that we have the connection during the whole read operation
-	ws.mux.RLock()
-	defer ws.mux.RUnlock()
-
 	//Cleanly close the connection with the server
 	return ws.conn.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, ""))
 }
 
 // Ping sends a websocket ping frame to the peer.
-// This is one of two parts of the websockets heartbeet protocol.
+// This is one of two parts of the websockets heartbeat protocol.
 // It has to be ensured that somebody calls this function continuously (e.g. each 60s).
-// Otherwise the socket will be closed by the peer.
+// Otherwise, the socket will be closed by the peer.
 func (ws *websocket) Ping() error {
 	if !ws.IsConnected() {
 		return ErrNoConnection
 	}
 
-	// ensure that we have the connection during the whole read operation
+	// ensure that we have the connection during the whole write operation
 	disconnected := false
-	ws.mux.RLock()
+	ws.write.Lock()
+
 	err := ws.conn.WriteControl(gorilla.PingMessage, []byte{}, time.Now().Add(ws.writingWait))
 	if err != nil {
 		disconnected = true
 	}
-	ws.mux.RUnlock()
+	ws.write.Unlock()
 
 	if disconnected {
 		ws.setConnection(nil)

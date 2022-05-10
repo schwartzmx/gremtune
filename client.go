@@ -12,7 +12,7 @@ import (
 	"github.com/supplyon/gremcos/interfaces"
 )
 
-// socketClosedByServerError is not really an error since this happens usually when the socket is closed by the peer.
+// socketClosedByServerError is not really an error since this usually happens when the socket is closed by the peer.
 // But in order to support the workflow of message processing as implemented in gremcos we need a error type here.
 type socketClosedByServerError struct {
 	err error
@@ -45,7 +45,7 @@ type client struct {
 	// responseNotifier notifies the requester that a response has arrived for a specific request
 	// <RequestID string,errorChannel chan error>
 	// As notification object error is used.
-	// In case of an error an error is sent on the channel.
+	// In case of an error is sent on the channel.
 	// !!! In case there is new (unprocessed) data available, nil is sent on the channel.
 	responseNotifier *sync.Map
 
@@ -369,6 +369,8 @@ func (c *client) safeClose() error {
 			return true
 		})
 
+		c.mux.Lock()
+		defer c.mux.Unlock()
 		if c.conn == nil {
 			err = fmt.Errorf("connection is nil")
 		} else {
@@ -475,14 +477,14 @@ func (c *client) workerSaveExit(name string, errs chan<- error) {
 
 	// call close to ensure that everything is cleaned up appropriately
 	if err := c.safeClose(); err != nil {
-		err = fmt.Errorf("error closing client while leaving worker '%s'", name)
+		err = errors.Wrapf(err,"error closing client while leaving worker '%s'", name)
 		errs <- err
 	}
 	// client exited
 	c.wg.Done()
 }
 
-// Ping send a ping over the socket to the peer
+// Ping sends a ping over the socket to the peer
 func (c *client) Ping() error {
 	wasAnError := false
 	err := c.conn.Ping()

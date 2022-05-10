@@ -121,7 +121,7 @@ func TestAuthRequestPreparation(t *testing.T) {
 	testRequest := prepareAuthRequest(id, "test", "root")
 
 	assert.Equal(t, testRequest.RequestID, id)
-	assert.Equal(t, "trasversal", testRequest.Processor)
+	assert.Equal(t, "traversal", testRequest.Processor)
 	assert.Equal(t, "authentication", testRequest.Op)
 
 	assert.Len(t, testRequest.Args, 1)

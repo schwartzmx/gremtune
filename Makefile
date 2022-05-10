@@ -27,7 +27,7 @@ bench: sep ## Execute benchmarks
 lint: ## Runs the linter to check for coding-style issues
 	@echo "--> Lint project"
 	@echo "!!!!golangci-lint has to be installed. See: https://github.com/golangci/golangci-lint#install"
-	@golangci-lint run --fast
+	@golangci-lint run --fast --timeout 10s
 
 report.test: sep ## Runs all unittests and generates a coverage- and a test-report.
 	@echo "--> Run the unit-tests"	
