@@ -12,5 +12,6 @@ require (
 	github.com/rs/zerolog v1.18.0
 	github.com/spf13/cast v1.3.1
 	github.com/stretchr/testify v1.7.0
+	go.uber.org/atomic v1.9.0
 	go.uber.org/goleak v1.1.12
 )

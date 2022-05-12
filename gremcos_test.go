@@ -19,20 +19,24 @@ type SuiteIntegrationTests struct {
 }
 
 // One entry returned from gremlin looks like this:
-//{"id":{
-//	"@type":"g:Int64",
-//	"@value":9147
-//	},
-//	"label":"EmployeeBulkData",
-//	"source":["tree"],
-//	"timestamp":["2018-07-01T13:37:45-05:00"]
-//}
+// {"id":
+//    {"@type":"g:UUID","@value":"f3410230-fb80-4195-9943-ea072f1e7e10"},
+// "label":"EmployeeBulkData",
+// "user_id":["9403"],
+// "source":["tree"],
+// "timestamp":["2018-07-01T13:37:45-05:00"]}
+
 type bulkResponseEntry struct {
-	ID        string   `json:"id,omitempty"`
-	Label     string   `json:"label,omitempty"`
-	Source    []string `json:"source,omitempty"`
-	Timestamp []string `json:"timestamp,omitempty"`
+	Id struct {
+		Type  string `json:"@type"`
+		Value string `json:"@value"`
+	} `json:"id"`
+	Label     string      `json:"label"`
+	UserId    []string    `json:"user_id"`
+	Source    []string    `json:"source"`
+	Timestamp []time.Time `json:"timestamp"`
 }
+
 
 type nodeLabels []string
 
@@ -71,7 +75,7 @@ func Test_SuiteIT(t *testing.T) {
 }
 
 func (s *SuiteIntegrationTests) truncateBulkData() {
-	s.T().Log("Removing bulk data from gremlin server strated...")
+	s.T().Log("Removing bulk data from gremlin server started...")
 	_, err := s.client.Execute(`g.V().hasLabel('EmployeeBulkData').drop().iterate()`)
 	s.Require().NoError(err)
 
@@ -118,7 +122,7 @@ func (s *SuiteIntegrationTests) TestExecuteBulkData_IT() {
 	s.Assert().Len(r, 10, "There should only be 10 responses")
 
 	var nl []bulkResponseEntry
-	err = json.Unmarshal([]byte(r[0].Result.Data), &nl)
+	err = json.Unmarshal(r[0].Result.Data, &nl)
 	s.Assert().NoError(err)
 	s.Assert().Len(nl, 64, "There should only be 64 values")
 }

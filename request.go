@@ -65,7 +65,7 @@ func prepareAuthRequest(requestID string, username string, password string) requ
 	req := request{}
 	req.RequestID = requestID
 	req.Op = "authentication"
-	req.Processor = "trasversal"
+	req.Processor = "traversal"
 
 	var simpleAuth []byte
 	user := []byte(username)

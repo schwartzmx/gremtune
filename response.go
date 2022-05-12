@@ -169,7 +169,7 @@ func (c *client) retrieveResponse(id string) ([]interfaces.Response, error) {
 
 	err := <-responseErrorChannel.c
 	// Hint: Don't return here immediately in case the obtained error is != nil.
-	// We don't want to loose the responses obtained so far, especially the
+	// We don't want to lose the responses obtained so far, especially the
 	// data stored in the attribute map of each response is useful.
 	// For example the response contains the request charge for this request.
 

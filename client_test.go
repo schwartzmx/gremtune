@@ -498,3 +498,51 @@ func TestCloseClient(t *testing.T) {
 	// THEN
 	assert.NoError(t, closeErr)
 }
+
+func TestConcurrentWriteAndClose(t *testing.T){
+	defer goleak.VerifyNone(t)
+
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
+	mockedDialer.EXPECT().IsConnected().AnyTimes().Return(true)
+	mockedDialer.EXPECT().Connect().Return(nil)
+	mockedDialer.EXPECT().Read().AnyTimes().DoAndReturn(func() (int, []byte, error){
+		time.Sleep(time.Millisecond*2)
+
+		return 0,[]byte{},nil
+	})
+	// not synced because the functions write and close should be synced
+	sending := false
+
+	mockedDialer.EXPECT().Write(gomock.Any()).MinTimes(1).Do(func(data interface{}) error {
+		require.False(t,sending)
+		sending = true
+		time.Sleep(time.Millisecond*500)
+		sending = false
+		return nil
+	})
+	mockedDialer.EXPECT().Close().MinTimes(1).Do(func() error {
+		require.False(t,sending)
+		sending = true
+		time.Sleep(time.Millisecond*1)
+		sending = false
+		return nil
+	})
+
+	errChan := make(chan error,100)
+	client,err := Dial(mockedDialer,errChan)
+	require.NoError(t, err)
+
+
+	go func() {
+			_, _ = client.Execute("g.V()")
+	}()
+
+	time.Sleep(time.Millisecond*50)
+	client.Close()
+
+	time.Sleep(time.Millisecond*50)
+	close(errChan)
+}

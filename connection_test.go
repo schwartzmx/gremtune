@@ -3,6 +3,7 @@ package gremcos
 import (
 	"bytes"
 	"fmt"
+	"go.uber.org/atomic"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -70,6 +71,8 @@ func TestConnect(t *testing.T) {
 	assert.True(t, websocket.IsConnected())
 }
 
+
+
 func TestConnectFail(t *testing.T) {
 	// GIVEN
 	mockCtrl := gomock.NewController(t)
@@ -77,16 +80,17 @@ func TestConnectFail(t *testing.T) {
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, true)
 
-	websocket, err := NewWebsocket("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	socket, err := NewWebsocket("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
 	require.NoError(t, err)
-	require.NotNil(t, websocket)
+	require.NotNil(t, socket)
 
 	// WHEN
-	err = websocket.Connect()
+	err = socket.Connect()
 
 	// THEN
 	assert.Error(t, err)
-	assert.False(t, websocket.IsConnected())
+	assert.False(t, socket.IsConnected())
+	assert.False(t, socket.(*websocket).connected.Load())
 }
 
 func TestConnectReconnect(t *testing.T) {
@@ -108,6 +112,8 @@ func TestConnectReconnect(t *testing.T) {
 	// THEN
 	assert.NoError(t, err)
 	assert.True(t, websocket.IsConnected())
+	assert.True(t, websocket.connected.Load())
+
 
 	// WHEN - second connect fails
 	websocket.wsDialerFactory = newMockedDialerFactory(mockedWebsocketConnection, true)
@@ -116,6 +122,7 @@ func TestConnectReconnect(t *testing.T) {
 	// THEN
 	assert.Error(t, err)
 	assert.False(t, websocket.IsConnected())
+	assert.False(t, websocket.connected.Load())
 }
 
 func TestConnectClose(t *testing.T) {
@@ -167,7 +174,7 @@ func TestPing(t *testing.T) {
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	websocket := &websocket{
 		conn:      mockedWebsocketConnection,
-		connected: true,
+		connected: atomic.NewBool(true),
 	}
 
 	// WHEN
@@ -186,7 +193,7 @@ func TestPingFail(t *testing.T) {
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	websocket := &websocket{
 		conn:      mockedWebsocketConnection,
-		connected: true,
+		connected: atomic.NewBool(true),
 	}
 
 	// WHEN
@@ -196,11 +203,13 @@ func TestPingFail(t *testing.T) {
 	// THEN
 	assert.Error(t, err)
 	assert.False(t, websocket.IsConnected())
+	assert.False(t, websocket.connected.Load())
+
 }
 
 func TestPingFailWhenNotConnected(t *testing.T) {
 	// GIVEN
-	websocket := &websocket{}
+	websocket := &websocket{connected: atomic.NewBool(false)}
 
 	// WHEN
 	err := websocket.Ping()
@@ -217,7 +226,7 @@ func TestWrite(t *testing.T) {
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	websocket := &websocket{
 		conn:      mockedWebsocketConnection,
-		connected: true,
+		connected: atomic.NewBool(true),
 	}
 	data := []byte("hello")
 
@@ -237,7 +246,7 @@ func TestRead(t *testing.T) {
 	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
 	websocket := &websocket{
 		conn:      mockedWebsocketConnection,
-		connected: true,
+		connected: atomic.NewBool(true),
 	}
 	data := []byte("hello")
 	datalen := len(data)
@@ -255,7 +264,7 @@ func TestRead(t *testing.T) {
 
 func TestMultiReconnectAndParallelRead(t *testing.T) {
 	// This test shall ensure that there are no race conditions when creating and reading from a connection.
-	// Hence it should be run with -race.
+	// Hence, it should be run with -race.
 	// The test reconnects multiple times and checks for the connection in parallel.
 
 	// GIVEN
@@ -345,4 +354,56 @@ func TestExtractConnectionError(t *testing.T) {
 
 	resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("hello")))
 	assert.Error(t, extractConnectionError(resp))
+}
+
+func TestConcurrentWriteAndCloseOnConnection(t *testing.T) {
+	// This test shall ensure that there are no race conditions when writing and closing a connection.
+	// Hence, it should be run with -race.
+
+	// GIVEN
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockedWebsocketConnection := mock_interfaces.NewMockWebsocketConnection(mockCtrl)
+	mockedDialerFactory := newMockedDialerFactory(mockedWebsocketConnection, false)
+
+	websocket, err := NewWebsocket("ws://localhost", websocketDialerFactoryFun(mockedDialerFactory))
+	require.NoError(t, err)
+	require.NotNil(t, websocket)
+
+	// WHEN - multiple reconnects and parallel checks
+	mockedWebsocketConnection.EXPECT().SetReadDeadline(gomock.Any()).AnyTimes()
+	mockedWebsocketConnection.EXPECT().SetWriteDeadline(gomock.Any()).AnyTimes()
+	mockedWebsocketConnection.EXPECT().WriteControl(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockedWebsocketConnection.EXPECT().ReadMessage().AnyTimes()
+	mockedWebsocketConnection.EXPECT().SetPongHandler(gomock.Any())
+
+	sending := false
+
+	mockedWebsocketConnection.EXPECT().WriteMessage(gomock.Any(),gomock.Any()).MinTimes(1).Do(func(dataType interface{},data interface{}) error {
+		require.False(t,sending)
+		sending = true
+		time.Sleep(time.Millisecond*500)
+		sending = false
+		return nil
+	})
+	mockedWebsocketConnection.EXPECT().Close().MinTimes(1).Do(func() error {
+		require.False(t,sending)
+		sending = true
+		time.Sleep(time.Millisecond*1)
+		sending = false
+		return nil
+	})
+
+	err = websocket.Connect()
+	require.NoError(t, err)
+
+	go func() {
+			_ = websocket.Write([]byte("HUHU"))
+	}()
+
+	time.Sleep(time.Millisecond*50)
+	websocket.Close()
+
+	time.Sleep(time.Millisecond*50)
+
 }
