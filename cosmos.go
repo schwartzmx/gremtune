@@ -51,6 +51,12 @@ type cosmosImpl struct {
 	numMaxActiveConnections int
 	connectionIdleTimeout   time.Duration
 
+	// readTimeout specifies the amount of time a query can last until the response is completely fetched at the client.
+	readTimeout time.Duration
+
+	// writeTimeout specifies the amount of time its allowed to take to send the query and all related data to the server.
+	writeTimeout time.Duration
+
 	// websocketGenerator is a function that is responsible to spawn new websocket
 	// connections if needed.
 	websocketGenerator websocketGeneratorFun
@@ -115,6 +121,16 @@ func ConnectionIdleTimeout(timeout time.Duration) Option {
 	}
 }
 
+// QueryTimeouts specifies the timeouts for executing a query.
+// readTimeout specifies the amount of time a query can last until the response is completely fetched at the client.
+// writeTimeout specifies the amount of time its allowed to take to send the query and all related data to the server.
+func QueryTimeouts(readTimeout time.Duration, writeTimeout time.Duration) Option {
+	return func(c *cosmosImpl) {
+		c.readTimeout = readTimeout
+		c.writeTimeout = writeTimeout
+	}
+}
+
 // NumMaxActiveConnections specifies the maximum amount of active connections.
 func NumMaxActiveConnections(numMaxActiveConnections int) Option {
 	return func(c *cosmosImpl) {
@@ -175,6 +191,8 @@ func New(host string, options ...Option) (Cosmos, error) {
 		metrics:                 nil,
 		websocketGenerator:      NewWebsocket,
 		credentialProvider:      noCredentials{},
+		readTimeout:             15 * time.Second,
+		writeTimeout:            15 * time.Second,
 	}
 
 	for _, opt := range options {
@@ -217,7 +235,7 @@ func (c *cosmosImpl) dial() (interfaces.QueryExecutor, error) {
 	// create a new websocket dialer to avoid using the same websocket connection for
 	// multiple queries at the same time
 	// use default settings (timeout, buffersizes etc.) for the websocket
-	dialer, err := c.websocketGenerator(c.host)
+	dialer, err := c.websocketGenerator(c.host, SetWritingWait(c.writeTimeout), SetReadingWait(c.readTimeout))
 	if err != nil {
 		return nil, err
 	}
