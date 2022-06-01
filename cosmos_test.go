@@ -106,6 +106,8 @@ func TestNew(t *testing.T) {
 	defer mockCtrl.Finish()
 	metrics, _ := NewMockedMetrics(mockCtrl)
 	idleTimeout := time.Second * 12
+	writeTimeout := time.Second * 22
+	readTimeout := time.Second * 33
 	maxActiveConnections := 10
 	username := "abcd"
 	password := "xyz"
@@ -116,12 +118,15 @@ func TestNew(t *testing.T) {
 		NumMaxActiveConnections(maxActiveConnections),
 		WithAuth(username, password),
 		withMetrics(metrics),
+		QueryTimeouts(readTimeout, writeTimeout),
 	)
 
 	// THEN
 	require.NoError(t, err)
 	cImpl := toCosmosImpl(t, cosmos)
 	assert.Equal(t, idleTimeout, cImpl.connectionIdleTimeout)
+	assert.Equal(t, writeTimeout, cImpl.writeTimeout)
+	assert.Equal(t, readTimeout, cImpl.readTimeout)
 	assert.Equal(t, maxActiveConnections, cImpl.numMaxActiveConnections)
 	require.NotNil(t, cImpl.credentialProvider)
 
