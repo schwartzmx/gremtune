@@ -97,6 +97,18 @@ func (e *edge) Not(not interfaces.QueryBuilder) interfaces.Edge {
 	return e.Add(NewSimpleQB(".not(%s)", not))
 }
 
+// Or adds .or(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+func (e *edge) Or(traversals ...interfaces.QueryBuilder) interfaces.Edge {
+	query := multitraversalQuery(".or", traversals...)
+	return e.Add(query)
+}
+
+// And adds .and(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+func (e *edge) And(traversals ...interfaces.QueryBuilder) interfaces.Edge {
+	query := multitraversalQuery(".and", traversals...)
+	return e.Add(query)
+}
+
 // Add can be used to add a custom QueryBuilder
 // e.g. g.V().Add(NewSimpleQB(".myCustomCall("%s")",label))
 func (e *edge) Add(builder interfaces.QueryBuilder) interfaces.Edge {

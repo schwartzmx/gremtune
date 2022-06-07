@@ -175,6 +175,12 @@ func (v *vertex) Or(traversals ...interfaces.QueryBuilder) interfaces.Vertex {
 	return v.Add(query)
 }
 
+// And adds .and(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+func (v *vertex) And(traversals ...interfaces.QueryBuilder) interfaces.Vertex {
+	query := multitraversalQuery(".and", traversals...)
+	return v.Add(query)
+}
+
 //  Not adds .not(<traversal>) to the query.
 func (v *vertex) Not(not interfaces.QueryBuilder) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".not(%s)", not))

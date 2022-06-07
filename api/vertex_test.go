@@ -128,6 +128,24 @@ func TestOrV(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().or(%s,%s)", graphName, q1, q2), result.String())
 }
 
+func TestAndV(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	q1 := NewSimpleQB(`has("name","alpha")`)
+	q2 := NewSimpleQB(`has("name","omega")`)
+
+	// WHEN
+	result := v.And(q1, q2)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.V().and(%s,%s)", graphName, q1, q2), result.String())
+}
+
 func TestOrEmpty(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

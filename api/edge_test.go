@@ -107,6 +107,42 @@ func TestNotE(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.not(%s)", graphName, q1), result.String())
 }
 
+func TestOrE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	q1 := NewSimpleQB(`has("name","alpha")`)
+	q2 := NewSimpleQB(`has("name","omega")`)
+
+	// WHEN
+	result := e.Or(q1, q2)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.or(%s,%s)", graphName, q1, q2), result.String())
+}
+
+func TestAndE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	q1 := NewSimpleQB(`has("name","alpha")`)
+	q2 := NewSimpleQB(`has("name","omega")`)
+
+	// WHEN
+	result := e.And(q1, q2)
+
+	// THEN
+	assert.NotNil(t, result)
+	assert.Equal(t, fmt.Sprintf("%s.and(%s,%s)", graphName, q1, q2), result.String())
+}
+
 func TestWhereE(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"

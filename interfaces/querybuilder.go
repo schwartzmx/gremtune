@@ -124,6 +124,9 @@ type Vertex interface {
 	// Or adds .or(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
 	Or(builder ...QueryBuilder) Vertex
 
+	// And adds .and(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+	And(builder ...QueryBuilder) Vertex
+
 	// Fold adds .fold() to the query.
 	Fold() Vertex
 
@@ -219,6 +222,12 @@ type Edge interface {
 
 	// Not adds .not(<traversal>) to the query.
 	Not(builder QueryBuilder) Edge
+
+	// Or adds .or(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+	Or(builder ...QueryBuilder) Edge
+
+	// And adds .and(<traversal_1>, <traversal_2>,...,<traversal_n>) to the query.
+	And(builder ...QueryBuilder) Edge
 
 	// Fold adds .fold() to the query.
 	Fold() Edge
