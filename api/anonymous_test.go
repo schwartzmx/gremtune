@@ -6,6 +6,72 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAnonymousEq(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e := Eq(123)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, "__.eq(123)", e.String())
+}
+
+func TestAnonymousNeq(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e := Neq(123)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, "__.neq(123)", e.String())
+}
+
+func TestAnonymousLt(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e := Lt(123)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, "__.lt(123)", e.String())
+}
+
+func TestAnonymousLte(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e := Lte(123)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, "__.lte(123)", e.String())
+}
+
+func TestAnonymousGt(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e := Gt(123)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, "__.gt(123)", e.String())
+}
+
+func TestAnonymousGte(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e := Gte(123)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, "__.gte(123)", e.String())
+}
+
 func TestAnonymousInE(t *testing.T) {
 	// GIVEN
 

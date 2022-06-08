@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -394,6 +395,132 @@ func TestEdgeHasLabel(t *testing.T) {
 	// THEN
 	assert.NotNil(t, e)
 	assert.Equal(t, fmt.Sprintf("%s.hasLabel(\"%s\")", graphName, label), e.String())
+}
+
+func TestHasE(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	key := "key"
+	value := "value"
+
+	// WHEN
+	e = e.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.has(\"%s\",\"%s\")", graphName, key, value), e.String())
+}
+
+func TestHasEInt(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	key := "key"
+	value := 12345
+
+	// WHEN
+	e = e.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.has(\"%s\",%d)", graphName, key, value), e.String())
+}
+
+func TestHasEBool(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	key := "key"
+	value := true
+
+	// WHEN
+	e = e.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.has(\"%s\",%t)", graphName, key, value), e.String())
+}
+
+func TestHasEFloat(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	key := "key"
+	value := 12.34
+
+	// WHEN
+	e = e.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.has(\"%s\",%f)", graphName, key, value), e.String())
+}
+
+func TestHasETime(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	key := "key"
+	value := time.Now()
+
+	// WHEN
+	e = e.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.has(\"%s\",\"%s\")", graphName, key, value), e.String())
+}
+
+func TestHasEMisc(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	key := "key"
+	value := myStructWithStringer{field1: "hello", field2: 12345}
+
+	// WHEN
+	e = e.Has(key, value)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.has(\"%s\",\"%s\")", graphName, key, value.String()), e.String())
+}
+
+func TestHasEMiscFail(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	key := "key"
+	type myStruct struct {
+		field1 string
+		field2 int
+	}
+	value := myStruct{field1: "hello", field2: 12345}
+
+	// WHEN + THEN
+	assert.Panics(t, func() { e.Has(key, value) }, "The code did not panic")
 }
 
 func TestEdgeHasLabelMulti(t *testing.T) {
