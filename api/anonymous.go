@@ -7,32 +7,32 @@ import (
 
 // Eq adds .eq(<int>) to the query. (equal)
 func Eq(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("__.eq(%d)", v)
+	return NewSimpleQB("eq(%d)", v)
 }
 
 // Neq adds .neq(<int>) to the query. (not equal)
 func Neq(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("__.neq(%d)", v)
+	return NewSimpleQB("neq(%d)", v)
 }
 
 // Lt adds .lt(<int>) to the query. (less than)
 func Lt(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("__.lt(%d)", v)
+	return NewSimpleQB("lt(%d)", v)
 }
 
 // Lte adds .lte(<int>) to the query. (less than equal)
 func Lte(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("__.lte(%d)", v)
+	return NewSimpleQB("lte(%d)", v)
 }
 
 // Gt adds .gt(<int>) to the query. (greater than)
 func Gt(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("__.gt(%d)", v)
+	return NewSimpleQB("gt(%d)", v)
 }
 
 // Gte adds .gte(<int>) to the query. (greater than equal)
 func Gte(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("__.gte(%d)", v)
+	return NewSimpleQB("gte(%d)", v)
 }
 
 // InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all incoming edges of the Vertex

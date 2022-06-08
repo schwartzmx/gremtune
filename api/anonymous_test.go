@@ -14,7 +14,7 @@ func TestAnonymousEq(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, e)
-	assert.Equal(t, "__.eq(123)", e.String())
+	assert.Equal(t, "eq(123)", e.String())
 }
 
 func TestAnonymousNeq(t *testing.T) {
@@ -25,7 +25,7 @@ func TestAnonymousNeq(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, e)
-	assert.Equal(t, "__.neq(123)", e.String())
+	assert.Equal(t, "neq(123)", e.String())
 }
 
 func TestAnonymousLt(t *testing.T) {
@@ -36,7 +36,7 @@ func TestAnonymousLt(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, e)
-	assert.Equal(t, "__.lt(123)", e.String())
+	assert.Equal(t, "lt(123)", e.String())
 }
 
 func TestAnonymousLte(t *testing.T) {
@@ -47,7 +47,7 @@ func TestAnonymousLte(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, e)
-	assert.Equal(t, "__.lte(123)", e.String())
+	assert.Equal(t, "lte(123)", e.String())
 }
 
 func TestAnonymousGt(t *testing.T) {
@@ -58,7 +58,7 @@ func TestAnonymousGt(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, e)
-	assert.Equal(t, "__.gt(123)", e.String())
+	assert.Equal(t, "gt(123)", e.String())
 }
 
 func TestAnonymousGte(t *testing.T) {
@@ -69,7 +69,7 @@ func TestAnonymousGte(t *testing.T) {
 
 	// THEN
 	assert.NotNil(t, e)
-	assert.Equal(t, "__.gte(123)", e.String())
+	assert.Equal(t, "gte(123)", e.String())
 }
 
 func TestAnonymousInE(t *testing.T) {
