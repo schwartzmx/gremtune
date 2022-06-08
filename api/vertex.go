@@ -324,7 +324,7 @@ func (v *vertex) Property(key, value interface{}) interfaces.Vertex {
 // e.g. ("temperature",23.02) or ("available",true)
 func toKeyValueString(key, value interface{}) (string, error) {
 	switch casted := value.(type) {
-	case *simpleQB:
+	case *simpleQueryBuilder:
 		return fmt.Sprintf("(\"%s\",%s)", key, casted.String()), nil
 	case string:
 		return fmt.Sprintf("(\"%s\",\"%s\")", key, Escape(casted)), nil
