@@ -260,7 +260,7 @@ func TestHasCheck(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf(`%s.V().has("%s")`, graphName, key), v.String())
 }
 
-func TestHas(t *testing.T) {
+func TestHasV(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -278,7 +278,7 @@ func TestHas(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",\"%s\")", graphName, key, value), v.String())
 }
 
-func TestHasInt(t *testing.T) {
+func TestHasVInt(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -296,7 +296,7 @@ func TestHasInt(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",%d)", graphName, key, value), v.String())
 }
 
-func TestHasBool(t *testing.T) {
+func TestHasVBool(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -314,7 +314,7 @@ func TestHasBool(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",%t)", graphName, key, value), v.String())
 }
 
-func TestHasFloat(t *testing.T) {
+func TestHasVFloat(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -332,7 +332,7 @@ func TestHasFloat(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",%f)", graphName, key, value), v.String())
 }
 
-func TestHasTime(t *testing.T) {
+func TestHasVTime(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -350,7 +350,7 @@ func TestHasTime(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",\"%s\")", graphName, key, value), v.String())
 }
 
-func TestHasMisc(t *testing.T) {
+func TestHasVMisc(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)
@@ -368,7 +368,7 @@ func TestHasMisc(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().has(\"%s\",\"%s\")", graphName, key, value.String()), v.String())
 }
 
-func TestHasMiscFail(t *testing.T) {
+func TestHasVMiscFail(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
 	g := NewGraph(graphName)

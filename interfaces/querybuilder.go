@@ -201,6 +201,13 @@ type Edge interface {
 	// HasLabel adds .hasLabel([<label_1>,<label_2>,..,<label_n>]), e.g. .hasLabel('user','name'), to the query. The query call returns all edges with the given label.
 	HasLabel(label ...string) Edge
 
+	// Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
+	// e.g. .has("temperature",23.02) or .has("available",true)
+	// The method can also be used to return edges that have a certain property.
+	// Then .has("<prop name>") will be added to the query.
+	//	e.Has("prop1")
+	Has(key string, value ...interface{}) Edge
+
 	// Id adds .id(), to the query. The query call returns the id of the edge.
 	Id() QueryBuilder
 

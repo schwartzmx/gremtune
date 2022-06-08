@@ -6,16 +6,16 @@ import (
 	"github.com/supplyon/gremcos/interfaces"
 )
 
-type simpleQB struct {
+type simpleQueryBuilder struct {
 	value string
 }
 
 func NewSimpleQB(format string, a ...interface{}) interfaces.QueryBuilder {
-	return &simpleQB{
+	return &simpleQueryBuilder{
 		value: fmt.Sprintf(format, a...),
 	}
 }
 
-func (sqb *simpleQB) String() string {
+func (sqb *simpleQueryBuilder) String() string {
 	return sqb.value
 }

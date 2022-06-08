@@ -92,6 +92,24 @@ func (e *edge) Where(where interfaces.QueryBuilder) interfaces.Edge {
 	return e.Add(NewSimpleQB(".where(%s)", where))
 }
 
+// Has adds .has("<key>","<value>"), e.g. .has("name","hans") depending on the given type the quotes for the value are omitted.
+// e.g. .has("temperature",23.02) or .has("available",true)
+// The method can also be used to return edges that have a certain property.
+// Then .has("<prop name>") will be added to the query.
+//	e.Has("prop1")
+func (e *edge) Has(key string, value ...interface{}) interfaces.Edge {
+	if len(value) == 0 {
+		return e.Add(NewSimpleQB(".has(\"%s\")", key))
+	}
+
+	keyVal, err := toKeyValueString(key, value[0])
+	if err != nil {
+		panic(errors.Wrapf(err, "cast has value %T to string failed (You could either implement the Stringer interface for this type or cast it to string beforehand)", value))
+	}
+
+	return e.Add(NewSimpleQB(".has%s", keyVal))
+}
+
 //  Not adds .not(<traversal>) to the query.
 func (e *edge) Not(not interfaces.QueryBuilder) interfaces.Edge {
 	return e.Add(NewSimpleQB(".not(%s)", not))
