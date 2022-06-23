@@ -128,3 +128,22 @@ func TestMultiparamQuery(t *testing.T) {
 	assert.Equal(t, ".outE(\"label1\")", q2.String())
 	assert.Equal(t, ".outE(\"label1\",\"label2\")", q3.String())
 }
+
+func TestMultiparamQueryInt(t *testing.T) {
+
+	// GIVEN
+	queryStr := ".within"
+	v1 := 1
+	v2 := 2
+
+	// WHEN
+	q1 := multiParamQueryInt(queryStr)
+	q2 := multiParamQueryInt(queryStr, v1)
+	q3 := multiParamQueryInt(queryStr, v1, v2)
+
+	// THEN
+	assert.NotNil(t, q1)
+	assert.Equal(t, ".within()", q1.String())
+	assert.Equal(t, ".within(1)", q2.String())
+	assert.Equal(t, ".within(1,2)", q3.String())
+}
