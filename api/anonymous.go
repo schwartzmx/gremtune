@@ -5,6 +5,22 @@ import (
 	"github.com/supplyon/gremcos/interfaces"
 )
 
+// WithinInt adds .within([<value_1>,<value_1>,..,<value_n>]), to the query. Where values are of type int.
+func WithinInt(values ...int) interfaces.QueryBuilder {
+	query := multiParamQueryInt("within", values...)
+	return &edge{
+		builders: []interfaces.QueryBuilder{query},
+	}
+}
+
+// Within adds .within([<value_1>,<value_1>,..,<value_n>]), to the query. Where values are of type string.
+func Within(values ...string) interfaces.QueryBuilder {
+	query := multiParamQuery("within", values...)
+	return &edge{
+		builders: []interfaces.QueryBuilder{query},
+	}
+}
+
 // Eq adds .eq(<int>) to the query. (equal)
 func Eq(v int) interfaces.QueryBuilder {
 	return NewSimpleQB("eq(%d)", v)

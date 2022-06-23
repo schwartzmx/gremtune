@@ -97,6 +97,26 @@ func multiParamQuery(query string, params ...string) interfaces.QueryBuilder {
 	return NewSimpleQB(qStr)
 }
 
+// multiParamQueryInt creates a query based on the given (optional) parameters.
+// The query is the name of the query method that supports 0..* parameters.
+// Examples:
+//    q1:=multiParamQueryInt(".within",1,2) ==> generates ".within(1,2)"
+//    q2:=multiParamQueryInt(".within") ==> generates ".within()"
+func multiParamQueryInt(query string, params ...int) interfaces.QueryBuilder {
+	if len(params) == 0 {
+		return NewSimpleQB(fmt.Sprintf("%s()", query))
+	}
+
+	paramsStr := make([]string, 0, len(params))
+	for _, param := range params {
+		paramsStr = append(paramsStr, fmt.Sprintf("%d", param))
+	}
+
+	qStr := strings.Join(paramsStr, ",")
+	qStr = fmt.Sprintf("%s(%s)", query, qStr)
+	return NewSimpleQB(qStr)
+}
+
 // multitraversalQuery creates a query based on the given (optional) parameters.
 // The query is the name of the query method that supports 0..* parameters.
 func multitraversalQuery(query string, traversals ...interfaces.QueryBuilder) interfaces.QueryBuilder {

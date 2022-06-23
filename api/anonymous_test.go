@@ -6,6 +6,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAnonymousWithin(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e1 := Within()
+	e2 := Within("a")
+	e3 := Within("a", "b", "c")
+
+	// THEN
+	assert.NotNil(t, e1)
+	assert.Equal(t, `within()`, e1.String())
+
+	assert.NotNil(t, e2)
+	assert.Equal(t, `within("a")`, e2.String())
+
+	assert.NotNil(t, e3)
+	assert.Equal(t, `within("a","b","c")`, e3.String())
+}
+
+func TestAnonymousWithinInt(t *testing.T) {
+	// GIVEN
+
+	// WHEN
+	e1 := WithinInt()
+	e2 := WithinInt(1)
+	e3 := WithinInt(1, 2, 3)
+
+	// THEN
+	assert.NotNil(t, e1)
+	assert.Equal(t, `within()`, e1.String())
+
+	assert.NotNil(t, e2)
+	assert.Equal(t, `within(1)`, e2.String())
+
+	assert.NotNil(t, e3)
+	assert.Equal(t, `within(1,2,3)`, e3.String())
+}
+
 func TestAnonymousEq(t *testing.T) {
 	// GIVEN
 
