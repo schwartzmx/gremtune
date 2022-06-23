@@ -7,18 +7,12 @@ import (
 
 // WithinInt adds .within([<value_1>,<value_1>,..,<value_n>]), to the query. Where values are of type int.
 func WithinInt(values ...int) interfaces.QueryBuilder {
-	query := multiParamQueryInt("within", values...)
-	return &edge{
-		builders: []interfaces.QueryBuilder{query},
-	}
+	return multiParamQueryInt("within", values...)
 }
 
 // Within adds .within([<value_1>,<value_1>,..,<value_n>]), to the query. Where values are of type string.
 func Within(values ...string) interfaces.QueryBuilder {
-	query := multiParamQuery("within", values...)
-	return &edge{
-		builders: []interfaces.QueryBuilder{query},
-	}
+	return multiParamQuery("within", values...)
 }
 
 // Eq adds .eq(<int>) to the query. (equal)
