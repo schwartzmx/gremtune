@@ -381,8 +381,8 @@ func (c *client) safeClose() error {
 }
 
 // writeWorker works on a loop and dispatches messages as soon as it receives them
-func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
-	defer c.workerSaveExit("writeWorker", errs)
+func (c *client) writeWorker(errs chan<- error, quit <-chan struct{}) {
+	defer c.workerSaveExit("writeWorker", errs, quit)
 
 	for {
 		select {
@@ -391,8 +391,7 @@ func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
 			err := c.conn.Write(msg)
 			if err != nil {
 				c.metrics.incrementConnectionUsageCount(connectionUsageKindWrite, true)
-				errs <- err
-				c.setLastErr(err)
+				c.postError(errs, err, quit)
 				c.mux.Unlock()
 				break
 			}
@@ -406,15 +405,16 @@ func (c *client) writeWorker(errs chan error, quit <-chan struct{}) {
 }
 
 // readWorker works on a loop and sorts messages as soon as it receives them
-func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
-	defer c.workerSaveExit("readWorker", errs)
+func (c *client) readWorker(errs chan<- error, quit <-chan struct{}) {
+	defer c.workerSaveExit("readWorker", errs, quit)
 
 	for {
 		msgType, msg, err := c.conn.Read()
+
 		if msgType == -1 { // msgType == -1 is noFrame (close connection)
 			closedErr := socketClosedByServerError{err: err}
-			errs <- closedErr
-			c.setLastErr(closedErr)
+
+			c.postError(errs, closedErr, quit)
 
 			// to return at this point is safe since we call workerSaveExit() to clean up everything
 			// when the function is left
@@ -434,8 +434,7 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 		if errorToPost != nil {
 			c.metrics.incrementConnectionUsageCount(connectionUsageKindRead, true)
 
-			errs <- errorToPost
-			c.setLastErr(errorToPost)
+			c.postError(errs, errorToPost, quit)
 
 			// to return at this point is safe since we call workerSaveExit() to clean up everything
 			// when the function is left
@@ -443,6 +442,8 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 		}
 
 		c.metrics.incrementConnectionUsageCount(connectionUsageKindRead, false)
+
+		// check if we're shutting down
 		select {
 		case <-quit:
 			return
@@ -452,18 +453,33 @@ func (c *client) readWorker(errs chan error, quit <-chan struct{}) {
 	}
 }
 
-func (c *client) pingWorker(errs chan error, quit <-chan struct{}) {
+// postError posts the error to the client if no shutdown is already initiated
+func (c *client) postError(errs chan<- error, errToPost error, close <-chan struct{}) {
+	if errToPost == nil {
+		return
+	}
+
+	select {
+	case <-close:
+		return
+	default:
+		errs <- errToPost
+		c.setLastErr(errToPost)
+	}
+}
+
+func (c *client) pingWorker(errs chan<- error, quit <-chan struct{}) {
 	ticker := time.NewTicker(c.pingInterval)
 	defer func() {
 		ticker.Stop()
-		c.workerSaveExit("pingWorker", errs)
+		c.workerSaveExit("pingWorker", errs, quit)
 	}()
 
 	for {
 		select {
 		case <-ticker.C:
 			if err := c.Ping(); err != nil {
-				errs <- err
+				c.postError(errs, err, quit)
 			}
 		case <-quit:
 			return
@@ -473,12 +489,12 @@ func (c *client) pingWorker(errs chan error, quit <-chan struct{}) {
 
 // workerSaveExit can be used as deferred call on leaving a worker routine.
 // It ensures that the client is closed and cleaned up appropriately.
-func (c *client) workerSaveExit(name string, errs chan<- error) {
+func (c *client) workerSaveExit(name string, errs chan<- error, quit <-chan struct{}) {
 
 	// call close to ensure that everything is cleaned up appropriately
 	if err := c.safeClose(); err != nil {
-		err = errors.Wrapf(err,"error closing client while leaving worker '%s'", name)
-		errs <- err
+		err = errors.Wrapf(err, "error closing client while leaving worker '%s'", name)
+		c.postError(errs, err, quit)
 	}
 	// client exited
 	c.wg.Done()

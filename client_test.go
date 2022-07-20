@@ -3,6 +3,7 @@ package gremcos
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"go.uber.org/goleak"
 	"sync"
 	"testing"
@@ -164,25 +165,46 @@ func TestDial(t *testing.T) {
 	}()
 	quitChannel := make(chan struct{})
 	once := sync.Once{}
+	readCount := 0
+	mux := sync.Mutex{}
+	readErr := fmt.Errorf("Read failed")
 
-	// WHEN
+	// EXPECT
 	mockedDialer.EXPECT().Connect().Return(nil)
-	mockedDialer.EXPECT().Read().Return(1, nil, fmt.Errorf("Read failed")).AnyTimes()
+	mockedDialer.EXPECT().Read().DoAndReturn(func() (int, []byte, error) {
+		mux.Lock()
+		readCount++
+		mux.Unlock()
+		return 1, nil, readErr
+	}).AnyTimes()
 	mockedDialer.EXPECT().Close().Do(func() {
 		once.Do(func() {
 			close(quitChannel)
 		})
 	}).Return(nil).AnyTimes()
 
+	// WHEN
 	client, err := Dial(mockedDialer, errorChannel)
 	require.NotNil(t, client)
 	require.NoError(t, err)
+
 	err = client.Close()
+	// Here is a race between closing the client and the error channel which happens after each other in
+	// cosmosImpl.Close() but the Error-Handling is decoupled, thus we need to wait for a "good" state
+	time.Sleep(time.Millisecond * 10)
 	close(errorChannel)
 
 	// THEN
 	assert.NoError(t, err)
-	assert.NotNil(t, client.LastError())
+	_, ok := <-quitChannel
+	assert.False(t, ok, "should have been closed")
+
+	mux.Lock()
+	if readCount > 0 {
+		assert.Equal(t, readErr, client.LastError())
+	} else {
+		assert.Nil(t, client.LastError())
+	}
 }
 
 func TestPingWorker(t *testing.T) {
@@ -344,7 +366,7 @@ func TestReadWorkerFailOnInvalidResponse(t *testing.T) {
 
 	client.wg.Add(1)
 	go client.readWorker(errorChannel, client.quitChannel)
-	client.Close()
+	time.Sleep(time.Millisecond * 50)
 
 	// THEN
 	assert.NotEmpty(t, errorChannel)
@@ -366,7 +388,7 @@ func TestReadWorkerFailOnInvalidFrame(t *testing.T) {
 
 	client.wg.Add(1)
 	go client.readWorker(errorChannel, client.quitChannel)
-	client.Close()
+	time.Sleep(time.Millisecond * 50)
 
 	// THEN
 	assert.NotEmpty(t, errorChannel)
@@ -487,19 +509,19 @@ func TestCloseClient(t *testing.T) {
 	mockedDialer.EXPECT().Read()
 	mockedDialer.EXPECT().Close().Return(nil)
 	errChan := make(chan error, 100)
-	defer close(errChan)
 
 	client, err := Dial(mockedDialer, errChan)
 	require.NoError(t, err)
 
 	// WHEN
 	closeErr := client.Close()
+	close(errChan) // closed right after the client in cosmosImpl.Close
 
 	// THEN
 	assert.NoError(t, closeErr)
 }
 
-func TestConcurrentWriteAndClose(t *testing.T){
+func TestConcurrentWriteAndClose(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	// GIVEN
@@ -508,41 +530,102 @@ func TestConcurrentWriteAndClose(t *testing.T){
 	mockedDialer := mock_interfaces.NewMockDialer(mockCtrl)
 	mockedDialer.EXPECT().IsConnected().AnyTimes().Return(true)
 	mockedDialer.EXPECT().Connect().Return(nil)
-	mockedDialer.EXPECT().Read().AnyTimes().DoAndReturn(func() (int, []byte, error){
-		time.Sleep(time.Millisecond*2)
+	mockedDialer.EXPECT().Read().AnyTimes().DoAndReturn(func() (int, []byte, error) {
+		time.Sleep(time.Millisecond * 2)
 
-		return 0,[]byte{},nil
+		return 0, []byte{}, nil
 	})
 	// not synced because the functions write and close should be synced
 	sending := false
 
 	mockedDialer.EXPECT().Write(gomock.Any()).MinTimes(1).Do(func(data interface{}) error {
-		require.False(t,sending)
+		require.False(t, sending)
 		sending = true
-		time.Sleep(time.Millisecond*500)
+		time.Sleep(time.Millisecond * 500)
 		sending = false
 		return nil
 	})
 	mockedDialer.EXPECT().Close().MinTimes(1).Do(func() error {
-		require.False(t,sending)
+		require.False(t, sending)
 		sending = true
-		time.Sleep(time.Millisecond*1)
+		time.Sleep(time.Millisecond * 1)
 		sending = false
 		return nil
 	})
 
-	errChan := make(chan error,100)
-	client,err := Dial(mockedDialer,errChan)
+	errChan := make(chan error, 100)
+	client, err := Dial(mockedDialer, errChan)
 	require.NoError(t, err)
 
-
 	go func() {
-			_, _ = client.Execute("g.V()")
+		_, _ = client.Execute("g.V()")
 	}()
 
-	time.Sleep(time.Millisecond*50)
+	time.Sleep(time.Millisecond * 50)
 	client.Close()
 
-	time.Sleep(time.Millisecond*50)
+	time.Sleep(time.Millisecond * 50)
 	close(errChan)
+}
+
+func Test_client_postError(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	inputErr := errors.New("input error")
+
+	tests := []struct {
+		name              string
+		errorToPost       error
+		closed            bool
+		expectedLastError error
+	}{
+		// GIVEN
+		{
+			name:              "no error",
+			closed:            true,
+			expectedLastError: nil,
+			errorToPost:       nil,
+		},
+		{
+			name:              "not closed",
+			expectedLastError: inputErr,
+			closed:            false,
+			errorToPost:       inputErr,
+		},
+		{
+			name:              "error is already closed",
+			expectedLastError: nil,
+			closed:            true,
+			errorToPost:       inputErr,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := client{}
+			errs := make(chan error, 100)
+			closeChan := make(chan struct{})
+			if tt.closed {
+				close(closeChan)
+				close(errs)
+			}
+			// WHEN
+			client.postError(errs, tt.errorToPost, closeChan)
+
+			// THEN
+			assert.Equal(t, tt.expectedLastError, client.LastError(), tt.name)
+
+			readError, ok := <-errs
+			assert.Equal(t, tt.closed, !ok, tt.name)
+			if !tt.closed {
+				assert.Equal(t, tt.errorToPost, readError, tt.name)
+
+				// cleanup
+				close(closeChan)
+				close(errs)
+			} else {
+				assert.Nil(t, readError)
+			}
+		})
+	}
 }
