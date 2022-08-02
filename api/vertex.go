@@ -283,6 +283,11 @@ func (v *vertex) HasId(id string) interfaces.Vertex {
 	return v.Add(NewSimpleQB(".hasId(\"%s\")", id))
 }
 
+// Cap adds .cap(<label>) to the query.
+func (v *vertex) Cap(label string) interfaces.Vertex {
+	return v.Add(NewSimpleQB(".cap(\"%s\")", label))
+}
+
 // OutE adds .outE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all outgoing edges of the Vertex
 func (v *vertex) OutE(labels ...string) interfaces.Edge {
 	query := multiParamQuery(".outE", labels...)

@@ -130,6 +130,9 @@ type Vertex interface {
 	// Fold adds .fold() to the query.
 	Fold() Vertex
 
+	// Cap adds .cap(<label>) to the query.
+	Cap(label string) Vertex
+
 	// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
 	Coalesce(qb1 QueryBuilder, qb2 QueryBuilder) Vertex
 
@@ -238,6 +241,9 @@ type Edge interface {
 
 	// Fold adds .fold() to the query.
 	Fold() Edge
+
+	// Cap adds .cap(<label>) to the query.
+	Cap(label string) Edge
 
 	// Coalesce adds .coalesce(<traversal>,<traversal>) to the query.
 	Coalesce(qb1 QueryBuilder, qb2 QueryBuilder) Edge
