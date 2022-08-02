@@ -219,6 +219,11 @@ func (e *edge) HasId(id string) interfaces.Edge {
 	return e.Add(NewSimpleQB(".hasId(\"%s\")", id))
 }
 
+// Cap adds .cap(<label>) to the query.
+func (e *edge) Cap(label string) interfaces.Edge {
+	return e.Add(NewSimpleQB(".cap(\"%s\")", label))
+}
+
 // Count adds .count(), to the query. The query call will return the number of entities found in the query.
 func (e *edge) Count() interfaces.QueryBuilder {
 	return e.Add(NewSimpleQB(".count()"))

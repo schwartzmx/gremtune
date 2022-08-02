@@ -882,6 +882,23 @@ func TestHasId(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.V().hasId(\"%s\")", graphName, id), v.String())
 }
 
+func TestVertexCap(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	v := g.V()
+	require.NotNil(t, v)
+	label := "my-label"
+
+	// WHEN
+	v = v.Cap(label)
+
+	// THEN
+	assert.NotNil(t, v)
+	assert.Equal(t, fmt.Sprintf("%s.V().cap(\"%s\")", graphName, label), v.String())
+}
+
 func TestVertexLimit(t *testing.T) {
 
 	// GIVEN

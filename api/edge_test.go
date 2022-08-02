@@ -576,6 +576,23 @@ func TestEdgeHasId(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s.hasId(\"%s\")", graphName, id), e.String())
 }
 
+func TestEdgeCap(t *testing.T) {
+	// GIVEN
+	graphName := "mygraph"
+	g := NewGraph(graphName)
+	require.NotNil(t, g)
+	e := NewEdgeG(g)
+	require.NotNil(t, e)
+	label := "my-label"
+
+	// WHEN
+	e = e.Cap(label)
+
+	// THEN
+	assert.NotNil(t, e)
+	assert.Equal(t, fmt.Sprintf("%s.cap(\"%s\")", graphName, label), e.String())
+}
+
 func TestEdgeId(t *testing.T) {
 	// GIVEN
 	graphName := "mygraph"
