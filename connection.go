@@ -45,7 +45,7 @@ type websocket struct {
 	readBufSize  int
 	writeBufSize int
 
-	read sync.Mutex // makes sure there is only one reader on the connection
+	read  sync.Mutex // makes sure there is only one reader on the connection
 	write sync.Mutex // makes sure there is only one writer on the connection
 
 	// wsDialerFactory is a factory that creates
@@ -156,7 +156,7 @@ func (ws *websocket) setConnection(connection interfaces.WebsocketConnection) {
 		ws.read.Unlock()
 	}()
 	ws.conn = connection
-	ws.connected.Store(connection!=nil)
+	ws.connected.Store(connection != nil)
 }
 
 // IsConnected returns whether the underlying WebsocketConnection is connected or not
@@ -210,12 +210,12 @@ func (ws *websocket) Read() (messageType int, msg []byte, err error) {
 // Close closes the underlying websocket
 func (ws *websocket) Close() error {
 
+	// ensure that we have the connection during the whole close operation
+	ws.write.Lock()
+
 	if !ws.IsConnected() {
 		return nil
 	}
-
-	// ensure that we have the connection during the whole close operation
-	ws.write.Lock()
 
 	// clean up in any case
 	defer func() {
