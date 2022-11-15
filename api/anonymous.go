@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/pkg/errors"
 	"github.com/supplyon/gremcos/interfaces"
+	"reflect"
 )
 
 // WithinInt adds .within([<value_1>,<value_1>,..,<value_n>]), to the query. Where values are of type int.
@@ -15,34 +16,52 @@ func Within(values ...string) interfaces.QueryBuilder {
 	return multiParamQuery("within", values...)
 }
 
-// Eq adds .eq(<int>) to the query. (equal)
-func Eq(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("eq(%d)", v)
+// Eq adds .eq(<T>) to the query. (equal)
+func Eq[T any](v T) interfaces.QueryBuilder {
+	if t := reflect.TypeOf(v).String(); t == "string" {
+		return NewSimpleQB("eq(\"%v\")", v)
+	}
+	return NewSimpleQB("eq(%v)", v)
 }
 
-// Neq adds .neq(<int>) to the query. (not equal)
-func Neq(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("neq(%d)", v)
+// Neq adds .neq(<T>) to the query. (not equal)
+func Neq[T Ordered](v T) interfaces.QueryBuilder {
+	if t := reflect.TypeOf(v).String(); t == "string" {
+		return NewSimpleQB("neq(\"%v\")", v)
+	}
+	return NewSimpleQB("neq(%v)", v)
 }
 
-// Lt adds .lt(<int>) to the query. (less than)
-func Lt(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("lt(%d)", v)
+// Lt adds .lt(<T>) to the query. (less than)
+func Lt[T Ordered](v T) interfaces.QueryBuilder {
+	if t := reflect.TypeOf(v).String(); t == "string" {
+		return NewSimpleQB("lt(\"%v\")", v)
+	}
+	return NewSimpleQB("lt(%v)", v)
 }
 
-// Lte adds .lte(<int>) to the query. (less than equal)
-func Lte(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("lte(%d)", v)
+// Lte adds .lte(<T>) to the query. (less than equal)
+func Lte[T Ordered](v T) interfaces.QueryBuilder {
+	if t := reflect.TypeOf(v).String(); t == "string" {
+		return NewSimpleQB("lte(\"%v\")", v)
+	}
+	return NewSimpleQB("lte(%v)", v)
 }
 
-// Gt adds .gt(<int>) to the query. (greater than)
-func Gt(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("gt(%d)", v)
+// Gt adds .gt(<T>) to the query. (greater than)
+func Gt[T Ordered](v T) interfaces.QueryBuilder {
+	if t := reflect.TypeOf(v).String(); t == "string" {
+		return NewSimpleQB("gt(\"%v\")", v)
+	}
+	return NewSimpleQB("gt(%v)", v)
 }
 
-// Gte adds .gte(<int>) to the query. (greater than equal)
-func Gte(v int) interfaces.QueryBuilder {
-	return NewSimpleQB("gte(%d)", v)
+// Gte adds .gte(<T>) to the query. (greater than equal)
+func Gte[T Ordered](v T) interfaces.QueryBuilder {
+	if t := reflect.TypeOf(v).String(); t == "string" {
+		return NewSimpleQB("gte(\"%v\")", v)
+	}
+	return NewSimpleQB("gte(%v)", v)
 }
 
 // InE adds .inE([<label_1>,<label_2>,..,<label_n>]), to the query. The query call returns all incoming edges of the Vertex
@@ -102,6 +121,7 @@ func Constant(c string) interfaces.QueryBuilder {
 // e.g. .has("temperature",23.02) or .has("available",true)
 // The method can also be used to return vertices that have a certain property.
 // Then .has("<prop name>") will be added to the query.
+//
 //	v.Has("prop1")
 func Has(key string, value ...interface{}) interfaces.QueryBuilder {
 	if len(value) == 0 {

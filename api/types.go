@@ -6,6 +6,12 @@ import (
 	"github.com/spf13/cast"
 )
 
+// Ordered is a constraint that permits any ordered type: any type
+// that supports the operators < <= >= >.
+type Ordered interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr | ~float32 | ~float64 | ~string
+}
+
 // Property represents the cosmos db type for a property.
 // As it would be returned by a call to .properties().
 type Property struct {
